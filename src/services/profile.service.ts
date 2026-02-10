@@ -93,10 +93,6 @@ class ProfileService {
     return response?.data || response;
   }
 
-  async uploadProfileImage(file: File): Promise<any> {
-    return await apiClient.uploadFile("/profile/image", file, "image");
-  }
-
   async deleteProfile(): Promise<{ message: string }> {
     // Delete current user's profile (requires authentication)
     return await apiClient.delete<{ message: string }>("/profile/");
