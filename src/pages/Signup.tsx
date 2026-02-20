@@ -115,6 +115,7 @@ const Signup = () => {
       name: "",
       email: "",
       password: "",
+      confirmPassword: "",
       role: "jobseeker",
       countryCode: "+254",
       phoneNumber: "",
