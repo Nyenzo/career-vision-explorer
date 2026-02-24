@@ -161,6 +161,14 @@ export interface Message {
   updated_at: string;
 }
 
+export interface GroupParticipant {
+  profile_id: string;
+  user_id?: string;
+  name?: string;
+  current_role?: string;
+  photo_url?: string;
+}
+
 export interface Conversation {
   conversation_id: string;
   match_id: string;
@@ -171,12 +179,77 @@ export interface Conversation {
   created_at: string;
   messages: Message[];
   other_profile: CofounderProfile;
+  // Group chat fields
+  conversation_type?: "direct" | "project_group";
+  project_id?: string | null;
+  title?: string | null;
+  created_by?: string | null;
+  project_description?: string | null;
+  participant_count?: number;
+  participants?: GroupParticipant[];
 }
 
 export interface ConversationListResponse {
   conversations: Conversation[];
   total: number;
   total_unread: number;
+}
+
+// Project interfaces
+
+export interface IdeaProject {
+  id: string;
+  profile_id: string;
+  user_id: string;
+  title: string;
+  description?: string;
+  idea_description?: string;
+  problem_statement?: string;
+  target_market?: string;
+  stage?: string;
+  roles_needed?: string[];
+  tech_stack?: string[];
+  equity_split?: string;
+  timeline?: string;
+  status?: string;
+  max_members?: number;
+  created_at?: string;
+  updated_at?: string;
+  owner_name?: string;
+}
+
+export interface ProjectMember {
+  id: string;
+  project_id: string;
+  profile_id: string;
+  user_id: string;
+  role: string;
+  status: "pending" | "approved" | "rejected" | "removed";
+  member_name: string;
+  member_role: string;
+  member_photo?: string | null;
+  requested_at?: string;
+  responded_at?: string;
+}
+
+export interface ProjectWithMembers extends IdeaProject {
+  members: ProjectMember[];
+  owner_name: string;
+  owner_photo?: string | null;
+  member_count: number;
+  pending_count: number;
+  has_group_chat: boolean;
+  group_chat_conversation_id?: string | null;
+  user_membership_status?: "owner" | "pending" | "approved" | "rejected" | "removed" | null;
+}
+
+export interface ProjectGroupChat {
+  conversation_id: string;
+  project_id: string;
+  title: string;
+  conversation_type: string;
+  participant_count: number;
+  created_at: string;
 }
 
 class CofounderMatchingService {
@@ -469,6 +542,13 @@ class CofounderMatchingService {
     );
   }
 
+  async sendGroupMessage(conversationId: string, messageText: string): Promise<Message> {
+    return await apiClient.post<Message>(
+      `/cofounder-matching/group-conversations/${conversationId}/messages`,
+      { message_text: messageText }
+    );
+  }
+
   async markConversationRead(conversationId: string): Promise<void> {
     await apiClient.put(`/cofounder-matching/conversations/${conversationId}/read`);
   }
@@ -493,6 +573,60 @@ class CofounderMatchingService {
 
   async updateOnboardingProfile(profileData: Partial<CofounderProfile>): Promise<CofounderProfile> {
     return await apiClient.put('/cofounder-matching/onboarding/profile', profileData);
+  }
+
+  // Project Methods
+
+  async listProjects(profileId?: string): Promise<IdeaProject[]> {
+    const params = profileId ? `?profile_id=${profileId}` : '';
+    return await apiClient.get<IdeaProject[]>(`/cofounder-matching/projects${params}`);
+  }
+
+  async browseMatchedProjects(): Promise<IdeaProject[]> {
+    return await apiClient.get<IdeaProject[]>('/cofounder-matching/projects/browse');
+  }
+
+  async getProjectDetail(projectId: string): Promise<ProjectWithMembers> {
+    return await apiClient.get<ProjectWithMembers>(`/cofounder-matching/projects/${projectId}`);
+  }
+
+  async createProject(data: Partial<IdeaProject>): Promise<IdeaProject> {
+    return await apiClient.post<IdeaProject>('/cofounder-matching/projects', data);
+  }
+
+  async updateProject(projectId: string, data: Partial<IdeaProject>): Promise<IdeaProject> {
+    return await apiClient.put<IdeaProject>(`/cofounder-matching/projects/${projectId}`, data);
+  }
+
+  async deleteProject(projectId: string): Promise<void> {
+    return await apiClient.delete(`/cofounder-matching/projects/${projectId}`);
+  }
+
+  async requestJoinProject(projectId: string): Promise<ProjectMember> {
+    return await apiClient.post<ProjectMember>(`/cofounder-matching/projects/${projectId}/join`);
+  }
+
+  async addMemberToProject(projectId: string, profileId: string, role?: string): Promise<ProjectMember> {
+    return await apiClient.post<ProjectMember>(`/cofounder-matching/projects/${projectId}/members`, {
+      profile_id: profileId,
+      role: role || "member",
+    });
+  }
+
+  async respondToMember(memberId: string, action: "approve" | "reject" | "remove"): Promise<ProjectMember> {
+    return await apiClient.put<ProjectMember>(`/cofounder-matching/projects/members/${memberId}`, { action });
+  }
+
+  async removeMember(projectId: string, memberProfileId: string): Promise<void> {
+    return await apiClient.delete(`/cofounder-matching/projects/${projectId}/members/${memberProfileId}`);
+  }
+
+  async createProjectGroupChat(projectId: string, title?: string): Promise<ProjectGroupChat> {
+    return await apiClient.post<ProjectGroupChat>(`/cofounder-matching/projects/${projectId}/group-chat`, { title });
+  }
+
+  async getGroupConversations(): Promise<Conversation[]> {
+    return await apiClient.get<Conversation[]>('/cofounder-matching/group-conversations');
   }
 }
 

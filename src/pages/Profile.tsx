@@ -69,7 +69,7 @@ const Profile: React.FC = () => {
   const linkedinInputRef = useRef<HTMLInputElement>(null);
   const skillsInputRef = useRef<HTMLTextAreaElement>(null);
   const workExperienceInputRef = useRef<HTMLTextAreaElement>(null);
-  const educationInputRef = useRef<HTMLTextAreaElement>(null);
+  const educationInputRef = useRef<HTMLInputElement>(null);
   const preferencesInputRef = useRef<HTMLTextAreaElement>(null);
   const salaryInputRef = useRef<HTMLInputElement>(null);
   const dobInputRef = useRef<HTMLInputElement>(null);
@@ -2250,21 +2250,81 @@ const Profile: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   {editing ? (
-                    <Textarea
-                      ref={educationInputRef}
-                      value={
-                        typeof editForm.education === 'string'
-                          ? editForm.education
-                          : Array.isArray(editForm.education)
-                            ? editForm.education.map(e => `${e.degree} - ${e.institution} (${e.start_year}-${e.end_year})`).join('\n')
-                            : ""
-                      }
-                      onChange={(e) => {
-                        setEditForm({ ...editForm, education: e.target.value });
-                      }}
-                      placeholder="e.g., BSc in Computer Science - MIT (2020-2024)"
-                      rows={6}
-                    />
+                    <div className="space-y-6">
+                      {(() => {
+                        // Parse education into array format for editing
+                        const eduEntries: Array<{ degree: string; institution: string; duration: string }> = (() => {
+                          if (Array.isArray(editForm.education)) {
+                            return editForm.education.map((e: any) => ({
+                              degree: e.degree || '',
+                              institution: e.institution || '',
+                              duration: e.start_year && e.end_year ? `${e.start_year}-${e.end_year}` : (e.duration || ''),
+                            }));
+                          }
+                          if (typeof editForm.education === 'string' && editForm.education.trim()) {
+                            return editForm.education.split('\n').filter((line: string) => line.trim()).map((line: string) => {
+                              const parts = line.trim().split(',').map((p: string) => p.trim());
+                              return {
+                                degree: parts[0] || line.trim(),
+                                institution: parts[1] || '',
+                                duration: parts.slice(2).join(',').trim() || '',
+                              };
+                            });
+                          }
+                          return [{ degree: '', institution: '', duration: '' }];
+                        })();
+
+                        const updateEntry = (index: number, field: string, value: string) => {
+                          const updated = [...eduEntries];
+                          updated[index] = { ...updated[index], [field]: value };
+                          // Store as string format "degree, institution, duration" per line
+                          const asString = updated
+                            .map(e => [e.degree, e.institution, e.duration].filter(Boolean).join(', '))
+                            .join('\n');
+                          setEditForm({ ...editForm, education: asString });
+                        };
+
+                        return (
+                          <>
+                            {eduEntries.map((edu, index) => (
+                              <div key={index} className="border rounded-lg p-4 space-y-4">
+                                <Input
+                                  ref={index === 0 ? educationInputRef : undefined}
+                                  value={edu.degree}
+                                  onChange={(e) => updateEntry(index, 'degree', e.target.value)}
+                                  placeholder="Degree (e.g., BSc in Computer Science)"
+                                  className="w-full"
+                                />
+                                <Input
+                                  value={edu.institution}
+                                  onChange={(e) => updateEntry(index, 'institution', e.target.value)}
+                                  placeholder="Institution"
+                                  className="w-full"
+                                />
+                                <Input
+                                  value={edu.duration}
+                                  onChange={(e) => updateEntry(index, 'duration', e.target.value)}
+                                  placeholder="Duration (e.g., 2020-2024)"
+                                  className="w-full"
+                                />
+                              </div>
+                            ))}
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                const currentStr = typeof editForm.education === 'string' ? editForm.education : '';
+                                const newStr = currentStr ? currentStr + '\n, , ' : ', , ';
+                                setEditForm({ ...editForm, education: newStr });
+                              }}
+                              className="w-full"
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add New Education
+                            </Button>
+                          </>
+                        );
+                      })()}
+                    </div>
                   ) : profile?.education ? (
                     <div className="space-y-4">
                       {typeof profile.education === 'string' ? (

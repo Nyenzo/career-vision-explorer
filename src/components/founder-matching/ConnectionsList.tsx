@@ -10,6 +10,7 @@ import {
   MapPin,
   Briefcase,
   CheckCircle,
+  ExternalLink,
 } from "lucide-react";
 import { cofounderMatchingService } from "@/services/founder-matching.service";
 import { toast } from "sonner";
@@ -142,6 +143,15 @@ export const ConnectionsList: React.FC = () => {
                   <Button size="sm" onClick={() => navigate(`/founder/dashboard?tab=messages&match_id=${connection.match_id}`)}>
                     <MessageCircle className="h-4 w-4 mr-2" />
                     Message
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate(`/founder/profile/${profile.profile_id}`)}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    View Profile
                   </Button>
 
                   {profile.linkedin_url && (
