@@ -510,6 +510,39 @@ class CofounderMatchingService {
     );
   }
 
+  // Messaging prefetch cache — populated by dashboard, consumed by MessagingInterface
+  private _prefetchedConversations: { data: ConversationListResponse; groupData: Conversation[]; timestamp: number } | null = null;
+  private _prefetchPromise: Promise<void> | null = null;
+
+  prefetchConversations(): void {
+    // Fire-and-forget: fetch conversations + group conversations in parallel
+    if (this._prefetchPromise) return;
+    this._prefetchPromise = (async () => {
+      try {
+        const [convs, groups] = await Promise.all([
+          this.getConversations(),
+          this.getGroupConversations().catch(() => [] as Conversation[]),
+        ]);
+        this._prefetchedConversations = { data: convs, groupData: groups, timestamp: Date.now() };
+      } catch {
+        this._prefetchedConversations = null;
+      } finally {
+        this._prefetchPromise = null;
+      }
+    })();
+  }
+
+  consumePrefetchedConversations(): { data: ConversationListResponse; groupData: Conversation[] } | null {
+    // Return cached data if fresh (< 30s old), then clear it
+    const cached = this._prefetchedConversations;
+    if (cached && Date.now() - cached.timestamp < 30_000) {
+      this._prefetchedConversations = null;
+      return { data: cached.data, groupData: cached.groupData };
+    }
+    this._prefetchedConversations = null;
+    return null;
+  }
+
   // Messaging Methods
 
   async getConversations(limit = 20, offset = 0): Promise<ConversationListResponse> {

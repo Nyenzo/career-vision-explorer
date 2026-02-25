@@ -30,16 +30,58 @@ export const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ initialM
   const [myProfileId, setMyProfileId] = useState<string | null>(null);
   const [showGroupInfo, setShowGroupInfo] = useState(false);
 
+  // Helper: merge group conversations into regular conversations list
+  const mergeGroupConversations = (regular: Conversation[], groupConvs: any[]): Conversation[] => {
+    const all = [...regular];
+    if (groupConvs && groupConvs.length > 0) {
+      const groupWrapped: Conversation[] = groupConvs.map((gc: any) => ({
+        conversation_id: gc.conversation_id,
+        match_id: gc.match_id || '',
+        profile_1_id: gc.profile_1_id || '',
+        profile_2_id: gc.profile_2_id || '',
+        last_message_at: gc.last_message_at || gc.created_at,
+        unread_count: gc.unread_count || 0,
+        created_at: gc.created_at,
+        messages: gc.messages || [],
+        other_profile: gc.other_profile || {} as any,
+        conversation_type: 'project_group' as const,
+        project_id: gc.project_id,
+        title: gc.title,
+        created_by: gc.created_by || null,
+        project_description: gc.project_description || null,
+        participant_count: gc.participant_count || gc.participants?.length || 0,
+        participants: gc.participants || [],
+      }));
+      const existingIds = new Set(all.map(c => c.conversation_id));
+      for (const gc of groupWrapped) {
+        if (!existingIds.has(gc.conversation_id)) {
+          all.push(gc);
+        }
+      }
+      all.sort((a, b) =>
+        new Date(b.last_message_at || 0).getTime() - new Date(a.last_message_at || 0).getTime()
+      );
+    }
+    return all;
+  };
+
+  // Derive myProfileId from conversation data instead of a separate API call
+  const deriveMyProfileId = (convs: Conversation[]) => {
+    if (myProfileId) return;
+    for (const c of convs) {
+      if (c.other_profile?.profile_id && c.profile_1_id && c.profile_2_id) {
+        const otherId = c.other_profile.profile_id;
+        const me = c.profile_1_id === otherId ? c.profile_2_id : c.profile_1_id;
+        if (me) { setMyProfileId(me); return; }
+      }
+    }
+  };
+
   // Load conversations
   useEffect(() => {
     loadConversations();
     loadAvailableMatches();
-    
-    // Load current user's profile_id for message ownership checks
-    cofounderMatchingService.getProfile()
-      .then(p => setMyProfileId(p.profile_id))
-      .catch(() => {});
-    
+
     // Poll for new messages every 15 seconds
     const interval = setInterval(() => {
         refreshConversations();
@@ -111,47 +153,25 @@ export const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ initialM
   const loadConversations = async () => {
     try {
       setLoading(true);
-      const response = await cofounderMatchingService.getConversations();
-      // Also load group conversations and merge
-      let allConversations = response.conversations || [];
-      try {
-        const groupConvs = await cofounderMatchingService.getGroupConversations();
-        if (groupConvs && groupConvs.length > 0) {
-          // Wrap group conversations to match Conversation interface
-          const groupWrapped: Conversation[] = groupConvs.map((gc: any) => ({
-            conversation_id: gc.conversation_id,
-            match_id: gc.match_id || '',
-            profile_1_id: gc.profile_1_id || '',
-            profile_2_id: gc.profile_2_id || '',
-            last_message_at: gc.last_message_at || gc.created_at,
-            unread_count: gc.unread_count || 0,
-            created_at: gc.created_at,
-            messages: gc.messages || [],
-            other_profile: gc.other_profile || {} as any,
-            conversation_type: 'project_group',
-            project_id: gc.project_id,
-            title: gc.title,
-            created_by: gc.created_by || null,
-            project_description: gc.project_description || null,
-            participant_count: gc.participant_count || gc.participants?.length || 0,
-            participants: gc.participants || [],
-          }));
-          // Merge, avoiding duplicates
-          const existingIds = new Set(allConversations.map(c => c.conversation_id));
-          for (const gc of groupWrapped) {
-            if (!existingIds.has(gc.conversation_id)) {
-              allConversations.push(gc);
-            }
-          }
-          // Sort by last message
-          allConversations.sort((a, b) => 
-            new Date(b.last_message_at || 0).getTime() - new Date(a.last_message_at || 0).getTime()
-          );
-        }
-      } catch (groupErr) {
-        console.log("No group conversations or error:", groupErr);
+      // Check if dashboard already prefetched this data
+      const cached = cofounderMatchingService.consumePrefetchedConversations();
+      let response: { conversations: Conversation[] };
+      let groupConvs: Conversation[];
+      if (cached) {
+        response = cached.data;
+        groupConvs = cached.groupData;
+      } else {
+        // Fetch regular and group conversations in parallel
+        const [r, g] = await Promise.all([
+          cofounderMatchingService.getConversations(),
+          cofounderMatchingService.getGroupConversations().catch(() => [] as Conversation[]),
+        ]);
+        response = r;
+        groupConvs = g;
       }
+      const allConversations = mergeGroupConversations(response.conversations || [], groupConvs);
       setConversations(allConversations);
+      deriveMyProfileId(allConversations);
     } catch (error) {
       console.error("Failed to load conversations:", error);
       toast.error("Failed to load conversations");
@@ -171,44 +191,14 @@ export const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ initialM
 
   const refreshConversations = async () => {
     try {
-      const response = await cofounderMatchingService.getConversations();
-      let allConversations = response.conversations || [];
-      // Merge group conversations
-      try {
-        const groupConvs = await cofounderMatchingService.getGroupConversations();
-        if (groupConvs && groupConvs.length > 0) {
-          const groupWrapped: Conversation[] = groupConvs.map((gc: any) => ({
-            conversation_id: gc.conversation_id,
-            match_id: gc.match_id || '',
-            profile_1_id: gc.profile_1_id || '',
-            profile_2_id: gc.profile_2_id || '',
-            last_message_at: gc.last_message_at || gc.created_at,
-            unread_count: gc.unread_count || 0,
-            created_at: gc.created_at,
-            messages: gc.messages || [],
-            other_profile: gc.other_profile || {} as any,
-            conversation_type: 'project_group',
-            project_id: gc.project_id,
-            title: gc.title,
-            created_by: gc.created_by || null,
-            project_description: gc.project_description || null,
-            participant_count: gc.participant_count || gc.participants?.length || 0,
-            participants: gc.participants || [],
-          }));
-          const existingIds = new Set(allConversations.map(c => c.conversation_id));
-          for (const gc of groupWrapped) {
-            if (!existingIds.has(gc.conversation_id)) {
-              allConversations.push(gc);
-            }
-          }
-          allConversations.sort((a, b) => 
-            new Date(b.last_message_at || 0).getTime() - new Date(a.last_message_at || 0).getTime()
-          );
-        }
-      } catch (e) {
-        // Group conversations unavailable, that's fine
-      }
+      // Fetch regular and group conversations in parallel
+      const [response, groupConvs] = await Promise.all([
+        cofounderMatchingService.getConversations(),
+        cofounderMatchingService.getGroupConversations().catch(() => [] as Conversation[]),
+      ]);
+      const allConversations = mergeGroupConversations(response.conversations || [], groupConvs);
       setConversations(allConversations);
+      deriveMyProfileId(allConversations);
       
       // If we have a selected conversation
       if (selectedConversation) {
