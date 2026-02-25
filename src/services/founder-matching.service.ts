@@ -1,13 +1,11 @@
 // src/services/founder-matching.service.ts
 import { apiClient } from "../lib/api-client";
-
-/* ============================== */
-/* ========= INTERFACES ========= */
-/* ============================== */
+import { trackDbOperation } from "../utils/performance";
 
 export interface CofounderProfile {
   profile_id?: string;
-  user_id?: string;
+  user_id: string; // Change from optional to required
+  name?: string;
   current_role: string;
   years_experience: number;
   technical_skills: string[];
@@ -24,40 +22,84 @@ export interface CofounderProfile {
   portfolio_url?: string;
   bio: string;
   is_active?: boolean;
+  can_match?: boolean;
+  photo_urls?: string[];
   created_at?: string;
   views_count?: number;
   matches_count?: number;
   interested_count?: number;
   mutual_interest_count?: number;
-  photos?: string[];
+  // Verification properties
+  business_vision?: string;
+  problem_statement?: string;
+  required_skills?: string[];
+  verification_status?: "verified" | "pending" | "rejected" | "unverified";
+  verification_documents?: Array<{
+    type: string;
+    url: string;
+    status: string;
+  }>;
+  verification_submitted_at?: string;
+  verification_reviewed_at?: string;
+}
+
+export interface PhotoUploadStatus {
+  photo_count: number;
+  max_photos: number;
+  min_required: number;
+  can_match: boolean;
+  photos_needed: number;
+  can_upload_more: boolean;
+  photos: string[];
+}
+
+export interface PhotoUploadResponse {
+  status: string;
+  image_url: string;
+  filename: string;
+  photo_count: number;
+  can_match: boolean;
+  photos_needed: number;
+  message: string;
 }
 
 export interface MatchProfile {
   match_id: string;
   matched_profile: {
     profile_id: string;
-    current_role: string;
-    years_experience: number;
-    technical_skills: string[];
-    seeking_roles: string[];
-    education: string[];
-    bio: string;
-    linkedin_url?: string;
-    portfolio_url?: string;
-    achievements?: string[];
-    soft_skills?: string[];
+    user_id?: string;
+    name?: string;
+    current_role?: string;
+    years_experience?: number;
     industries?: string[];
+    technical_skills?: string[];
+    soft_skills?: string[];
+    seeking_roles?: string[];
     commitment_level?: string;
     location_preference?: string;
-    photos?: string[];
+    preferred_locations?: string[];
+    achievements?: string[];
+    education?: string[];
+    certifications?: string[];
+    linkedin_url?: string;
+    portfolio_url?: string;
+    bio?: string;
+    photo_urls?: string[];
+    is_active?: boolean;
+    can_match?: boolean;
   };
   overall_score: number;
-  score_breakdown: {
+  score_breakdown?: {
     skill_compatibility: number;
     experience_match: number;
     role_alignment: number;
   };
-  status: "suggested" | "interested" | "declined" | "mutual_interest" | "skipped";
+  status?:
+    | "suggested"
+    | "interested"
+    | "declined"
+    | "mutual_interest"
+    | "skipped";
   mutual_interest_at?: string;
 }
 
@@ -73,12 +115,30 @@ export interface DiscoverMatchesRequest {
   };
 }
 
+export interface MatchActionRequest {
+  action: "interested" | "declined" | "skipped";
+}
+
 export interface MatchActionResponse {
   match_id: string;
-  status: string;
-  user_action: string;
-  mutual_interest: boolean;
+  new_status: string;
+  is_mutual: boolean;
   message: string;
+  // Alias for compatibility
+  mutual_interest?: boolean;
+  status?: string;
+  user_action?: string;
+}
+
+export interface MatchingPreferences {
+  preferred_industries: string[];
+  preferred_roles: string[];
+  min_experience: number;
+  max_experience: number;
+  preferred_locations: string[];
+  min_match_score: number;
+  notification_frequency: "realtime" | "daily" | "weekly";
+  auto_match: boolean;
 }
 
 export interface Statistics {
@@ -90,14 +150,15 @@ export interface Statistics {
   engagement_score: number;
 }
 
-export interface PhotoUploadResponse {
-  photo_url: string;
-  photo_count: number;
-}
-
-export interface PhotoUploadStatus {
-  uploaded: boolean;
-  photos: string[];
+export interface Message {
+  message_id: string;
+  conversation_id: string;
+  sender_profile_id: string;
+  message_text: string;
+  is_read: boolean;
+  read_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface GroupParticipant {
@@ -118,6 +179,7 @@ export interface Conversation {
   created_at: string;
   messages: Message[];
   other_profile: CofounderProfile;
+  // Group chat fields
   conversation_type?: "direct" | "project_group";
   project_id?: string | null;
   title?: string | null;
@@ -128,24 +190,12 @@ export interface Conversation {
 }
 
 export interface ConversationListResponse {
-  conversations: Array<{
-    conversation_id: string;
-    match_profile: CofounderProfile;
-    last_message: string;
-    unread_count: number;
-  }>;
+  conversations: Conversation[];
+  total: number;
+  total_unread: number;
 }
 
-export interface Message {
-  message_id: string;
-  sender_id: string;
-  text: string;
-  timestamp: string;
-}
-
-/* ============================== */
-/* ========= PROJECTS =========== */
-/* ============================== */
+// Project interfaces
 
 export interface IdeaProject {
   id: string;
@@ -202,135 +252,381 @@ export interface ProjectGroupChat {
   created_at: string;
 }
 
-/* ============================== */
-/* ========= SERVICE ============ */
-/* ============================== */
-
 class CofounderMatchingService {
-  private readonly base = "/api/v1/cofounder-matching";
-
-  /* Profile */
-  async createProfile(profileData: Omit<CofounderProfile, "profile_id" | "user_id">) {
-    return apiClient.post(`${this.base}/profile`, profileData);
+  // Profile Management
+  async createProfile(
+    profileData: Omit<CofounderProfile, "profile_id" | "user_id">
+  ): Promise<CofounderProfile> {
+    return trackDbOperation("Create Cofounder Profile", async () => {
+      return await apiClient.post<CofounderProfile>(
+        "/cofounder-matching/profile",
+        profileData
+      );
+    });
   }
 
-  async getProfile() {
-    return apiClient.get(`${this.base}/profile`);
+  async getProfile(): Promise<CofounderProfile> {
+    return trackDbOperation("Get Cofounder Profile", async () => {
+      return await apiClient.get<CofounderProfile>(
+        "/cofounder-matching/profile"
+      );
+    });
   }
 
-  async updateProfile(profileData: Partial<CofounderProfile>) {
-    return apiClient.put(`${this.base}/profile`, profileData);
-  }
-
-  async deleteProfile() {
-    return apiClient.delete(`${this.base}/profile`);
-  }
-
-  /* Photos */
-  async uploadPhoto(file: File) {
-    return apiClient.uploadFile(`${this.base}/profile/photos`, file);
-  }
-
-  async getPhotoStatus() {
-    return apiClient.get(`${this.base}/profile/photos`);
-  }
-
-  async deletePhoto(photoUrl: string) {
-    return apiClient.delete(
-      `${this.base}/profile/photos?photo_url=${encodeURIComponent(photoUrl)}`
+  async updateProfile(
+    profileData: Partial<CofounderProfile>
+  ): Promise<CofounderProfile> {
+    return await apiClient.put<CofounderProfile>(
+      "/cofounder-matching/profile",
+      profileData
     );
   }
 
-  /* Matching */
-  async discoverMatches(request: DiscoverMatchesRequest) {
-    return apiClient.post(`${this.base}/discover`, request);
+  async deleteProfile(): Promise<void> {
+    return await apiClient.delete("/cofounder-matching/profile");
   }
 
-  async swipeRight(matchId: string) {
-    return apiClient.post(`${this.base}/matches/${matchId}/action`, {
-      action: "interested",
+  // Photo Management
+  async uploadPhoto(file: File): Promise<PhotoUploadResponse> {
+    return trackDbOperation("Upload Cofounder Photo", async () => {
+      return await apiClient.uploadFile<PhotoUploadResponse>(
+        "/cofounder-matching/profile/photos",
+        file
+      );
     });
   }
 
-  async swipeLeft(matchId: string) {
-    return apiClient.post(`${this.base}/matches/${matchId}/action`, {
-      action: "declined",
+  async getPhotoStatus(): Promise<PhotoUploadStatus> {
+    return await apiClient.get<PhotoUploadStatus>(
+      "/cofounder-matching/profile/photos"
+    );
+  }
+
+  async deletePhoto(photoUrl: string): Promise<PhotoUploadStatus> {
+    return await apiClient.delete<PhotoUploadStatus>(
+      `/cofounder-matching/profile/photos?photo_url=${encodeURIComponent(photoUrl)}`
+    );
+  }
+
+  // Match Discovery
+  async discoverMatches(
+    request: DiscoverMatchesRequest
+  ): Promise<{ matches_found: number; matches: MatchProfile[] }> {
+    return trackDbOperation("Discover Matches", async () => {
+      return await apiClient.post<{
+        matches_found: number;
+        matches: MatchProfile[];
+      }>("/cofounder-matching/discover", request);
     });
   }
 
-  async swipeSkip(matchId: string) {
-    return apiClient.post(`${this.base}/matches/${matchId}/action`, {
-      action: "skipped",
-    });
+  async getAllMatches(
+    limit: number = 20,
+    offset: number = 0
+  ): Promise<{ matches: MatchProfile[]; total: number }> {
+    return await apiClient.get<{ matches: MatchProfile[]; total: number }>(
+      `/cofounder-matching/matches?limit=${limit}&offset=${offset}`
+    );
   }
 
-  async getMutualMatches() {
-    return apiClient.get(`${this.base}/matches/mutual`);
+  async getMatchDetails(matchId: string): Promise<MatchProfile> {
+    return await apiClient.get<MatchProfile>(
+      `/cofounder-matching/matches/${matchId}`
+    );
   }
 
-  async getPendingInterests() {
-    return apiClient.get(`${this.base}/matches/pending-interests`);
+  async getMutualMatches(): Promise<{ mutual_matches: MatchProfile[] }> {
+    return await apiClient.get<{ mutual_matches: MatchProfile[] }>(
+      "/cofounder-matching/matches/mutual"
+    );
   }
 
-  /* Messaging */
-  async getConversations(limit = 20, offset = 0) {
+  // Match Actions
+  async handleMatchAction(
+    matchId: string,
+    action: MatchActionRequest
+  ): Promise<MatchActionResponse> {
+    return await apiClient.post<MatchActionResponse>(
+      `/cofounder-matching/matches/${matchId}/action`,
+      { action: action.action }
+    );
+  }
+
+  // Preferences Management
+  async setPreferences(
+    preferences: MatchingPreferences
+  ): Promise<MatchingPreferences> {
+    return await apiClient.post<MatchingPreferences>(
+      "/cofounder-matching/preferences",
+      preferences
+    );
+  }
+
+  async getPreferences(): Promise<MatchingPreferences> {
+    return await apiClient.get<MatchingPreferences>(
+      "/cofounder-matching/preferences"
+    );
+  }
+
+  async updatePreferences(
+    preferences: Partial<MatchingPreferences>
+  ): Promise<MatchingPreferences> {
+    return await apiClient.put<MatchingPreferences>(
+      "/cofounder-matching/preferences",
+      preferences
+    );
+  }
+
+  // Statistics
+  async getStatistics(): Promise<Statistics> {
+    return await apiClient.get<Statistics>(
+      "/cofounder-matching/statistics"
+    );
+  }
+
+  // Quick stats for dashboard
+  async getQuickStats(): Promise<{
+    total_matches: number;
+    mutual_interests: number;
+    profile_views: number;
+    profile_completeness: number;
+  }> {
+    const stats = await this.getStatistics();
+    const profile = await this.getProfile().catch(() => null);
+
+    // Calculate profile completeness
+    let profileCompleteness = 0;
+    if (profile) {
+      const requiredFields: (keyof CofounderProfile)[] = [
+        "current_role",
+        "years_experience",
+        "technical_skills",
+        "soft_skills",
+        "seeking_roles",
+        "industries",
+        "commitment_level",
+        "location_preference",
+        "preferred_locations",
+        "bio",
+      ];
+
+      const filledFields = requiredFields.filter((field) => {
+        const value = profile[field];
+        return (
+          value !== undefined &&
+          value !== null &&
+          (Array.isArray(value)
+            ? value.length > 0
+            : value.toString().trim().length > 0)
+        );
+      }).length;
+
+      profileCompleteness = Math.round(
+        (filledFields / requiredFields.length) * 100
+      );
+    }
+
+    return {
+      total_matches: stats.total_matches,
+      mutual_interests: stats.mutual_interests,
+      profile_views: stats.profile_views,
+      profile_completeness: profileCompleteness,
+    };
+  }
+
+  // Connect with a match (alias for interested action)
+  async connect(matchId: string): Promise<MatchActionResponse> {
+    return await apiClient.post<MatchActionResponse>(
+      `/cofounder-matching/matches/${matchId}/connect`,
+      {}
+    );
+  }
+
+  // Follow/Unfollow Profile
+  async followProfile(profileId: string): Promise<void> {
+    return await apiClient.post(
+      `/cofounder-matching/profiles/${profileId}/follow`,
+      {}
+    );
+  }
+
+  async unfollowProfile(profileId: string): Promise<void> {
+    return await apiClient.delete(
+      `/cofounder-matching/profiles/${profileId}/follow`
+    );
+  }
+
+  async getFollowStats(profileId: string): Promise<{
+    follower_count: number;
+    following_count: number;
+    is_following: boolean;
+  }> {
+    return await apiClient.get(
+      `/cofounder-matching/profiles/${profileId}/follow-stats`
+    );
+  }
+
+  async getMatchProfile(profileId: string): Promise<CofounderProfile> {
+    return await apiClient.get(
+      `/cofounder-matching/profiles/${profileId}`
+    );
+  }
+
+  async getFollowing(): Promise<CofounderProfile[]> {
+    return await apiClient.get(`/cofounder-matching/profiles/following`);
+  }
+
+  // Get pending interests (people who expressed interest in you)
+  async getPendingInterests(): Promise<{
+    pending_matches: MatchProfile[];
+    total: number;
+  }> {
+    return await apiClient.get<{ pending_matches: MatchProfile[]; total: number }>(
+      "/cofounder-matching/matches/pending-interests"
+    );
+  }
+
+  // Swipe right (express interest)
+  async swipeRight(matchId: string): Promise<MatchActionResponse> {
+    return await apiClient.post<MatchActionResponse>(
+      `/cofounder-matching/matches/${matchId}/action`,
+      { action: "interested" }
+    );
+  }
+
+  // Swipe left (decline)
+  async swipeLeft(matchId: string): Promise<MatchActionResponse> {
+    return await apiClient.post<MatchActionResponse>(
+      `/cofounder-matching/matches/${matchId}/action`,
+      { action: "declined" }
+    );
+  }
+
+  // Swipe (skip)
+  async swipeSkip(matchId: string): Promise<MatchActionResponse> {
+    return await apiClient.post<MatchActionResponse>(
+      `/cofounder-matching/matches/${matchId}/action`,
+      { action: "skipped" }
+    );
+  }
+
+  // Messaging Methods
+
+  async getConversations(limit = 20, offset = 0): Promise<ConversationListResponse> {
     const params = new URLSearchParams({
       limit: limit.toString(),
-      offset: offset.toString(),
+      offset: offset.toString()
     });
-    return apiClient.get(`${this.base}/conversations?${params}`);
+    return await apiClient.get<ConversationListResponse>(
+      `/cofounder-matching/conversations?${params.toString()}`
+    );
   }
 
-  async getMessages(conversationId: string, limit = 50, beforeId?: string) {
+  async getMessages(
+    conversationId: string, 
+    limit = 50, 
+    beforeId?: string
+  ): Promise<Message[]> {
     const params = new URLSearchParams({ limit: limit.toString() });
-    if (beforeId) params.append("before_id", beforeId);
-    return apiClient.get(
-      `${this.base}/conversations/${conversationId}/messages?${params}`
+    if (beforeId) params.append('before_id', beforeId);
+    
+    return await apiClient.get<Message[]>(
+      `/cofounder-matching/conversations/${conversationId}/messages?${params.toString()}`
     );
   }
 
-  async sendMessage(matchId: string, messageText: string) {
-    return apiClient.post(
-      `${this.base}/conversations/${matchId}/messages`,
+  async sendMessage(matchId: string, messageText: string): Promise<Message> {
+    return await apiClient.post<Message>(
+      `/cofounder-matching/conversations/${matchId}/messages`,
       { message_text: messageText }
     );
   }
 
-  async sendGroupMessage(conversationId: string, messageText: string) {
-    return apiClient.post(
-      `${this.base}/group-conversations/${conversationId}/messages`,
+  async sendGroupMessage(conversationId: string, messageText: string): Promise<Message> {
+    return await apiClient.post<Message>(
+      `/cofounder-matching/group-conversations/${conversationId}/messages`,
       { message_text: messageText }
     );
   }
 
-  async markConversationRead(conversationId: string) {
-    return apiClient.put(`${this.base}/conversations/${conversationId}/read`);
+  async markConversationRead(conversationId: string): Promise<void> {
+    await apiClient.put(`/cofounder-matching/conversations/${conversationId}/read`);
   }
 
-  /* Projects */
-  async listProjects(profileId?: string) {
-    const query = profileId ? `?profile_id=${profileId}` : "";
-    return apiClient.get(`${this.base}/projects${query}`);
+  // Onboarding Methods
+  async getOnboardingStatus(): Promise<{
+    is_complete: boolean;
+    missing_requirements: string[];
+    can_match: boolean;
+  }> {
+    return await apiClient.get('/cofounder-matching/onboarding/status');
   }
 
-  async browseMatchedProjects() {
-    return apiClient.get(`${this.base}/projects/browse`);
+  async completeOnboarding(): Promise<{
+    status: string;
+    onboarding_completed: boolean;
+    can_match: boolean;
+    message: string;
+  }> {
+    return await apiClient.post('/cofounder-matching/onboarding/complete');
   }
 
-  async getProjectDetail(projectId: string) {
-    return apiClient.get(`${this.base}/projects/${projectId}`);
+  async updateOnboardingProfile(profileData: Partial<CofounderProfile>): Promise<CofounderProfile> {
+    return await apiClient.put('/cofounder-matching/onboarding/profile', profileData);
   }
 
-  async createProject(data: Partial<IdeaProject>) {
-    return apiClient.post(`${this.base}/projects`, data);
+  // Project Methods
+
+  async listProjects(profileId?: string): Promise<IdeaProject[]> {
+    const params = profileId ? `?profile_id=${profileId}` : '';
+    return await apiClient.get<IdeaProject[]>(`/cofounder-matching/projects${params}`);
   }
 
-  async updateProject(projectId: string, data: Partial<IdeaProject>) {
-    return apiClient.put(`${this.base}/projects/${projectId}`, data);
+  async browseMatchedProjects(): Promise<IdeaProject[]> {
+    return await apiClient.get<IdeaProject[]>('/cofounder-matching/projects/browse');
   }
 
-  async deleteProject(projectId: string) {
-    return apiClient.delete(`${this.base}/projects/${projectId}`);
+  async getProjectDetail(projectId: string): Promise<ProjectWithMembers> {
+    return await apiClient.get<ProjectWithMembers>(`/cofounder-matching/projects/${projectId}`);
+  }
+
+  async createProject(data: Partial<IdeaProject>): Promise<IdeaProject> {
+    return await apiClient.post<IdeaProject>('/cofounder-matching/projects', data);
+  }
+
+  async updateProject(projectId: string, data: Partial<IdeaProject>): Promise<IdeaProject> {
+    return await apiClient.put<IdeaProject>(`/cofounder-matching/projects/${projectId}`, data);
+  }
+
+  async deleteProject(projectId: string): Promise<void> {
+    return await apiClient.delete(`/cofounder-matching/projects/${projectId}`);
+  }
+
+  async requestJoinProject(projectId: string): Promise<ProjectMember> {
+    return await apiClient.post<ProjectMember>(`/cofounder-matching/projects/${projectId}/join`);
+  }
+
+  async addMemberToProject(projectId: string, profileId: string, role?: string): Promise<ProjectMember> {
+    return await apiClient.post<ProjectMember>(`/cofounder-matching/projects/${projectId}/members`, {
+      profile_id: profileId,
+      role: role || "member",
+    });
+  }
+
+  async respondToMember(memberId: string, action: "approve" | "reject" | "remove"): Promise<ProjectMember> {
+    return await apiClient.put<ProjectMember>(`/cofounder-matching/projects/members/${memberId}`, { action });
+  }
+
+  async removeMember(projectId: string, memberProfileId: string): Promise<void> {
+    return await apiClient.delete(`/cofounder-matching/projects/${projectId}/members/${memberProfileId}`);
+  }
+
+  async createProjectGroupChat(projectId: string, title?: string): Promise<ProjectGroupChat> {
+    return await apiClient.post<ProjectGroupChat>(`/cofounder-matching/projects/${projectId}/group-chat`, { title });
+  }
+
+  async getGroupConversations(): Promise<Conversation[]> {
+    return await apiClient.get<Conversation[]>('/cofounder-matching/group-conversations');
   }
 }
 
