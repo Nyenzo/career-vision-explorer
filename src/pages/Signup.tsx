@@ -30,7 +30,7 @@ import { toast } from "@/components/ui/sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Linkedin } from "lucide-react";
+import { Linkedin, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import OnboardingWizard from "@/components/onboarding/OnboardingWizard";
 import ProfileImageUpload from "@/components/auth/ProfileImageUpload";
@@ -45,6 +45,9 @@ const signupSchema = z.object({
     message: "Please enter a valid email address.",
   }),
   password: z.string().min(8, {
+    message: "Password must be at least 8 characters.",
+  }),
+  confirmPassword: z.string().min(8, {
     message: "Password must be at least 8 characters.",
   }),
   role: z.enum(["jobseeker", "employer", "freelancer"], {
@@ -63,6 +66,14 @@ const signupSchema = z.object({
   companyWebsite: z.string().url().optional().or(z.literal('')),
   industry: z.string().optional(),
 }).superRefine((data, ctx) => {
+  // Password confirmation validation
+  if (data.password !== data.confirmPassword) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Passwords do not match.',
+      path: ['confirmPassword'],
+    });
+  }
   // Job seeker validation
   if (data.role === 'jobseeker') {
     if (!data.phoneNumber || data.phoneNumber.length === 0) {
@@ -94,6 +105,8 @@ const Signup = () => {
   const [profileImage, setProfileImage] = useState<string>("");
   const [linkedInDataImported, setLinkedInDataImported] = useState(false);
   const [newUserData, setNewUserData] = useState<any>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const location = useLocation()
   
   const form = useForm<z.infer<typeof signupSchema>>({
@@ -102,6 +115,7 @@ const Signup = () => {
       name: "",
       email: "",
       password: "",
+      confirmPassword: "",
       role: "jobseeker",
       countryCode: "+254",
       phoneNumber: "",
@@ -118,6 +132,8 @@ const Signup = () => {
   });
 
   const selectedRole = form.watch("role");
+  const password = form.watch("password");
+  const confirmPassword = form.watch("confirmPassword");
 
   const handleImageChange = (imageUrl: string) => {
     setProfileImage(imageUrl);
@@ -202,22 +218,16 @@ const Signup = () => {
   };
 
   const onSubmitError = (errors: any) => {
-    console.log('🚨 Form validation errors:', errors);
     // Show specific validation errors to user
     Object.keys(errors).forEach(field => {
       const error = errors[field];
       if (error?.message) {
-        console.log(`❌ Validation error for ${field}:`, error.message);
         toast.error("Form Validation Error", {
           description: `${field}: ${error.message}`,
         });
       }
     });
   };
-
-  // Add form state debugging
-  const formValues = form.watch();
-  console.log('📊 Current form values:', formValues);
 
   const handleLinkedInSignup = () => {
     setLinkedInImportOpen(true);
@@ -514,14 +524,57 @@ const Signup = () => {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="password" 
-                          placeholder="••••••••" 
-                          {...field}
-                          className="transition-all focus:ring-2 focus:ring-career-blue"
-                          disabled={linkedInDataImported}
-                        />
+                        <div className="relative">
+                          <Input 
+                            type={showPassword ? "text" : "password"} 
+                            placeholder="••••••••" 
+                            {...field}
+                            className="transition-all focus:ring-2 focus:ring-career-blue pr-10"
+                            disabled={linkedInDataImported}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                            disabled={linkedInDataImported}
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm Password</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input 
+                            type={showConfirmPassword ? "text" : "password"} 
+                            placeholder="••••••••" 
+                            {...field}
+                            className="transition-all focus:ring-2 focus:ring-career-blue pr-10"
+                            disabled={linkedInDataImported}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                            disabled={linkedInDataImported}
+                          >
+                            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </FormControl>
+                      {confirmPassword && password !== confirmPassword && (
+                        <p className="text-sm text-red-500 mt-1">Passwords do not match</p>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -531,7 +584,6 @@ const Signup = () => {
                   type="submit"
                   className="w-full bg-career-blue hover:bg-career-blue/90 transition-colors"
                   disabled={isLoading}
-                  onClick={() => console.log('🔘 Create Account button clicked')}
                 >
                   {isLoading ? "Creating Account..." : "Create Account"}
                 </Button>

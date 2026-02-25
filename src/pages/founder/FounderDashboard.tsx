@@ -30,7 +30,7 @@ import { NotificationsFeed } from "@/components/founder-matching/NotificationsFe
 import { ConnectionsList } from "@/components/founder-matching/ConnectionsList";
 import { MessagingInterface } from "@/components/founder-matching/MessagingInterface";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { apiClient } from "@/lib/api-client";
 import {
@@ -86,8 +86,10 @@ interface Match {
 
 const FounderDashboard = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("discover");
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [currentProfileIndex, setCurrentProfileIndex] = useState(0);
   const [potentialMatches, setPotentialMatches] = useState<Match[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
@@ -102,6 +104,22 @@ const FounderDashboard = () => {
     total_matches: 0,
     pending_matches: 0,
   });
+
+  // Read URL search params (e.g. ?tab=messages&match_id=xxx)
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    const matchId = searchParams.get('match_id');
+    if (tab) {
+      setActiveTab(tab);
+    }
+    if (matchId) {
+      setSelectedMatchId(matchId);
+    }
+    // Clean up search params from URL after reading
+    if (tab || matchId) {
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   // Fetch data on component mount
   useEffect(() => {
@@ -160,8 +178,9 @@ const FounderDashboard = () => {
 
     setSwiping(true);
     try {
-      // Send rejection to API using action endpoint
-      await apiClient.post(`/cofounder-matching/matches/${currentMatch.match_id}/action`, {
+      // Send decline via discover action endpoint
+      await apiClient.post(`/cofounder-matching/discover/action`, {
+        candidate_profile_id: currentMatch.matched_profile?.profile_id || currentMatch.profile_2_id,
         action: "declined"
       });
 
@@ -195,8 +214,9 @@ const FounderDashboard = () => {
 
     setSwiping(true);
     try {
-      // Send interest to API using action endpoint
-      await apiClient.post(`/cofounder-matching/matches/${currentMatch.match_id}/action`, {
+      // Send interest via discover action endpoint
+      await apiClient.post(`/cofounder-matching/discover/action`, {
+        candidate_profile_id: currentMatch.matched_profile?.profile_id || currentMatch.profile_2_id,
         action: "interested"
       });
 
@@ -393,7 +413,7 @@ const FounderDashboard = () => {
               <div className="text-2xl font-bold text-indigo-600">
                 {stats.total_matches || 0}
               </div>
-              <div className="text-sm text-slate-500">Total Matches</div>
+              <div className="text-sm text-slate-500">Connections</div>
             </CardContent>
           </Card>
           <Card className="text-center">
@@ -401,7 +421,7 @@ const FounderDashboard = () => {
               <div className="text-2xl font-bold text-purple-600">
                 {stats.pending_matches || 0}
               </div>
-              <div className="text-sm text-slate-500">Pending</div>
+              <div className="text-sm text-slate-500">Interested in You</div>
             </CardContent>
           </Card>
         </div>
@@ -818,7 +838,7 @@ const FounderDashboard = () => {
               </TabsContent>
 
               <TabsContent value="messages" className="mt-0">
-                <MessagingInterface />
+                <MessagingInterface initialMatchId={selectedMatchId || undefined} />
               </TabsContent>
             </div>
           </Tabs>

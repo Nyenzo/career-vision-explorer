@@ -92,7 +92,7 @@ const Profile: React.FC = () => {
       // Use backend value if available, otherwise calculate locally
       setLocalCompletionPercentage(
         authProfile.profile_completion_percentage ||
-          calculateProfileCompletion(authProfile)
+        calculateProfileCompletion(authProfile)
       );
       setLoading(false);
     } else if (isAuthenticated && !authProfile) {
@@ -117,7 +117,7 @@ const Profile: React.FC = () => {
       // Use backend value if available, otherwise calculate locally
       setLocalCompletionPercentage(
         profileData.profile_completion_percentage ||
-          calculateProfileCompletion(profileData)
+        calculateProfileCompletion(profileData)
       );
     } catch (error) {
       console.error("Error loading profile:", error);
@@ -167,7 +167,7 @@ const Profile: React.FC = () => {
           company_website:
             cleanPayload.company_website ||
             cleanPayload.company_data?.company_website,
-          company_size: 
+          company_size:
             cleanPayload.company_size ||
             cleanPayload.company_data?.company_size,
           name: cleanPayload.name,
@@ -204,7 +204,7 @@ const Profile: React.FC = () => {
       // Use backend value if available, otherwise calculate locally
       setLocalCompletionPercentage(
         updatedProfile.profile_completion_percentage ||
-          calculateProfileCompletion(updatedProfile)
+        calculateProfileCompletion(updatedProfile)
       );
       setEditing(false);
       toast.success("Profile updated successfully!");
@@ -236,7 +236,7 @@ const Profile: React.FC = () => {
     // Use backend value if available, otherwise calculate locally
     setLocalCompletionPercentage(
       profile?.profile_completion_percentage ||
-        calculateProfileCompletion(profile)
+      calculateProfileCompletion(profile)
     );
     setEditing(false);
   };
@@ -384,12 +384,12 @@ const Profile: React.FC = () => {
         ...profile,
         // Safely spread personal_info if it exists
         ...(parsedData.personal_info &&
-        typeof parsedData.personal_info === "object"
+          typeof parsedData.personal_info === "object"
           ? parsedData.personal_info
           : {}),
         // Safely spread professional_summary if it exists
         ...(parsedData.professional_summary &&
-        typeof parsedData.professional_summary === "object"
+          typeof parsedData.professional_summary === "object"
           ? parsedData.professional_summary
           : {}),
         // Update arrays with fallbacks
@@ -403,7 +403,7 @@ const Profile: React.FC = () => {
         languages: parsedData.languages || profile?.languages || [],
         // Safely spread additional_info if it exists
         ...(parsedData.additional_info &&
-        typeof parsedData.additional_info === "object"
+          typeof parsedData.additional_info === "object"
           ? parsedData.additional_info
           : {}),
         resume_link: response.cv_file_url || profile?.resume_link,
@@ -776,7 +776,7 @@ const Profile: React.FC = () => {
                           benefits,
                         },
                       });
-                    } catch {}
+                    } catch { }
                   }}
                   placeholder={`[
   {
@@ -1045,11 +1045,10 @@ const Profile: React.FC = () => {
                       <>
                         <Separator className="my-4" />
                         <div
-                          className={`flex items-center gap-3 p-3 rounded-lg ${
-                            companyData.is_verified
-                              ? "bg-green-50 border border-green-200"
-                              : "bg-yellow-50 border border-yellow-200"
-                          }`}
+                          className={`flex items-center gap-3 p-3 rounded-lg ${companyData.is_verified
+                            ? "bg-green-50 border border-green-200"
+                            : "bg-yellow-50 border border-yellow-200"
+                            }`}
                         >
                           {companyData.is_verified ? (
                             <>
@@ -1061,8 +1060,8 @@ const Profile: React.FC = () => {
                                 <p className="text-xs text-green-600">
                                   {companyData.verification_date
                                     ? `Verified on ${new Date(
-                                        companyData.verification_date
-                                      ).toLocaleDateString()}`
+                                      companyData.verification_date
+                                    ).toLocaleDateString()}`
                                     : "Verified company"}
                                 </p>
                               </div>
@@ -1158,7 +1157,7 @@ const Profile: React.FC = () => {
                             .toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      
+
                       {editing && (
                         <div className="absolute bottom-4 right-0">
                           <Button
@@ -1807,13 +1806,12 @@ const Profile: React.FC = () => {
                       </div>
                       <Progress
                         value={localCompletionPercentage}
-                        className={`w-full h-2 ${
-                          localCompletionPercentage < 50
-                            ? "bg-red-500"
-                            : localCompletionPercentage < 75
+                        className={`w-full h-2 ${localCompletionPercentage < 50
+                          ? "bg-red-500"
+                          : localCompletionPercentage < 75
                             ? "bg-yellow-500"
                             : "bg-green-500"
-                        }`}
+                          }`}
                         aria-label="Profile completion progress"
                       />
                       {localCompletionPercentage < 100 && (
@@ -2258,8 +2256,8 @@ const Profile: React.FC = () => {
                         typeof editForm.education === 'string'
                           ? editForm.education
                           : Array.isArray(editForm.education)
-                          ? editForm.education.map(e => `${e.degree} - ${e.institution} (${e.start_year}-${e.end_year})`).join('\n')
-                          : ""
+                            ? editForm.education.map(e => `${e.degree} - ${e.institution} (${e.start_year}-${e.end_year})`).join('\n')
+                            : ""
                       }
                       onChange={(e) => {
                         setEditForm({ ...editForm, education: e.target.value });
@@ -2267,10 +2265,32 @@ const Profile: React.FC = () => {
                       placeholder="e.g., BSc in Computer Science - MIT (2020-2024)"
                       rows={6}
                     />
-                  ) : profile?.education?.length ? (
+                  ) : profile?.education ? (
                     <div className="space-y-4">
-                      {Array.isArray(profile.education) &&
-                        profile.education.map((edu, i) => (
+                      {typeof profile.education === 'string' ? (
+                        profile.education.split('\n').filter(line => line.trim()).map((line, i) => {
+                          // Parse "Degree, Institution, Duration" format
+                          const parts = line.trim().split(',').map(p => p.trim());
+                          const degree = parts[0] || line.trim();
+                          const institution = parts[1] || '';
+                          const duration = parts.slice(2).join(',').trim() || '';
+                          return (
+                            <div
+                              key={i}
+                              className="border-l-2 border-primary/20 pl-4"
+                            >
+                              <h4 className="font-semibold">{degree}</h4>
+                              {institution && (
+                                <p className="text-muted-foreground">{institution}</p>
+                              )}
+                              {duration && (
+                                <p className="text-sm text-muted-foreground">{duration}</p>
+                              )}
+                            </div>
+                          );
+                        })
+                      ) : Array.isArray(profile.education) ? (
+                        profile.education.map((edu: any, i: number) => (
                           <div
                             key={i}
                             className="border-l-2 border-primary/20 pl-4"
@@ -2283,7 +2303,8 @@ const Profile: React.FC = () => {
                               {edu.start_year} – {edu.end_year}
                             </p>
                           </div>
-                        ))}
+                        ))
+                      ) : null}
                     </div>
                   ) : (
                     <p className="text-muted-foreground">
@@ -2577,7 +2598,7 @@ const Profile: React.FC = () => {
                         try {
                           const preferences = JSON.parse(e.target.value);
                           setEditForm({ ...editForm, preferences });
-                        } catch {}
+                        } catch { }
                       }}
                       placeholder={`{
   "remote_work": true,

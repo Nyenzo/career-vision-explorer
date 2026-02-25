@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area"; 
-import { Send, Search, MessageSquare, MoreVertical, Phone, Video } from 'lucide-react';
+import { Send, Search, MessageSquare, MoreVertical, Phone, Video, Loader2 } from 'lucide-react';
 import { cofounderMatchingService, Conversation, Message } from "@/services/founder-matching.service";
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from "sonner";
@@ -45,8 +45,7 @@ export const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ initialM
       if (existing) {
         setSelectedConversation(existing);
       }
-      // If it's a new conversation not in the list yet, we might need a different approach
-      // For now, we assume the user starts messaging from the Connections tab
+      
     }
   }, [initialMatchId, conversations]);
 
@@ -499,7 +498,7 @@ export const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ initialM
                         </div>
                     ) : (
                         messages.map((msg) => {
-                            const isOwn = msg.sender_profile_id === selectedConversation.other_profile?.id;
+                            const isOwn = msg.sender_profile_id !== selectedConversation.other_profile?.profile_id;
                             
                             return (
                                 <div key={msg.message_id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>

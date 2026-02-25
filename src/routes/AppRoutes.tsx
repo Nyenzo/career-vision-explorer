@@ -533,6 +533,16 @@ export const AppRoutes = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="edit-profile"
+            element={
+              <ProtectedRoute requiredRole="freelancer">
+                <Suspense fallback={<PageLoader />}>
+                  <CreateFreelancerProfile />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
         </Route>
 
         {/* General Protected Routes */}

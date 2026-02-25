@@ -4,15 +4,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  DollarSign, 
-  Star, 
-  Briefcase, 
-  Clock, 
+import {
+  DollarSign,
+  Star,
+  Briefcase,
+  Clock,
   TrendingUp,
   Users,
   Settings,
-  Plus
+  Plus,
+  LogOut
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { freelancerService } from '@/services/freelancer.service';
@@ -25,7 +26,7 @@ import InsightsEmbedded from '@/components/insights/InsightsEmbedded';
 
 export default function FreelancerDashboard() {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user, profile, logout } = useAuth();
   const [freelancerProfile, setFreelancerProfile] = useState<Freelancer | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasProfile, setHasProfile] = useState(false);
@@ -37,7 +38,7 @@ export default function FreelancerDashboard() {
 
   const checkFreelancerProfile = async () => {
     if (!user) return;
-    
+
     try {
       setLoading(true);
       const profile = await freelancerService.getFreelancerByUserId(user.user_id);
@@ -141,6 +142,10 @@ export default function FreelancerDashboard() {
               <Settings className="w-4 h-4 mr-2" />
               Edit Profile
             </Button>
+            <Button variant="ghost" onClick={logout} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
           </div>
         </div>
 
@@ -155,140 +160,140 @@ export default function FreelancerDashboard() {
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-medium text-gray-600">
-                Total Earnings
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold">$0</span>
-                  <DollarSign className="w-8 h-8 text-green-500" />
-                </div>
-              </CardContent>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg font-medium text-gray-600">
+                    Total Earnings
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold">$0</span>
+                    <DollarSign className="w-8 h-8 text-green-500" />
+                  </div>
+                </CardContent>
               </Card>
 
               <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-medium text-gray-600">
-                Rating
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl font-bold">
-                    {freelancerProfile.rating.toFixed(1)}
-                  </span>
-                  <Star className="w-5 h-5 text-yellow-500 fill-current" />
-                </div>
-                <span className="text-sm text-gray-500">
-                  ({freelancerProfile.total_reviews} reviews)
-                </span>
-              </div>
-            </CardContent>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg font-medium text-gray-600">
+                    Rating
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold">
+                        {freelancerProfile.rating.toFixed(1)}
+                      </span>
+                      <Star className="w-5 h-5 text-yellow-500 fill-current" />
+                    </div>
+                    <span className="text-sm text-gray-500">
+                      ({freelancerProfile.total_reviews} reviews)
+                    </span>
+                  </div>
+                </CardContent>
               </Card>
 
               <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-medium text-gray-600">
-                Active Projects
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold">0</span>
-                <Briefcase className="w-8 h-8 text-blue-500" />
-              </div>
-            </CardContent>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg font-medium text-gray-600">
+                    Active Projects
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold">0</span>
+                    <Briefcase className="w-8 h-8 text-blue-500" />
+                  </div>
+                </CardContent>
               </Card>
 
               <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-medium text-gray-600">
-                Profile Views
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold">0</span>
-                <Users className="w-8 h-8 text-purple-500" />
-              </div>
-            </CardContent>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg font-medium text-gray-600">
+                    Profile Views
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold">0</span>
+                    <Users className="w-8 h-8 text-purple-500" />
+                  </div>
+                </CardContent>
               </Card>
             </div>
 
             {/* Profile Status */}
             <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Profile Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Availability</span>
-                <Badge variant={freelancerProfile.available_for_hire ? "success" : "secondary"}>
-                  {freelancerProfile.available_for_hire ? "Available for Hire" : "Not Available"}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Hourly Rate</span>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">
-                    {freelancerProfile.hourly_rate ? `$${freelancerProfile.hourly_rate}/hr` : "Not set"}
-                  </span>
-                  <Button size="sm" variant="outline" onClick={() => setPricingDialogOpen(true)}>
-                    <DollarSign className="w-3 h-3 mr-1" />
-                    Manage Pricing
-                  </Button>
+              <CardHeader>
+                <CardTitle>Profile Status</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Availability</span>
+                    <Badge variant={freelancerProfile.available_for_hire ? "success" : "secondary"}>
+                      {freelancerProfile.available_for_hire ? "Available for Hire" : "Not Available"}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Hourly Rate</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">
+                        {freelancerProfile.hourly_rate ? `$${freelancerProfile.hourly_rate}/hr` : "Not set"}
+                      </span>
+                      <Button size="sm" variant="outline" onClick={() => setPricingDialogOpen(true)}>
+                        <DollarSign className="w-3 h-3 mr-1" />
+                        Manage Pricing
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Experience</span>
+                    <span className="font-medium">
+                      {freelancerProfile.experience_years} years
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Location</span>
+                    <span className="font-medium">
+                      {freelancerProfile.location || "Not specified"}
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Experience</span>
-                <span className="font-medium">
-                  {freelancerProfile.experience_years} years
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Location</span>
-                <span className="font-medium">
-                  {freelancerProfile.location || "Not specified"}
-                </span>
-              </div>
-            </div>
-          </CardContent>
+              </CardContent>
             </Card>
 
             {/* Skills */}
             <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Skills</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {freelancerProfile.skills.map((skill, index) => (
-                <Badge key={index} variant="secondary">
-                  {skill}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              <CardHeader>
+                <CardTitle>Skills</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {freelancerProfile.skills.map((skill, index) => (
+                    <Badge key={index} variant="secondary">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Recent Activity */}
             <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-8 text-gray-500">
-              <Clock className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-              <p>No recent activity</p>
-              <p className="text-sm mt-1">
-                Start applying to projects or update your profile to attract clients
-              </p>
-            </div>
-          </CardContent>
+              <CardHeader>
+                <CardTitle>Recent Activity</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-gray-500">
+                  <Clock className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <p>No recent activity</p>
+                  <p className="text-sm mt-1">
+                    Start applying to projects or update your profile to attract clients
+                  </p>
+                </div>
+              </CardContent>
             </Card>
           </TabsContent>
 
