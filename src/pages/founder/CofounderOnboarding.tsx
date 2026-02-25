@@ -106,16 +106,20 @@ const CofounderOnboarding = () => {
 
   // Check if user already has a profile and load it
   useEffect(() => {
+    let cancelled = false;
+    
     const loadExistingProfile = async () => {
       try {
         const profile = await cofounderMatchingService.getProfile();
         
         // If profile exists and onboarding is complete, redirect to dashboard
         if (profile && profile.onboarding_completed) {
-          toast.info("You've already completed onboarding!");
-          navigate("/founder/dashboard");
+          cancelled = true;
+          navigate("/founder/dashboard", { replace: true });
           return;
         }
+        
+        if (cancelled) return;
         
         // Load existing profile data if available (incomplete onboarding)
         if (profile) {
@@ -153,11 +157,15 @@ const CofounderOnboarding = () => {
           toast.error("Failed to load profile. Please try again.");
         }
       } finally {
-        setInitialLoading(false);
+        if (!cancelled) {
+          setInitialLoading(false);
+        }
       }
     };
     
     loadExistingProfile();
+    
+    return () => { cancelled = true; };
   }, [navigate]);
 
   // Handle photo upload
@@ -1342,16 +1350,20 @@ const CofounderOnboarding = () => {
     return titles[step - 1] || "";
   };
 
+  // Show a minimal full-screen loader while checking if onboarding was already completed.
+  if (initialLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-blue-50/50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-slate-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Layout>
-      {initialLoading ? (
-        <div className="min-h-screen bg-gradient-to-b from-blue-50/50 to-white flex items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-            <p className="text-slate-600">Loading your profile...</p>
-          </div>
-        </div>
-      ) : (
         <div className="min-h-screen bg-gradient-to-b from-blue-50/50 to-white">
           <div className="max-w-2xl mx-auto p-4 py-8">
           {/* Progress Bar */}
@@ -1435,7 +1447,6 @@ const CofounderOnboarding = () => {
           )}
         </div>
       </div>
-      )}
     </Layout>
   );
 };

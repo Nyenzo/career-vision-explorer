@@ -123,7 +123,7 @@ export const JobDetailsContent = ({ job, onUpdate }: JobDetailsContentProps) => 
        skills: formData.skills_required,
        description: formData.description,
        benefits: formData.benefits,
-       application_deadline: formData.application_deadline,
+       application_deadline: formData.application_deadline || null,
        remote_friendly: formData.remote_friendly,
        responsibilities: formData.responsibilities,
        companyInfo: formData.company_info,

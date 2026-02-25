@@ -100,6 +100,33 @@ export interface PhotoUploadStatus {
   photos: string[];
 }
 
+export interface GroupParticipant {
+  profile_id: string;
+  user_id?: string;
+  name?: string;
+  current_role?: string;
+  photo_url?: string;
+}
+
+export interface Conversation {
+  conversation_id: string;
+  match_id: string;
+  profile_1_id: string;
+  profile_2_id: string;
+  last_message_at: string;
+  unread_count: number;
+  created_at: string;
+  messages: Message[];
+  other_profile: CofounderProfile;
+  conversation_type?: "direct" | "project_group";
+  project_id?: string | null;
+  title?: string | null;
+  created_by?: string | null;
+  project_description?: string | null;
+  participant_count?: number;
+  participants?: GroupParticipant[];
+}
+
 export interface ConversationListResponse {
   conversations: Array<{
     conversation_id: string;
@@ -117,179 +144,194 @@ export interface Message {
 }
 
 /* ============================== */
+/* ========= PROJECTS =========== */
+/* ============================== */
+
+export interface IdeaProject {
+  id: string;
+  profile_id: string;
+  user_id: string;
+  title: string;
+  description?: string;
+  idea_description?: string;
+  problem_statement?: string;
+  target_market?: string;
+  stage?: string;
+  roles_needed?: string[];
+  tech_stack?: string[];
+  equity_split?: string;
+  timeline?: string;
+  status?: string;
+  max_members?: number;
+  created_at?: string;
+  updated_at?: string;
+  owner_name?: string;
+}
+
+export interface ProjectMember {
+  id: string;
+  project_id: string;
+  profile_id: string;
+  user_id: string;
+  role: string;
+  status: "pending" | "approved" | "rejected" | "removed";
+  member_name: string;
+  member_role: string;
+  member_photo?: string | null;
+  requested_at?: string;
+  responded_at?: string;
+}
+
+export interface ProjectWithMembers extends IdeaProject {
+  members: ProjectMember[];
+  owner_name: string;
+  owner_photo?: string | null;
+  member_count: number;
+  pending_count: number;
+  has_group_chat: boolean;
+  group_chat_conversation_id?: string | null;
+  user_membership_status?: "owner" | "pending" | "approved" | "rejected" | "removed" | null;
+}
+
+export interface ProjectGroupChat {
+  conversation_id: string;
+  project_id: string;
+  title: string;
+  conversation_type: string;
+  participant_count: number;
+  created_at: string;
+}
+
+/* ============================== */
 /* ========= SERVICE ============ */
 /* ============================== */
 
 class CofounderMatchingService {
   private readonly base = "/api/v1/cofounder-matching";
 
-  /* ================= Profile ================= */
-
-  async createProfile(
-    profileData: Omit<CofounderProfile, "profile_id" | "user_id">
-  ): Promise<CofounderProfile> {
+  /* Profile */
+  async createProfile(profileData: Omit<CofounderProfile, "profile_id" | "user_id">) {
     return apiClient.post(`${this.base}/profile`, profileData);
   }
 
-  async getProfile(): Promise<CofounderProfile> {
+  async getProfile() {
     return apiClient.get(`${this.base}/profile`);
   }
 
-  async updateProfile(
-    profileData: Partial<CofounderProfile>
-  ): Promise<CofounderProfile> {
+  async updateProfile(profileData: Partial<CofounderProfile>) {
     return apiClient.put(`${this.base}/profile`, profileData);
   }
 
-  async deleteProfile(): Promise<void> {
+  async deleteProfile() {
     return apiClient.delete(`${this.base}/profile`);
   }
 
-  /* ================= Photos ================= */
-
-  async uploadPhoto(file: File): Promise<PhotoUploadResponse> {
+  /* Photos */
+  async uploadPhoto(file: File) {
     return apiClient.uploadFile(`${this.base}/profile/photos`, file);
   }
 
-  async getPhotoStatus(): Promise<PhotoUploadStatus> {
+  async getPhotoStatus() {
     return apiClient.get(`${this.base}/profile/photos`);
   }
 
-  async deletePhoto(photoUrl: string): Promise<PhotoUploadStatus> {
+  async deletePhoto(photoUrl: string) {
     return apiClient.delete(
       `${this.base}/profile/photos?photo_url=${encodeURIComponent(photoUrl)}`
     );
   }
 
-  /* ================= Discovery ================= */
-
-  async discoverMatches(
-    request: DiscoverMatchesRequest
-  ): Promise<{ matches_found: number; matches: MatchProfile[] }> {
+  /* Matching */
+  async discoverMatches(request: DiscoverMatchesRequest) {
     return apiClient.post(`${this.base}/discover`, request);
   }
 
-  /* ================= Swipe Actions ================= */
-
-  async swipeRight(matchId: string): Promise<MatchActionResponse> {
+  async swipeRight(matchId: string) {
     return apiClient.post(`${this.base}/matches/${matchId}/action`, {
       action: "interested",
     });
   }
 
-  async swipeLeft(matchId: string): Promise<MatchActionResponse> {
+  async swipeLeft(matchId: string) {
     return apiClient.post(`${this.base}/matches/${matchId}/action`, {
       action: "declined",
     });
   }
 
-  /* ================= Matches ================= */
+  async swipeSkip(matchId: string) {
+    return apiClient.post(`${this.base}/matches/${matchId}/action`, {
+      action: "skipped",
+    });
+  }
 
-  async getMutualMatches(): Promise<{ mutual_matches: MatchProfile[] }> {
+  async getMutualMatches() {
     return apiClient.get(`${this.base}/matches/mutual`);
   }
 
-  async getPendingInterests(): Promise<{
-    pending_matches: MatchProfile[];
-    total: number;
-  }> {
+  async getPendingInterests() {
     return apiClient.get(`${this.base}/matches/pending-interests`);
   }
 
-  /* ================= Messaging ================= */
-
-  async getConversations(
-    limit = 20,
-    offset = 0
-  ): Promise<ConversationListResponse> {
+  /* Messaging */
+  async getConversations(limit = 20, offset = 0) {
     const params = new URLSearchParams({
       limit: limit.toString(),
       offset: offset.toString(),
     });
+    return apiClient.get(`${this.base}/conversations?${params}`);
+  }
 
+  async getMessages(conversationId: string, limit = 50, beforeId?: string) {
+    const params = new URLSearchParams({ limit: limit.toString() });
+    if (beforeId) params.append("before_id", beforeId);
     return apiClient.get(
-      `${this.base}/conversations?${params.toString()}`
+      `${this.base}/conversations/${conversationId}/messages?${params}`
     );
   }
 
-  async getMessages(
-    conversationId: string,
-    limit = 50
-  ): Promise<Message[]> {
-    const params = new URLSearchParams({
-      limit: limit.toString(),
-    });
-
-    return apiClient.get(
-      `${this.base}/conversations/${conversationId}/messages?${params.toString()}`
-    );
-  }
-
-  async sendMessage(
-    matchId: string,
-    messageText: string
-  ): Promise<Message> {
+  async sendMessage(matchId: string, messageText: string) {
     return apiClient.post(
       `${this.base}/conversations/${matchId}/messages`,
-      { text: messageText }
+      { message_text: messageText }
     );
   }
 
-  /* ================= Statistics ================= */
-
-  async getStatistics(): Promise<Statistics> {
-    return apiClient.get(`${this.base}/statistics`);
+  async sendGroupMessage(conversationId: string, messageText: string) {
+    return apiClient.post(
+      `${this.base}/group-conversations/${conversationId}/messages`,
+      { message_text: messageText }
+    );
   }
 
-  async getQuickStats(): Promise<{
-    total_matches: number;
-    mutual_interests: number;
-    profile_views: number;
-    profile_completeness: number;
-  }> {
-    const stats = await this.getStatistics();
-    const profile = await this.getProfile().catch(() => null);
+  async markConversationRead(conversationId: string) {
+    return apiClient.put(`${this.base}/conversations/${conversationId}/read`);
+  }
 
-    let profileCompleteness = 0;
+  /* Projects */
+  async listProjects(profileId?: string) {
+    const query = profileId ? `?profile_id=${profileId}` : "";
+    return apiClient.get(`${this.base}/projects${query}`);
+  }
 
-    if (profile) {
-      const requiredFields: (keyof CofounderProfile)[] = [
-        "current_role",
-        "years_experience",
-        "technical_skills",
-        "soft_skills",
-        "seeking_roles",
-        "industries",
-        "commitment_level",
-        "location_preference",
-        "preferred_locations",
-        "bio",
-      ];
+  async browseMatchedProjects() {
+    return apiClient.get(`${this.base}/projects/browse`);
+  }
 
-      const filledFields = requiredFields.filter((field) => {
-        const value = profile[field];
-        return (
-          value !== undefined &&
-          value !== null &&
-          (Array.isArray(value)
-            ? value.length > 0
-            : value.toString().trim().length > 0)
-        );
-      }).length;
+  async getProjectDetail(projectId: string) {
+    return apiClient.get(`${this.base}/projects/${projectId}`);
+  }
 
-      profileCompleteness = Math.round(
-        (filledFields / requiredFields.length) * 100
-      );
-    }
+  async createProject(data: Partial<IdeaProject>) {
+    return apiClient.post(`${this.base}/projects`, data);
+  }
 
-    return {
-      total_matches: stats.total_matches,
-      mutual_interests: stats.mutual_interests,
-      profile_views: stats.profile_views,
-      profile_completeness: profileCompleteness,
-    };
+  async updateProject(projectId: string, data: Partial<IdeaProject>) {
+    return apiClient.put(`${this.base}/projects/${projectId}`, data);
+  }
+
+  async deleteProject(projectId: string) {
+    return apiClient.delete(`${this.base}/projects/${projectId}`);
   }
 }
 
-export const cofounderMatchingService =
-  new CofounderMatchingService();
+export const cofounderMatchingService = new CofounderMatchingService();

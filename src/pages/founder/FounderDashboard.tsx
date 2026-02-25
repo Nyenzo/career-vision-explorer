@@ -1,6 +1,7 @@
 // src/pages/founder/FounderDashboard.tsx
 import React, { useState, useEffect, useCallback } from "react";
 import Layout from "@/components/layout/Layout";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -714,7 +715,10 @@ const FounderDashboard = () => {
   return (
     <Layout>
       <div className="min-h-screen bg-white">
-        <div className="max-w-4xl mx-auto p-4 md:p-6">
+        <div className={cn(
+          "mx-auto p-4 md:p-6",
+          activeTab === 'messages' ? 'max-w-7xl' : 'max-w-4xl'
+        )}>
           {/* Header */}
           <div className="flex items-center justify-between mb-6 md:mb-8">
             <div>
@@ -837,7 +841,7 @@ const FounderDashboard = () => {
                 <ConnectionsList />
               </TabsContent>
 
-              <TabsContent value="messages" className="mt-0">
+              <TabsContent value="messages" className="mt-0 -mb-20 md:-mb-0">
                 <MessagingInterface initialMatchId={selectedMatchId || undefined} />
               </TabsContent>
             </div>

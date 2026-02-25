@@ -5,21 +5,21 @@
 
 export const API_CONFIG = {
   // Base API URL - use relative URL for dev proxy, absolute for production
-  BASE_URL: import.meta.env.DEV 
-    ? '/api/v1' 
+  BASE_URL: import.meta.env.DEV
+    ? '/api/v1'
     : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'),
-  
+
   // Backend URL (without /api/v1)
   BACKEND_URL: import.meta.env.DEV
     ? ''
     : (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'),
-  
+
   // Supabase Configuration (for direct frontend access if needed)
   SUPABASE: {
     URL: import.meta.env.VITE_SUPABASE_URL,
     ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY,
   },
-  
+
   // Request timeouts (in milliseconds)
   TIMEOUTS: {
     DEFAULT: 45000,    // 45 seconds (increased for slow Supabase connections)
@@ -28,7 +28,7 @@ export const API_CONFIG = {
     UPLOAD: 180000,    // 3 minutes for file uploads
     DATABASE: 60000,   // 60 seconds for database operations
   },
-  
+
   // Cache TTL (in milliseconds)
   CACHE_TTL: {
     DEFAULT: 60000,    // 1 minute
@@ -36,7 +36,7 @@ export const API_CONFIG = {
     LONG: 300000,      // 5 minutes
     AI_RESULTS: 600000, // 10 minutes for AI-generated content
   },
-  
+
   // API Endpoints that need special handling
   ENDPOINTS: {
     // Authentication endpoints
@@ -47,14 +47,14 @@ export const API_CONFIG = {
       LOGOUT: '/auth/logout',
       ME: '/auth/me',
     },
-    
+
     // File upload endpoints
     UPLOADS: {
       PROFILE_IMAGE: '/profile/image',
       RESUME: '/profile/resume',
       CV_PARSE: '/ai/upload-and-parse-cv',
     },
-    
+
     // AI-powered endpoints (may need longer timeouts)
     AI: {
       JOB_MATCH: '/jobs/ai-match',
@@ -63,7 +63,7 @@ export const API_CONFIG = {
       INTERVIEW_PREP: '/ai/interview-prep',
     },
   },
-  
+
   // Feature flags
   FEATURES: {
     ENABLE_CACHING: true,
@@ -77,11 +77,11 @@ export const API_CONFIG = {
 export function validateApiConfig(): void {
   const required = ['VITE_API_BASE_URL'];
   const missing = required.filter(key => !import.meta.env[key]);
-  
+
   if (missing.length > 0) {
     console.warn(`Missing environment variables: ${missing.join(', ')}`);
   }
-  
+
   // Warn if sensitive keys are exposed
   if (import.meta.env.GEMINI_API_KEY) {
     console.error('WARNING: GEMINI_API_KEY should not be exposed in frontend!');
