@@ -11,23 +11,22 @@ class ProfileService {
       } catch (error: any) {
         if (error.message?.includes("timed out")) {
           const fallbackEndpoint = userId ? `/profile/${userId}` : "/profile/";
-          return await apiClient.get<Profile>(fallbackEndpoint, { timeout: 45000 });
+          return await apiClient.get<Profile>(fallbackEndpoint, {
+            timeout: 45000,
+          });
         }
         throw error;
       }
     });
   }
 
-  async updateProfile(
-    profileData: ProfileUpdate
-  ): Promise<Profile> {
+  async updateProfile(profileData: ProfileUpdate): Promise<Profile> {
     return await apiClient.put<Profile>("/profile/", profileData);
   }
 
   async updateCompanyProfile(
-    companyData: Partial<CompanyData>
+    companyData: Partial<CompanyData>,
   ): Promise<Profile> {
-    // Update current user's company profile data
     return await apiClient.put<Profile>("/profile/", companyData);
   }
 
@@ -48,7 +47,6 @@ class ProfileService {
   }
 
   async uploadProfileImage(file: File): Promise<any> {
-    // Use apiClient.uploadFile for consistent header/token handling
     // The backend expects the field name to be 'image'
     return await apiClient.uploadFile<any>("/profile/image", file, "image");
   }
@@ -72,29 +70,35 @@ class ProfileService {
     offset?: number;
   }): Promise<Profile[]> {
     const queryParams = new URLSearchParams();
-    if (params.skills)
+
+    if (params.skills) {
       params.skills.forEach((s) => queryParams.append("skills", s));
-    if (params.account_type)
+    }
+    if (params.account_type) {
       queryParams.append("account_type", params.account_type);
-    if (params.limit) queryParams.append("limit", params.limit.toString());
-    if (params.offset) queryParams.append("offset", params.offset.toString());
+    }
+    if (params.limit) {
+      queryParams.append("limit", params.limit.toString());
+    }
+    if (params.offset) {
+      queryParams.append("offset", params.offset.toString());
+    }
 
     const queryString = queryParams.toString();
     return await apiClient.get<Profile[]>(
-      `/profile/search/profiles${queryString ? `?${queryString}` : ""}`
+      `/profile/search/profiles${queryString ? `?${queryString}` : ""}`,
     );
   }
 
   async parseResume(file: File): Promise<any> {
     const response = await apiClient.uploadFile<any>(
       "/ai/upload-and-parse-cv",
-      file
+      file,
     );
     return response?.data || response;
   }
 
   async deleteProfile(): Promise<{ message: string }> {
-    // Delete current user's profile (requires authentication)
     return await apiClient.delete<{ message: string }>("/profile/");
   }
 }
