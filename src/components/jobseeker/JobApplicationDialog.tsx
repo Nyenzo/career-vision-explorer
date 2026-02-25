@@ -47,15 +47,16 @@ export const JobApplicationDialog = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingCV, setIsUploadingCV] = useState(false);
   const [cvUploaded, setCvUploaded] = useState(false);
+  const [resumeError, setResumeError] = useState(false);
 
   const { isJobSeeker, isFreelancer, isAuthenticated, user } = useAuth();
 
   // Allow both job seekers and freelancers to view and apply for jobs
   const canApplyForJobs = isJobSeeker() || isFreelancer();
 
-  const { refetch: refetchApplications } = canApplyForJobs
-    ? useJobApplications()
-    : { refetch: () => {} };
+  // Always call hooks unconditionally (Rules of Hooks)
+  const { refetch: refetchFn } = useJobApplications();
+  const refetchApplications = canApplyForJobs ? refetchFn : () => {};
 
   useEffect(() => {
     async function checkCVStatus() {
@@ -84,6 +85,14 @@ export const JobApplicationDialog = ({
       toast.error("Only job seekers and freelancers can apply for jobs");
       return;
     }
+
+    // Require resume if not already uploaded
+    if (!resumeFile && !cvUploaded) {
+      setResumeError(true);
+      toast.error("CV is required to apply for this job");
+      return;
+    }
+    setResumeError(false);
 
     setIsSubmitting(true);
 
@@ -181,6 +190,7 @@ export const JobApplicationDialog = ({
             resumeFile={resumeFile}
             setResumeFile={setResumeFile}
             cvAlreadyUploaded={cvUploaded}
+            showError={resumeError}
           />
 
           <ApplicationActions

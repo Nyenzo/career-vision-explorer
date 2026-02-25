@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, ThumbsUp, ThumbsDown, Download, Mail, FileText, Briefcase } from "lucide-react";
+import { Calendar, ThumbsUp, ThumbsDown, Download, Mail, FileText, Briefcase, Check, X } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { EmployerApplication } from "@/hooks/use-employer-applications";
 import { API_CONFIG } from "@/config/api.config";
@@ -153,9 +153,41 @@ export function ApplicantProfileDialog({
             </div>
             <p className="text-xs text-gray-500 mt-1">
               {matchScore > 0
-                ? `${matchScore}% of required skills matched`
+                ? `${matchScore}% match score`
                 : 'No skill data available for comparison'}
             </p>
+
+            {/* Matched skills breakdown */}
+            {applicant.matched_skills && applicant.matched_skills.length > 0 && (
+              <div className="mt-3">
+                <p className="text-xs font-medium text-green-700 mb-1 flex items-center gap-1">
+                  <Check className="h-3 w-3" /> Matched Skills ({applicant.matched_skills.length})
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {applicant.matched_skills.map((skill, i) => (
+                    <Badge key={i} className="text-xs bg-green-100 text-green-800 hover:bg-green-100">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Missing skills breakdown */}
+            {applicant.missing_skills && applicant.missing_skills.length > 0 && (
+              <div className="mt-3">
+                <p className="text-xs font-medium text-red-600 mb-1 flex items-center gap-1">
+                  <X className="h-3 w-3" /> Missing Skills ({applicant.missing_skills.length})
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {applicant.missing_skills.map((skill, i) => (
+                    <Badge key={i} variant="outline" className="text-xs border-red-200 text-red-600">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Skills */}

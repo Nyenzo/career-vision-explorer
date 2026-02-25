@@ -74,6 +74,8 @@ export interface Application {
   resume_link?: string;
   match_score?: number;
   applicant_skills?: string[];
+  matched_skills?: string[];
+  missing_skills?: string[];
   // Compatibility field for components expecting job object
   job?: {
     title: string;
