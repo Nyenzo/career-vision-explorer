@@ -11,9 +11,10 @@ interface ResumeUploadSectionProps {
   resumeFile: File | null;
   setResumeFile: (file: File | null) => void;
   cvAlreadyUploaded?: boolean;
+  showError?: boolean;
 }
 
-export const ResumeUploadSection = ({ resumeFile, setResumeFile, cvAlreadyUploaded }: ResumeUploadSectionProps) => {
+export const ResumeUploadSection = ({ resumeFile, setResumeFile, cvAlreadyUploaded, showError }: ResumeUploadSectionProps) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -44,14 +45,17 @@ export const ResumeUploadSection = ({ resumeFile, setResumeFile, cvAlreadyUpload
           <span className="text-sm text-green-600 font-medium">(Already in profile)</span>
         )}
       </div>
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+      <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+        showError && !resumeFile && !cvAlreadyUploaded
+          ? 'border-red-400 bg-red-50'
+          : 'border-gray-300 hover:border-blue-400'
+      }`}>
         <Input
           id="resume"
           type="file"
           accept=".pdf,.doc,.docx"
           onChange={handleFileChange}
           className="hidden"
-          required={!cvAlreadyUploaded}
         />
         <label htmlFor="resume" className="cursor-pointer">
           <div className="space-y-2">
@@ -66,6 +70,9 @@ export const ResumeUploadSection = ({ resumeFile, setResumeFile, cvAlreadyUpload
           </div>
         </label>
       </div>
+      {showError && !resumeFile && !cvAlreadyUploaded && (
+        <p className="text-sm text-red-600 font-medium">CV is required to apply for this job</p>
+      )}
       {resumeFile && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-3">
           <div className="flex items-center gap-2 text-green-800">

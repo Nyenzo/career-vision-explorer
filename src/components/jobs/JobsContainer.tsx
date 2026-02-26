@@ -38,9 +38,9 @@ export const JobsContainer = ({ jobs }: JobsContainerProps) => {
   // Allow both job seekers and freelancers to view and apply for jobs
   const canApplyForJobs = isJobSeeker() || isFreelancer();
   
-  const { getApplicationForJob } = canApplyForJobs 
-    ? useJobApplications() 
-    : { getApplicationForJob: () => null };
+  // Always call hooks unconditionally (Rules of Hooks)
+  const { getApplicationForJob: getAppFn } = useJobApplications();
+  const getApplicationForJob = canApplyForJobs ? getAppFn : () => null;
     
   const { addToWishlist, removeFromWishlist, isJobInWishlist } = useWishlist();
   

@@ -50,6 +50,15 @@ class AuthService {
   }
 
   async logout(): Promise<void> {
+    // Invalidate tokens on the backend before clearing local state
+    try {
+      const refreshToken = localStorage.getItem("refresh_token");
+      await apiClient.post("/auth/logout", {
+        refresh_token: refreshToken || undefined,
+      });
+    } catch {
+      // Best-effort — clear local state even if backend call fails
+    }
     apiClient.setToken(null);
     localStorage.removeItem("refresh_token");
     localStorage.removeItem("user");

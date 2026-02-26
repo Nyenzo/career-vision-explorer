@@ -30,6 +30,7 @@ import {
 import { NotificationsFeed } from "@/components/founder-matching/NotificationsFeed";
 import { ConnectionsList } from "@/components/founder-matching/ConnectionsList";
 import { MessagingInterface } from "@/components/founder-matching/MessagingInterface";
+import { cofounderMatchingService } from "@/services/founder-matching.service";
 import { toast } from "sonner";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
@@ -165,6 +166,8 @@ const FounderDashboard = () => {
         toast.error("Failed to load dashboard data");
       } finally {
         setLoading(false);
+        // Prefetch messaging data in background so Messages tab loads instantly
+        cofounderMatchingService.prefetchConversations();
       }
     };
 
