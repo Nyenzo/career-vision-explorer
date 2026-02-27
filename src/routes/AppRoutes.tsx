@@ -9,6 +9,7 @@ const Index = lazy(() => import("@/pages/Index"));
 const Login = lazy(() => import("@/pages/Login"));
 const Signup = lazy(() => import("@/pages/Signup"));
 const LinkedInCallback = lazy(() => import("@/pages/auth/LinkedInCallback"));
+const Notifications = lazy(() => import("@/pages/Notifications"));
 const Jobs = lazy(() => import("@/pages/Jobs"));
 const JobDetails = lazy(() => import("@/pages/JobDetails"));
 const PublicProfile = lazy(() => import("@/pages/PublicProfile"));
@@ -59,6 +60,13 @@ const JobSeekerDashboard = lazy(
 const JobSeekerSettings = lazy(
   () => import("@/pages/jobseeker/JobSeekerSettings")
 );
+
+const FounderDashboard = lazy(() => import("@/pages/founder/FounderDashboard"));
+const FounderOnboarding = lazy(
+  () => import("@/pages/founder/CofounderOnboarding")
+);
+const FounderProfile = lazy(() => import("@/pages/founder/FounderProfile"));
+const FounderMatches = lazy(() => import("@/pages/founder/FounderMatches"));
 
 // Freelancer
 const Freelancers = lazy(() => import("@/pages/Freelancers"));
@@ -316,6 +324,7 @@ export const AppRoutes = () => {
             </Suspense>
           }
         />
+        {/* Forgot/reset password temporarily disabled (missing pages) */}
         <Route
           path="/auth/callback"
           element={
@@ -445,6 +454,63 @@ export const AppRoutes = () => {
           />
         </Route>
 
+        {/* Founder Matching Routes */}
+        <Route path="/founder" element={<Outlet />}>
+          <Route
+            path="dashboard"
+            element={
+              <ProtectedRoute requiredRole="job_seeker">
+                <Suspense fallback={<PageLoader />}>
+                  <FounderDashboard />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          {/* Add this route for onboarding */}
+          <Route
+            path="onboarding"
+            element={
+              <ProtectedRoute requiredRole="job_seeker">
+                <Suspense fallback={<PageLoader />}>
+                  <FounderOnboarding />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="matches"
+            element={
+              <ProtectedRoute requiredRole="job_seeker">
+                <Suspense fallback={<PageLoader />}>
+                  <FounderMatches />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          {/* ADD THIS ROUTE - Current user's founder profile */}
+          <Route
+            path="profile"
+            element={
+              <ProtectedRoute requiredRole="job_seeker">
+                <Suspense fallback={<PageLoader />}>
+                  <FounderProfile />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          {/* Keep this route for viewing other users' founder profiles */}
+          <Route
+            path="profile/:profileId"
+            element={
+              <ProtectedRoute requiredRole="job_seeker">
+                <Suspense fallback={<PageLoader />}>
+                  <FounderProfile />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+
         {/* Freelancer Routes */}
         <Route path="/freelancer" element={<Outlet />}>
           <Route
@@ -467,6 +533,16 @@ export const AppRoutes = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="edit-profile"
+            element={
+              <ProtectedRoute requiredRole="freelancer">
+                <Suspense fallback={<PageLoader />}>
+                  <CreateFreelancerProfile />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
         </Route>
 
         {/* General Protected Routes */}
@@ -476,6 +552,16 @@ export const AppRoutes = () => {
             <ProtectedRoute>
               <Suspense fallback={<PageLoader />}>
                 <Dashboard />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/notifications"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<PageLoader />}>
+                <Notifications />
               </Suspense>
             </ProtectedRoute>
           }

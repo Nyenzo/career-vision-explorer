@@ -6,6 +6,7 @@ import { RecentActivityCard } from "@/components/jobseeker/dashboard/RecentActiv
 import { QuickStatsCards } from "@/components/jobseeker/dashboard/QuickStatsCards";
 import { InterviewScheduleDialog } from "@/components/jobseeker/InterviewScheduleDialog";
 import EditProfileDialog from "@/components/profile/EditProfileDialog";
+import NotificationDropdown from "@/components/shared/NotificationDropdown";
 import { useAuth } from "@/hooks/use-auth";
 import {
   Bell,
@@ -16,9 +17,13 @@ import {
   Video,
   Phone,
   MapPin,
+  Users,
+  Target,
+  TrendingUp,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import {
   Card,
   CardContent,
@@ -27,11 +32,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
 import { useInterviewSchedule } from "@/hooks/use-interview-schedule";
 
 const JobSeekerDashboard = () => {
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const { interviews, getUpcomingInterviews } = useInterviewSchedule();
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [interviewDialogOpen, setInterviewDialogOpen] = useState(false);
@@ -40,12 +46,27 @@ const JobSeekerDashboard = () => {
   const upcomingInterviews = getUpcomingInterviews();
   const nextInterview = upcomingInterviews[0];
 
+  // Founder matching stats (mocked - replace with real data)
+  const founderStats = {
+    matchScore: 85,
+    profileViews: 12,
+    mutualMatches: 3,
+    profileCompleteness: 70,
+  };
+
   const handleSaveProfile = async (data: any) => {
     console.log("Saving profile:", data);
   };
 
   const handleEditProfile = () => {
     navigate("/profile");
+  };
+
+  const handleMessagesClick = () => {
+    // TODO: Implement messaging feature
+    toast.info("Messages", {
+      description: "Messaging feature coming soon!",
+    });
   };
 
   const getTypeIcon = (type: string) => {
@@ -93,6 +114,10 @@ const JobSeekerDashboard = () => {
                       ?.split(" ")
                       .map((n) => n[0])
                       .join("")
+                      .toUpperCase() || user?.name
+                      ?.split(" ")
+                      .map((n) => n[0])
+                      .join("")
                       .toUpperCase() || "PN"}
                   </AvatarFallback>
                 </Avatar>
@@ -100,7 +125,7 @@ const JobSeekerDashboard = () => {
                 {/* Name and Actions - Takes remaining space */}
                 <div className="flex flex-col gap-4 flex-1">
                   <h1 className="text-2xl font-bold text-gray-900">
-                    {profile?.name || "Profile Name"}
+                    {profile?.name || user?.name || "Profile Name"}
                   </h1>
 
                   {/* Edit Profile Button and Notification Icons - Now in same row */}
@@ -114,10 +139,12 @@ const JobSeekerDashboard = () => {
                     </Button>
 
                     {/* Notification Icons - Enlarged and next to button */}
-                    <button className="p-3 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors">
-                      <Bell className="h-6 w-6" />
-                    </button>
-                    <button className="p-3 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors">
+                    <NotificationDropdown />
+                    <button
+                      onClick={handleMessagesClick}
+                      className="p-3 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+                      title="Messages"
+                    >
                       <MessageSquare className="h-6 w-6" />
                     </button>
                   </div>
@@ -136,6 +163,42 @@ const JobSeekerDashboard = () => {
             {/* Left Column */}
             <div className="space-y-6">
               <ProfileCompletionCard />
+              {/* Founder Matching Card */}
+
+              <Card className="border-blue-200 hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Users className="h-5 w-5 text-blue-600" />
+                    Find Co-Founders
+                    <Badge
+                      variant="outline"
+                      className="ml-auto bg-blue-50 text-blue-700 border-blue-200"
+                    >
+                      New
+                    </Badge>
+                  </CardTitle>
+                  <CardDescription>
+                    Connect with potential co-founders for your startup
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="p-3 border rounded-lg space-y-2 bg-gradient-to-r from-blue-50 to-white">
+                    <h4 className="font-medium text-sm">
+                      Build Your Dream Team
+                    </h4>
+                    <p className="text-xs text-muted-foreground">
+                      Find technical, business, and marketing co-founders who
+                      match your skills and vision
+                    </p>
+                  </div>
+                  <Button
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={() => navigate("/founder/onboarding")}
+                  >
+                    Explore Co-Founder Matching
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Right Column */}
@@ -234,11 +297,15 @@ const JobSeekerDashboard = () => {
           open={editProfileOpen}
           onOpenChange={setEditProfileOpen}
           userData={{
-            name: profile?.name || "",
-            email: profile?.email || "",
-            role: profile?.role || "",
-            education: profile?.education || "",
-            experience: profile?.experience || "",
+            name: user?.name || "",
+            email: user?.email || "",
+            role: profile?.active_role || user?.account_type || "job_seeker",
+            education: Array.isArray(profile?.education)
+              ? profile.education
+                  .map((edu) => `${edu.institution} - ${edu.degree}`)
+                  .join(", ")
+              : "",
+            experience: profile?.experience_years?.toString() || "",
             location: profile?.location || "",
             phone: profile?.phone || "",
             bio: profile?.bio || "",

@@ -253,13 +253,9 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
       const payload = JSON.parse(atob(accessToken.split(".")[1]));
       const user: User = {
         user_id: payload.sub,
-        name: "",
+        name: payload.name || "",
         email: payload.email,
-        account_type: payload.account_type as
-          | "job_seeker"
-          | "employer"
-          | "admin"
-          | "freelancer",
+        account_type: payload.account_type as User["account_type"],
       };
 
       authService.setStoredUser(user);

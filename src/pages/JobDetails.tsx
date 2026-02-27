@@ -26,16 +26,16 @@ const JobDetails = () => {
 
   // Allow both job seekers and freelancers to view and apply for jobs
   const canApplyForJobs = isJobSeeker() || isFreelancer();
-  
-  const { getApplicationForJob, isLoading: applicationsLoading } = canApplyForJobs 
-    ? useJobApplications() 
+
+  const { getApplicationForJob, isLoading: applicationsLoading } = canApplyForJobs
+    ? useJobApplications()
     : { getApplicationForJob: () => null, isLoading: false };
- 
+
   const [job, setJob] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
- 
-   useEffect(() => {
+
+  useEffect(() => {
     if (!id) {
       setError("Invalid job ID");
       setLoading(false);
@@ -50,8 +50,8 @@ const JobDetails = () => {
         const fetchedJob = await jobsService.getJobById(id);
         //merge fetched jobs with matchscore from location state
         let matchScore = location.state?.matchScore ?? Math.round((fetchedJob.similarity_score ?? 0) * 100);
-        if ( matchScore === 0) {
-         try {
+        if (matchScore === 0 && canApplyForJobs) {
+          try {
             const recommendations = await apiClient.get<Array<{ job_id: string; similarity_score: number }>>(
               '/vector/jobs/recommendations'
             );
@@ -63,7 +63,7 @@ const JobDetails = () => {
           }
         }
 
-        setJob({...fetchedJob, matchScore});
+        setJob({ ...fetchedJob, matchScore });
       } catch (err) {
         setError("Job not found");
       } finally {
@@ -88,14 +88,14 @@ const JobDetails = () => {
       </Layout>
     );
   }
-  
+
   // The reliable calculation: This line now only runs AFTER the gatekeeper has confirmed all data is present.
   const isApplied = !!getApplicationForJob(job.job_id);
 
   const handleApply = () => {
     setApplicationDialogOpen(true);
   };
-  
+
   const handleSave = () => {
     setIsSaved(!isSaved);
     toast.success(isSaved ? "Job removed from saved jobs" : "Job saved successfully");
@@ -104,7 +104,7 @@ const JobDetails = () => {
   const handleJobUpdate = (updatedJob: any) => {
     setJob(updatedJob);
   };
-  
+
   return (
     <Layout>
       <div className="min-h-screen bg-background">
@@ -120,18 +120,18 @@ const JobDetails = () => {
               Back to Jobs
             </Button>
           </div>
-          
+
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-8">
               <JobHeader job={job} />
-              { (isAdmin() || isEmployer()) ? (
+              {(isAdmin() || isEmployer()) ? (
                 <JobDetailsContent job={job} onUpdate={handleJobUpdate} />
               ) : (
                 <JobDetailsView job={job} />
               )}
             </div>
-            
+
             {/* Sidebar */}
             <div className="space-y-8">
               <JobActions
@@ -153,7 +153,7 @@ const JobDetails = () => {
             </div>
           </div>
         </div>
-        
+
         <JobApplicationDialog
           job={job}
           open={applicationDialogOpen}

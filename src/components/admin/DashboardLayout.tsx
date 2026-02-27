@@ -6,9 +6,9 @@ import { useAuth } from "@/hooks/use-auth";
 // Remove this import: import Navbar from "@/components/layout/Navbar";
 
 interface DashboardLayoutProps {
-  children: ReactNode;
+  children: React.ReactNode;
   title: string;
-  role?: "employer" | "job_seeker";
+  role: "admin" | "employer" | "job_seeker" | "freelancer";
 }
 
 const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {

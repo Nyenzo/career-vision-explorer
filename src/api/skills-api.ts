@@ -1,116 +1,87 @@
-
-export interface Skill {
-  id: string;
-  name: string;
-  category: string;
-  level: number; // 1-100
-  verified: boolean;
-  endorsements: number;
-  lastAssessed?: string;
-}
-
-export interface SkillAssessment {
-  id: string;
-  skillId: string;
-  skillName: string;
-  score: number;
-  completedAt: string;
-  certificate?: string;
-  questions: AssessmentQuestion[];
-}
-
-export interface AssessmentQuestion {
-  id: string;
-  question: string;
-  options: string[];
-  correctAnswer: number;
-  userAnswer?: number;
-}
+// Skills API - now using real backend integration
+import { skillsService, SkillFilters } from '../../services/skills.service';
+import { 
+  Skill, 
+  SkillCreate, 
+  SkillAssessmentResult, 
+  Recommendation,
+  PaginatedResponse 
+} from '../../types/api';
 
 export class SkillsApi {
-  private static baseUrl = '/api/skills';
-
-  static async getUserSkills(): Promise<Skill[]> {
-    await new Promise(resolve => setTimeout(resolve, 400));
-    
-    return [
-      {
-        id: "1",
-        name: "React",
-        category: "Frontend",
-        level: 85,
-        verified: true,
-        endorsements: 12,
-        lastAssessed: "2024-06-01",
-      },
-      {
-        id: "2",
-        name: "TypeScript",
-        category: "Programming",
-        level: 78,
-        verified: false,
-        endorsements: 8,
-        lastAssessed: "2024-05-15",
-      }
-    ];
+  static async getUserSkills(): Promise<string[]> {
+    // Get user skills from profile
+    const { profileService } = await import('../../services/profile.service');
+    const profile = await profileService.getProfile();
+    return profile.skills || [];
   }
 
-  static async getSkillAssessments(): Promise<SkillAssessment[]> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    return [
-      {
-        id: "1",
-        skillId: "1",
-        skillName: "React",
-        score: 85,
-        completedAt: "2024-06-01",
-        questions: [],
-      }
-    ];
+  static async addSkill(name: string, category?: string): Promise<{ message: string }> {
+    // Add skill to user profile
+    const { profileService } = await import('../../services/profile.service');
+    return profileService.addSkill(name);
   }
 
-  static async startSkillAssessment(skillId: string): Promise<AssessmentQuestion[]> {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    return [
-      {
-        id: "1",
-        question: "What is JSX in React?",
-        options: [
-          "A JavaScript extension",
-          "A CSS framework",
-          "A database",
-          "A testing library"
-        ],
-        correctAnswer: 0,
-      }
-    ];
+  static async removeSkill(name: string): Promise<{ message: string }> {
+    const { profileService } = await import('../../services/profile.service');
+    return profileService.removeSkill(name);
   }
 
-  static async submitSkillAssessment(skillId: string, answers: number[]): Promise<SkillAssessment> {
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    return {
-      id: Date.now().toString(),
-      skillId,
-      skillName: "React",
-      score: 85,
-      completedAt: new Date().toISOString(),
-      questions: [],
+  static async getSkills(filters?: SkillFilters): Promise<PaginatedResponse<Skill>> {
+    return skillsService.getSkills(filters);
+  }
+
+  static async getSkillById(skillId: string): Promise<Skill> {
+    return skillsService.getSkillById(skillId);
+  }
+
+  static async createSkill(skillData: SkillCreate): Promise<Skill> {
+    return skillsService.createSkill(skillData);
+  }
+
+  static async updateSkill(skillId: string, skillData: Partial<SkillCreate>): Promise<Skill> {
+    return skillsService.updateSkill(skillId, skillData);
+  }
+
+  static async deleteSkill(skillId: string): Promise<{ message: string }> {
+    return skillsService.deleteSkill(skillId);
+  }
+
+
+  // Get skill categories
+  static async getSkillCategories(): Promise<string[]> {
+    return skillsService.getSkillCategories();
+  }
+
+  // Utility methods
+  static getDemandLevelColor(level: string): string {
+    const colors = {
+      'High': 'green',
+      'Medium': 'yellow',
+      'Low': 'red'
     };
+    return colors[level as keyof typeof colors] || 'gray';
   }
 
-  static async addSkill(skillName: string, category: string): Promise<Skill> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    return {
-      id: Date.now().toString(),
-      name: skillName,
-      category,
-      level: 0,
-      verified: false,
-      endorsements: 0,
+  static formatSkillLevel(score: number): string {
+    if (score >= 90) return 'Expert';
+    if (score >= 75) return 'Advanced';
+    if (score >= 60) return 'Intermediate';
+    if (score >= 40) return 'Beginner';
+    return 'Novice';
+  }
+
+  static getSkillIcon(category: string): string {
+    const icons = {
+      'Frontend': '🎨',
+      'Backend': '⚙️',
+      'Database': '🗄️',
+      'Mobile': '📱',
+      'DevOps': '🚀',
+      'Design': '🎨',
+      'Marketing': '📈',
+      'Management': '👥'
     };
+    return icons[category as keyof typeof icons] || '💼';
   }
 }

@@ -1,3 +1,4 @@
+// src/lib/api-client.ts
 import { API_CONFIG } from "../config/api.config";
 
 // API Client configuration for FastAPI backend
@@ -32,17 +33,39 @@ class ApiClient {
     const token = this.getToken();
     const timeoutMs = config?.timeoutMs || API_CONFIG.TIMEOUTS.DEFAULT;
 
-    const defaultHeaders: HeadersInit = {};
+    // Create headers as a Record<string, string>
+    const headers: Record<string, string> = {};
 
     if (!(options.body instanceof FormData)) {
-      defaultHeaders["Content-Type"] = "application/json";
+      headers["Content-Type"] = "application/json";
     }
 
     if (token) {
-      defaultHeaders.Authorization = `Bearer ${token}`;
+      headers["Authorization"] = `Bearer ${token}`;
     }
 
-    // Use provided signal or create new one for timeout
+    // Merge with any existing headers from options
+    if (options.headers) {
+      if (options.headers instanceof Headers) {
+        options.headers.forEach((value, key) => {
+          headers[key] = value;
+        });
+      } else if (Array.isArray(options.headers)) {
+        // Handle array of tuples
+        options.headers.forEach(([key, value]) => {
+          headers[key] = value;
+        });
+      } else if (typeof options.headers === "object") {
+        // Handle Record<string, string>
+        Object.assign(headers, options.headers);
+      }
+    }
+
+    // Reduced logging - only log in development
+    if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_API === "true") {
+      console.log(`🌐 ${options.method || "GET"} ${endpoint}`);
+    }
+
     let controller: AbortController | null = null;
     let timeoutId: NodeJS.Timeout | null = null;
     let signal = config?.signal;
@@ -54,43 +77,50 @@ class ApiClient {
     }
 
     const requestConfig: RequestInit = {
-      headers: {
-        ...defaultHeaders,
-        ...options.headers,
-      },
+      headers,
       signal,
       ...options,
     };
 
     try {
-      console.log(`🚀 API Request: ${options.method || "GET"} ${url}`);
       const startTime = performance.now();
-
       const response = await fetch(url, requestConfig);
-
       const endTime = performance.now();
-      console.log(
-        `✅ API Response: ${url} (${Math.round(endTime - startTime)}ms)`
-      );
+
+      // Reduced logging
+      if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_API === "true") {
+        console.log(
+          `📡 ${response.status} ${endpoint} (${Math.round(endTime - startTime)}ms)`
+        );
+      }
 
       if (timeoutId) clearTimeout(timeoutId);
 
       if (!response.ok) {
         let errorData: any = null;
-        let errorMessage = `HTTP ${response.status}`;
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+
         try {
           const text = await response.text();
+          
+          if (import.meta.env.DEV) {
+            console.error(`❌ ${response.status} ${endpoint}:`, text);
+          }
+
           if (text) {
             try {
               errorData = JSON.parse(text);
+              errorMessage = errorData.detail || errorData.message || text;
             } catch {
-              // If JSON parsing fails, just use text
               errorMessage = text;
             }
           }
         } catch (e) {
-          console.error("Failed to read error response:", e);
+          if (import.meta.env.DEV) {
+            console.error("Failed to read error response:", e);
+          }
         }
+
         const error = new Error(errorMessage);
         (error as any).status = response.status;
         (error as any).response = errorData;
@@ -99,28 +129,25 @@ class ApiClient {
 
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
-        return await response.json();
+        const data = await response.json();
+        return data;
       }
 
-      return response.text() as unknown as T;
+      const text = await response.text();
+      return text as unknown as T;
     } catch (error: any) {
       if (timeoutId) clearTimeout(timeoutId);
 
       if (error.name === "AbortError") {
-        if (config?.signal?.aborted) {
-          console.log(`🚫 API Request cancelled: ${url}`);
-          throw new Error("Request cancelled");
-        } else {
-          console.error(`⏰ API Timeout: ${url} (${timeoutMs}ms)`);
-          throw new Error(
-            `Request timed out after ${
-              timeoutMs / 1000
-            } seconds. The database might be slow.`
-          );
+        if (import.meta.env.DEV) {
+          console.error(`⏰ Timeout: ${endpoint} (${timeoutMs}ms)`);
         }
+        throw new Error(`Request timed out after ${timeoutMs / 1000} seconds`);
       }
 
-      console.error(`❌ API request failed: ${url}`, error.message);
+      if (import.meta.env.DEV) {
+        console.error(`❌ ${endpoint}`, error.message);
+      }
       throw error;
     }
   }
@@ -136,28 +163,19 @@ class ApiClient {
     );
   }
 
-  async getFast<T>(
-    endpoint: string,
-    config?: { signal?: AbortSignal }
-  ): Promise<T> {
-    return this.request<T>(
-      endpoint,
-      { method: "GET" },
-      { timeoutMs: API_CONFIG.TIMEOUTS.FAST, signal: config?.signal }
-    );
-  }
-
   async post<T>(
     endpoint: string,
     data?: any,
     config?: { signal?: AbortSignal }
   ): Promise<T> {
     const isFormData = data instanceof FormData;
+    const body = isFormData ? data : data ? JSON.stringify(data) : undefined;
+
     return this.request<T>(
       endpoint,
       {
         method: "POST",
-        body: isFormData ? data : data ? JSON.stringify(data) : undefined,
+        body,
       },
       { signal: config?.signal }
     );
@@ -174,13 +192,6 @@ class ApiClient {
     return this.request<T>(endpoint, { method: "DELETE" });
   }
 
-  async patch<T>(endpoint: string, data?: any): Promise<T> {
-    return this.request<T>(endpoint, {
-      method: "PATCH",
-      body: data ? JSON.stringify(data) : undefined,
-    });
-  }
-
   async uploadFile<T>(
     endpoint: string,
     file: File,
@@ -190,10 +201,12 @@ class ApiClient {
     const formData = new FormData();
     formData.append(fieldName, file);
 
-    const headers: HeadersInit = {};
+    const headers: Record<string, string> = {};
     if (token) {
-      headers.Authorization = `Bearer ${token}`;
+      headers["Authorization"] = `Bearer ${token}`;
     }
+
+    console.log(`📤 Uploading file:`, file.name, file.size);
 
     const response = await fetch(`${this.baseURL}${endpoint}`, {
       method: "POST",
@@ -209,6 +222,17 @@ class ApiClient {
     }
 
     return await response.json();
+  }
+
+  // Fast get for critical data
+  async getFast<T>(
+    endpoint: string,
+    config?: { signal?: AbortSignal }
+  ): Promise<T> {
+    return this.get<T>(endpoint, {
+      timeout: API_CONFIG.TIMEOUTS.FAST,
+      signal: config?.signal,
+    });
   }
 }
 

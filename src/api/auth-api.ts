@@ -1,99 +1,78 @@
-
-// Removed mock auth import - using real auth service
-
-export interface AuthResponse {
-  success: boolean;
-  user?: any;
-  token?: string;
-  message?: string;
-}
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface SignupRequest {
-  name: string;
-  email: string;
-  password: string;
-  role: 'admin' | 'jobseeker' | 'employer' | 'subadmin';
-  phoneNumber?: string;
-  countryCode?: string;
-  profileImage?: string;
-}
+// Auth API - now using real backend integration
+import { authService } from '../../services/auth.service';
+import { 
+  User, 
+  UserLogin, 
+  UserRegister, 
+  TokenResponse,
+  PasswordChangeRequest,
+  PasswordResetRequest,
+  PasswordResetConfirm
+} from '../../types/auth';
 
 export class AuthApi {
-  private static baseUrl = '/api/auth';
-
-  static async login(credentials: LoginRequest): Promise<AuthResponse> {
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // Simulate authentication check
-    const user = getCurrentUser();
-    if (user) {
-      return {
-        success: true,
-        user,
-        token: `auth_token_${Date.now()}`,
-        message: 'Login successful'
-      };
-    }
-    
-    return {
-      success: false,
-      message: 'Invalid credentials'
-    };
+  static async login(credentials: UserLogin): Promise<TokenResponse> {
+    return authService.login(credentials);
   }
 
-  static async signup(userData: SignupRequest): Promise<AuthResponse> {
-    await new Promise(resolve => setTimeout(resolve, 1200));
-    
-    try {
-      // This would integrate with the auth system
-      return {
-        success: true,
-        user: {
-          id: Date.now().toString(),
-          name: userData.name,
-          email: userData.email,
-          role: userData.role
-        },
-        token: `auth_token_${Date.now()}`,
-        message: 'Account created successfully'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Failed to create account'
-      };
-    }
+  static async register(userData: UserRegister): Promise<TokenResponse> {
+    return authService.register(userData);
   }
 
-  static async logout(): Promise<AuthResponse> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    return {
-      success: true,
-      message: 'Logged out successfully'
-    };
+  static async logout(): Promise<void> {
+    return authService.logout();
   }
 
-  static async refreshToken(): Promise<AuthResponse> {
-    await new Promise(resolve => setTimeout(resolve, 400));
-    
-    const user = getCurrentUser();
-    if (user) {
-      return {
-        success: true,
-        token: `auth_token_${Date.now()}`,
-        user
-      };
-    }
-    
-    return {
-      success: false,
-      message: 'Session expired'
-    };
+  static async refreshToken(): Promise<TokenResponse> {
+    return authService.refreshToken();
+  }
+
+  static async getCurrentUser(): Promise<User> {
+    return authService.getCurrentUser();
+  }
+
+  static async changePassword(passwordChange: PasswordChangeRequest): Promise<{ message: string }> {
+    return authService.changePassword(passwordChange);
+  }
+
+  static async resetPassword(resetRequest: PasswordResetRequest): Promise<{ message: string }> {
+    return authService.resetPassword(resetRequest);
+  }
+
+  static async confirmPasswordReset(confirmRequest: PasswordResetConfirm): Promise<{ message: string }> {
+    return authService.confirmPasswordReset(confirmRequest);
+  }
+
+  static async registerAdmin(userData: UserRegister): Promise<TokenResponse> {
+    return authService.registerAdmin(userData);
+  }
+
+  static async registerFirstAdmin(userData: UserRegister): Promise<TokenResponse> {
+    return authService.registerFirstAdmin(userData);
+  }
+
+  // Utility methods
+  static isAuthenticated(): boolean {
+    return authService.isAuthenticated();
+  }
+
+  static getStoredUser(): User | null {
+    return authService.getStoredUser();
+  }
+
+  static hasRole(role: 'job_seeker' | 'employer' | 'admin'): boolean {
+    return authService.hasRole(role);
+  }
+
+  static isAdmin(): boolean {
+    return authService.isAdmin();
+  }
+
+  static isEmployer(): boolean {
+    return authService.isEmployer();
+  }
+
+  static isJobSeeker(): boolean {
+    return authService.isJobSeeker();
   }
 }

@@ -71,6 +71,11 @@ export interface Application {
   company_name?: string;
   applicant_name?: string;
   applicant_email?: string;
+  resume_link?: string;
+  match_score?: number;
+  applicant_skills?: string[];
+  matched_skills?: string[];
+  missing_skills?: string[];
   // Compatibility field for components expecting job object
   job?: {
     title: string;
@@ -118,16 +123,16 @@ export interface Profile {
   date_of_birth?: string;
   salary_expectation?: string;
   availability?:
-    | "Available"
-    | "Not Available"
-    | "Available in 2 weeks"
-    | "Available in 1 month";
+  | "Available"
+  | "Not Available"
+  | "Available in 2 weeks"
+  | "Available in 1 month";
   preferred_job_type?:
-    | "Full-time"
-    | "Part-time"
-    | "Contract"
-    | "Internship"
-    | "Remote";
+  | "Full-time"
+  | "Part-time"
+  | "Contract"
+  | "Internship"
+  | "Remote";
   work_authorization?: string;
   languages?: string[];
   certifications?: string[];
@@ -288,16 +293,16 @@ export interface ProfileUpdate {
   date_of_birth?: string;
   salary_expectation?: string;
   availability?:
-    | "Available"
-    | "Not Available"
-    | "Available in 2 weeks"
-    | "Available in 1 month";
+  | "Available"
+  | "Not Available"
+  | "Available in 2 weeks"
+  | "Available in 1 month";
   preferred_job_type?:
-    | "Full-time"
-    | "Part-time"
-    | "Contract"
-    | "Internship"
-    | "Remote";
+  | "Full-time"
+  | "Part-time"
+  | "Contract"
+  | "Internship"
+  | "Remote";
   work_authorization?: string;
   languages?: string[];
   certifications?: string[];
@@ -371,12 +376,12 @@ export interface ProfileUpdate {
     company_website?: string;
     industry?: string;
     company_size?:
-      | "1-10"
-      | "11-50"
-      | "51-200"
-      | "201-500"
-      | "501-1000"
-      | "1000+";
+    | "1-10"
+    | "11-50"
+    | "51-200"
+    | "201-500"
+    | "501-1000"
+    | "1000+";
     founded_year?: number;
     company_description?: string;
     company_culture?: string;

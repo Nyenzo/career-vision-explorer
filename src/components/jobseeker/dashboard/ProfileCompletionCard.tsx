@@ -17,8 +17,64 @@ export const ProfileCompletionCard = () => {
   const { profile, isLoading } = useAuth();
   const navigate = useNavigate();
 
-  // Use backend-provided completion percentage
-  const overall = profile?.profile_completion_percentage ?? 0;
+  // Calculate completion percentage using same logic as Profile.tsx
+  const calculateProfileCompletion = () => {
+    if (!profile) return 0;
+
+    const isEmployer = profile.account_type === "employer";
+    if (isEmployer) return 100;
+
+    // Job seeker completion calculation - SAME AS Profile.tsx
+    const sectionWeights = {
+      name: 10,
+      bio: 15,
+      skills: 20,
+      location: 5,
+      education: 10,
+      work_experience: 15,
+      resume_link: 10,
+      linkedin_url: 5,
+      github_url: 5,
+      portfolio_url: 5,
+      profile_image_url: 5,
+    };
+
+    let score = 0;
+
+    if (profile.name) score += sectionWeights.name;
+    if (profile.bio && profile.bio.length > 50) score += sectionWeights.bio;
+    else if (profile.bio) score += sectionWeights.bio * 0.5;
+
+    if (profile.skills && profile.skills.length >= 5) score += sectionWeights.skills;
+    else if (profile.skills && profile.skills.length > 0) {
+      score += sectionWeights.skills * (profile.skills.length / 5);
+    }
+
+    if (profile.location) score += sectionWeights.location;
+    if (profile.education) score += sectionWeights.education;
+
+    if (profile.work_experience && profile.work_experience.length >= 1) {
+      score += sectionWeights.work_experience;
+    }
+
+    if (profile.resume_link) score += sectionWeights.resume_link;
+
+    let socialProfiles = 0;
+    if (profile.linkedin_url) socialProfiles++;
+    if (profile.github_url) socialProfiles++;
+    if (profile.portfolio_url) socialProfiles++;
+    score += (socialProfiles / 3) * 15;
+
+    if (profile.profile_image_url) score += sectionWeights.profile_image_url;
+
+    if (profile.certifications && profile.certifications.length > 0) {
+      score += Math.min(5, profile.certifications.length);
+    }
+
+    return Math.min(100, Math.round(score));
+  };
+
+  const overall = calculateProfileCompletion();
 
   const getCompletionSections = () => {
     if (!profile) return [];

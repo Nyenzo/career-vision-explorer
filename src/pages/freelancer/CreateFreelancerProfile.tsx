@@ -1,21 +1,30 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { freelancerService } from '@/services/freelancer.service';
 import { toast } from 'sonner';
 import Layout from '@/components/layout/Layout';
+import type { Freelancer } from '@/types/freelancer';
 
 export default function CreateFreelancerProfile() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, profile } = useAuth();
+
+  // Determine mode from route path
+  const isEditMode = location.pathname.includes('edit-profile');
+
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(isEditMode);
+  const [existingProfile, setExistingProfile] = useState<Freelancer | null>(null);
+
   const [formData, setFormData] = useState({
     title: '',
     bio: '',
@@ -25,9 +34,43 @@ export default function CreateFreelancerProfile() {
     portfolio_url: '',
     location: profile?.location || '',
     languages: ['English'] as string[],
+    available_for_hire: true,
   });
   const [skillInput, setSkillInput] = useState('');
   const [languageInput, setLanguageInput] = useState('');
+
+  // Load existing freelancer profile when in edit mode
+  useEffect(() => {
+    const loadExistingProfile = async () => {
+      if (!user?.user_id) return;
+      try {
+        setFetching(true);
+        const existing = await freelancerService.getFreelancerByUserId(user.user_id);
+        setExistingProfile(existing);
+        setFormData({
+          title: existing.title || '',
+          bio: existing.bio || '',
+          hourly_rate: existing.hourly_rate ? String(existing.hourly_rate) : '',
+          skills: existing.skills || [],
+          experience_years: existing.experience_years || 0,
+          portfolio_url: existing.portfolio_url || '',
+          location: existing.location || profile?.location || '',
+          languages: existing.languages?.length ? existing.languages : ['English'],
+          available_for_hire: existing.available_for_hire ?? true,
+        });
+      } catch (error: any) {
+        if (isEditMode) {
+          toast.info('No existing freelancer profile found. You can create one below.');
+        }
+      } finally {
+        setFetching(false);
+      }
+    };
+
+    if (isEditMode) {
+      loadExistingProfile();
+    }
+  }, [user?.user_id, isEditMode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,36 +83,39 @@ export default function CreateFreelancerProfile() {
     try {
       setLoading(true);
       
-      // Create freelancer profile
-      const freelancerData = {
+      const payload = {
         title: formData.title,
         bio: formData.bio,
         hourly_rate: formData.hourly_rate ? parseFloat(formData.hourly_rate) : undefined,
-        skills: [...new Set([...(profile?.skills || []), ...formData.skills])], // Merge with existing skills
+        skills: [...new Set([...formData.skills])],
         experience_years: formData.experience_years,
         portfolio_url: formData.portfolio_url || undefined,
-        available_for_hire: true,
+        available_for_hire: formData.available_for_hire,
         location: formData.location || undefined,
         languages: formData.languages,
       };
 
-      const newProfile = await freelancerService.createFreelancer(freelancerData);
-      
-      // Sync portfolio from profile projects
-      if (newProfile.freelancer_id) {
-        try {
-          await freelancerService.syncPortfolio(newProfile.freelancer_id);
-        } catch (syncError) {
-          console.error('Portfolio sync failed:', syncError);
-          // Don't fail the whole process if sync fails
+      if (existingProfile?.freelancer_id) {
+        // ── Update existing profile ──
+        await freelancerService.updateFreelancer(existingProfile.freelancer_id, payload);
+        toast.success('Freelancer profile updated successfully!');
+      } else {
+        // ── Create new profile ──
+        const newProfile = await freelancerService.createFreelancer(payload as any);
+        if (newProfile.freelancer_id) {
+          try {
+            await freelancerService.syncPortfolio(newProfile.freelancer_id);
+          } catch (syncError) {
+            console.error('Portfolio sync failed:', syncError);
+          }
         }
+        toast.success('Freelancer profile created successfully!');
       }
-      
-      toast.success('Freelancer profile created successfully!');
+
       navigate('/freelancer/dashboard');
     } catch (error: any) {
-      console.error('Error creating freelancer profile:', error);
-      toast.error(error.message || 'Failed to create freelancer profile');
+      console.error('Error saving freelancer profile:', error);
+      toast.error(error.message || 'Failed to save freelancer profile');
     } finally {
       setLoading(false);
     }
@@ -99,16 +145,35 @@ export default function CreateFreelancerProfile() {
     }
   };
 
+  const pageTitle = existingProfile ? 'Edit Your Freelancer Profile' : 'Create Your Freelancer Profile';
+  const pageDescription = existingProfile
+    ? 'Update your freelancer profile details'
+    : 'Set up your freelancer profile to start offering your services';
+  const submitLabel = loading
+    ? (existingProfile ? 'Saving...' : 'Creating...')
+    : (existingProfile ? 'Save Changes' : 'Create Profile');
+
+  if (fetching) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            <p className="text-sm text-gray-500">Loading your profile...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
         <div className="container mx-auto px-4 max-w-2xl">
           <Card>
             <CardHeader>
-              <CardTitle>Create Your Freelancer Profile</CardTitle>
-              <CardDescription>
-                Set up your freelancer profile to start offering your services
-              </CardDescription>
+              <CardTitle>{pageTitle}</CardTitle>
+              <CardDescription>{pageDescription}</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -161,6 +226,18 @@ export default function CreateFreelancerProfile() {
                   />
                 </div>
 
+                {/* Available for hire */}
+                <div className="flex items-center gap-3">
+                  <input
+                    id="available_for_hire"
+                    type="checkbox"
+                    checked={formData.available_for_hire}
+                    onChange={(e) => setFormData({ ...formData, available_for_hire: e.target.checked })}
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <Label htmlFor="available_for_hire" className="cursor-pointer">Available for hire</Label>
+                </div>
+
                 {/* Skills */}
                 <div>
                   <Label>Skills</Label>
@@ -176,13 +253,6 @@ export default function CreateFreelancerProfile() {
                     </Button>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {/* Show existing skills from profile */}
-                    {profile?.skills?.map((skill) => (
-                      <Badge key={skill} variant="secondary">
-                        {skill}
-                      </Badge>
-                    ))}
-                    {/* Show newly added skills */}
                     {formData.skills.map((skill) => (
                       <Badge key={skill} variant="default">
                         {skill}
@@ -260,7 +330,8 @@ export default function CreateFreelancerProfile() {
                     disabled={loading}
                     className="flex-1"
                   >
-                    {loading ? 'Creating...' : 'Create Profile'}
+                    {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    {submitLabel}
                   </Button>
                   <Button
                     type="button"

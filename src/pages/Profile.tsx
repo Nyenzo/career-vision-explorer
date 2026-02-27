@@ -69,7 +69,7 @@ const Profile: React.FC = () => {
   const linkedinInputRef = useRef<HTMLInputElement>(null);
   const skillsInputRef = useRef<HTMLTextAreaElement>(null);
   const workExperienceInputRef = useRef<HTMLTextAreaElement>(null);
-  const educationInputRef = useRef<HTMLTextAreaElement>(null);
+  const educationInputRef = useRef<HTMLInputElement>(null);
   const preferencesInputRef = useRef<HTMLTextAreaElement>(null);
   const salaryInputRef = useRef<HTMLInputElement>(null);
   const dobInputRef = useRef<HTMLInputElement>(null);
@@ -78,6 +78,7 @@ const Profile: React.FC = () => {
   const jobInputRef = useRef<HTMLInputElement>(null);
   const experience_yearsInputRef = useRef<HTMLInputElement>(null);
   const twitterInputRef = useRef<HTMLTextAreaElement>(null);
+  const profileImageInputRef = useRef<HTMLInputElement>(null);
   const resumeInputRef = useRef<HTMLTextAreaElement>(null);
   const stackoverflowInputRef = useRef<HTMLTextAreaElement>(null);
   const projectsInputRef = useRef<HTMLDivElement>(null);
@@ -88,9 +89,10 @@ const Profile: React.FC = () => {
     if (isAuthenticated && authProfile) {
       setProfile(authProfile);
       setEditForm(authProfile);
+      // Use backend value if available, otherwise calculate locally
       setLocalCompletionPercentage(
         authProfile.profile_completion_percentage ||
-          calculateProfileCompletion(authProfile)
+        calculateProfileCompletion(authProfile)
       );
       setLoading(false);
     } else if (isAuthenticated && !authProfile) {
@@ -112,9 +114,10 @@ const Profile: React.FC = () => {
 
       setProfile(profileData);
       setEditForm(profileData);
+      // Use backend value if available, otherwise calculate locally
       setLocalCompletionPercentage(
         profileData.profile_completion_percentage ||
-          calculateProfileCompletion(profileData)
+        calculateProfileCompletion(profileData)
       );
     } catch (error) {
       console.error("Error loading profile:", error);
@@ -139,8 +142,6 @@ const Profile: React.FC = () => {
         return;
       }
 
-      const profileId = profile?.id || user!.user_id;
-
       // Clean the payload - remove undefined values
       const cleanPayload: ProfileUpdate = Object.fromEntries(
         Object.entries(payload).filter(
@@ -149,7 +150,6 @@ const Profile: React.FC = () => {
       ) as ProfileUpdate;
 
       console.log("🔄 Profile update starting...", {
-        profileId,
         userAccountType: user?.account_type,
         cleanPayload,
       });
@@ -157,8 +157,8 @@ const Profile: React.FC = () => {
       let updatedProfile;
 
       if (user?.account_type === "employer") {
-        // For employers, prepare company data properly
-        const companyData = {
+        // For employers, update profile with top-level company fields
+        const employerProfileData = {
           company_name:
             cleanPayload.company_name ||
             cleanPayload.company_data?.company_name,
@@ -167,19 +167,20 @@ const Profile: React.FC = () => {
           company_website:
             cleanPayload.company_website ||
             cleanPayload.company_data?.company_website,
-          company_size: cleanPayload.company_data?.company_size || "1-10",
-          company_description: cleanPayload.company_data?.company_description,
-          company_culture: cleanPayload.company_data?.company_culture,
-          contact_email: cleanPayload.company_data?.contact_email,
-          contact_phone: cleanPayload.company_data?.contact_phone,
+          company_size:
+            cleanPayload.company_size ||
+            cleanPayload.company_data?.company_size,
+          name: cleanPayload.name,
+          bio: cleanPayload.bio,
+          phone: cleanPayload.phone,
+          location: cleanPayload.location,
         };
 
-        console.log("🏢 Sending company data:", companyData);
+        console.log("🏢 Sending employer profile data:", employerProfileData);
 
-        // Use the direct company profile update method
-        updatedProfile = await profileService.updateCompanyProfile(
-          profileId,
-          companyData
+        // Update the profile with employer-specific fields (no profileId needed)
+        updatedProfile = await profileService.updateProfile(
+          employerProfileData
         );
       } else {
         // For regular users, remove company data
@@ -188,20 +189,22 @@ const Profile: React.FC = () => {
           company_name,
           industry,
           company_website,
+          company_size,
           ...userData
         } = cleanPayload;
         console.log("👤 Sending user data:", userData);
+        // Update profile without profileId 
         updatedProfile = await profileService.updateProfile(
-          profileId,
           userData
         );
       }
 
       setProfile(updatedProfile);
       setEditForm(updatedProfile);
+      // Use backend value if available, otherwise calculate locally
       setLocalCompletionPercentage(
         updatedProfile.profile_completion_percentage ||
-          calculateProfileCompletion(updatedProfile)
+        calculateProfileCompletion(updatedProfile)
       );
       setEditing(false);
       toast.success("Profile updated successfully!");
@@ -211,11 +214,29 @@ const Profile: React.FC = () => {
     }
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setLoading(true);
+      await profileService.uploadProfileImage(file);
+      await loadProfile();
+      toast.success("Profile image updated successfully");
+    } catch (error) {
+      console.error("Image upload failed", error);
+      toast.error("Failed to upload image. Max size 10MB.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCancel = () => {
     setEditForm(profile as ProfileType);
+    // Use backend value if available, otherwise calculate locally
     setLocalCompletionPercentage(
       profile?.profile_completion_percentage ||
-        calculateProfileCompletion(profile)
+      calculateProfileCompletion(profile)
     );
     setEditing(false);
   };
@@ -303,7 +324,7 @@ const Profile: React.FC = () => {
     return Math.min(100, Math.round(score));
   };
 
-  // update local completion percentage when editing form
+  // Update local completion percentage when editing form
   useEffect(() => {
     setLocalCompletionPercentage(calculateProfileCompletion(editForm));
   }, [editForm]);
@@ -363,12 +384,12 @@ const Profile: React.FC = () => {
         ...profile,
         // Safely spread personal_info if it exists
         ...(parsedData.personal_info &&
-        typeof parsedData.personal_info === "object"
+          typeof parsedData.personal_info === "object"
           ? parsedData.personal_info
           : {}),
         // Safely spread professional_summary if it exists
         ...(parsedData.professional_summary &&
-        typeof parsedData.professional_summary === "object"
+          typeof parsedData.professional_summary === "object"
           ? parsedData.professional_summary
           : {}),
         // Update arrays with fallbacks
@@ -382,7 +403,7 @@ const Profile: React.FC = () => {
         languages: parsedData.languages || profile?.languages || [],
         // Safely spread additional_info if it exists
         ...(parsedData.additional_info &&
-        typeof parsedData.additional_info === "object"
+          typeof parsedData.additional_info === "object"
           ? parsedData.additional_info
           : {}),
         resume_link: response.cv_file_url || profile?.resume_link,
@@ -402,13 +423,13 @@ const Profile: React.FC = () => {
     }
   };
 
-  // Get company data with fallbacks
+  // Get company data with fallbacks from both company_data and top-level profile fields
   const getCompanyData = () => {
     return {
-      company_name: profile?.company_data?.company_name || "",
-      industry: profile?.company_data?.industry || "",
-      company_website: profile?.company_data?.company_website || "",
-      company_size: profile?.company_data?.company_size || "",
+      company_name: profile?.company_name || profile?.company_data?.company_name || "",
+      industry: profile?.industry || profile?.company_data?.industry || "",
+      company_website: profile?.company_website || profile?.company_data?.company_website || "",
+      company_size: profile?.company_size || profile?.company_data?.company_size || "",
       founded_year: profile?.company_data?.founded_year || undefined,
       company_description: profile?.company_data?.company_description || "",
       company_culture: profile?.company_data?.company_culture || "",
@@ -755,7 +776,7 @@ const Profile: React.FC = () => {
                           benefits,
                         },
                       });
-                    } catch {}
+                    } catch { }
                   }}
                   placeholder={`[
   {
@@ -1024,11 +1045,10 @@ const Profile: React.FC = () => {
                       <>
                         <Separator className="my-4" />
                         <div
-                          className={`flex items-center gap-3 p-3 rounded-lg ${
-                            companyData.is_verified
-                              ? "bg-green-50 border border-green-200"
-                              : "bg-yellow-50 border border-yellow-200"
-                          }`}
+                          className={`flex items-center gap-3 p-3 rounded-lg ${companyData.is_verified
+                            ? "bg-green-50 border border-green-200"
+                            : "bg-yellow-50 border border-yellow-200"
+                            }`}
                         >
                           {companyData.is_verified ? (
                             <>
@@ -1040,8 +1060,8 @@ const Profile: React.FC = () => {
                                 <p className="text-xs text-green-600">
                                   {companyData.verification_date
                                     ? `Verified on ${new Date(
-                                        companyData.verification_date
-                                      ).toLocaleDateString()}`
+                                      companyData.verification_date
+                                    ).toLocaleDateString()}`
                                     : "Verified company"}
                                 </p>
                               </div>
@@ -1126,16 +1146,38 @@ const Profile: React.FC = () => {
               <Card>
                 <CardContent className="p-6">
                   <div className="text-center">
-                    <Avatar className="h-24 w-24 mx-auto mb-4">
-                      <AvatarImage src={profile?.profile_image_url} />
-                      <AvatarFallback className="text-2xl">
-                        {profile?.name
-                          ?.split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="relative inline-block">
+                      <Avatar className="h-24 w-24 mx-auto mb-4">
+                        <AvatarImage src={profile?.profile_image_url} />
+                        <AvatarFallback className="text-2xl">
+                          {profile?.name
+                            ?.split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+
+                      {editing && (
+                        <div className="absolute bottom-4 right-0">
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="h-8 w-8 rounded-full shadow-md"
+                            onClick={() => profileImageInputRef.current?.click()}
+                          >
+                            <Edit3 className="h-4 w-4" />
+                          </Button>
+                          <input
+                            ref={profileImageInputRef}
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                          />
+                        </div>
+                      )}
+                    </div>
 
                     {editing ? (
                       <div className="space-y-3">
@@ -1764,13 +1806,12 @@ const Profile: React.FC = () => {
                       </div>
                       <Progress
                         value={localCompletionPercentage}
-                        className={`w-full h-2 ${
-                          localCompletionPercentage < 50
-                            ? "bg-red-500"
-                            : localCompletionPercentage < 75
+                        className={`w-full h-2 ${localCompletionPercentage < 50
+                          ? "bg-red-500"
+                          : localCompletionPercentage < 75
                             ? "bg-yellow-500"
                             : "bg-green-500"
-                        }`}
+                          }`}
                         aria-label="Profile completion progress"
                       />
                       {localCompletionPercentage < 100 && (
@@ -2209,33 +2250,107 @@ const Profile: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   {editing ? (
-                    <Textarea
-                      ref={educationInputRef}
-                      value={
-                        editForm.education
-                          ? JSON.stringify(editForm.education, null, 2)
-                          : ""
-                      }
-                      onChange={(e) => {
-                        try {
-                          const education = JSON.parse(e.target.value);
-                          setEditForm({ ...editForm, education });
-                        } catch {}
-                      }}
-                      placeholder={`[
-  {
-    "institution": "University Name",
-    "degree": "BSc in Computer Science",
-    "start_year": 2020,
-    "end_year": 2024
-  }
-]`}
-                      rows={6}
-                    />
-                  ) : profile?.education?.length ? (
+                    <div className="space-y-6">
+                      {(() => {
+                        // Parse education into array format for editing
+                        const eduEntries: Array<{ degree: string; institution: string; duration: string }> = (() => {
+                          if (Array.isArray(editForm.education)) {
+                            return editForm.education.map((e: any) => ({
+                              degree: e.degree || '',
+                              institution: e.institution || '',
+                              duration: e.start_year && e.end_year ? `${e.start_year}-${e.end_year}` : (e.duration || ''),
+                            }));
+                          }
+                          if (typeof editForm.education === 'string' && editForm.education.trim()) {
+                            return editForm.education.split('\n').filter((line: string) => line.trim()).map((line: string) => {
+                              const parts = line.trim().split(',').map((p: string) => p.trim());
+                              return {
+                                degree: parts[0] || line.trim(),
+                                institution: parts[1] || '',
+                                duration: parts.slice(2).join(',').trim() || '',
+                              };
+                            });
+                          }
+                          return [{ degree: '', institution: '', duration: '' }];
+                        })();
+
+                        const updateEntry = (index: number, field: string, value: string) => {
+                          const updated = [...eduEntries];
+                          updated[index] = { ...updated[index], [field]: value };
+                          // Store as string format "degree, institution, duration" per line
+                          const asString = updated
+                            .map(e => [e.degree, e.institution, e.duration].filter(Boolean).join(', '))
+                            .join('\n');
+                          setEditForm({ ...editForm, education: asString });
+                        };
+
+                        return (
+                          <>
+                            {eduEntries.map((edu, index) => (
+                              <div key={index} className="border rounded-lg p-4 space-y-4">
+                                <Input
+                                  ref={index === 0 ? educationInputRef : undefined}
+                                  value={edu.degree}
+                                  onChange={(e) => updateEntry(index, 'degree', e.target.value)}
+                                  placeholder="Degree (e.g., BSc in Computer Science)"
+                                  className="w-full"
+                                />
+                                <Input
+                                  value={edu.institution}
+                                  onChange={(e) => updateEntry(index, 'institution', e.target.value)}
+                                  placeholder="Institution"
+                                  className="w-full"
+                                />
+                                <Input
+                                  value={edu.duration}
+                                  onChange={(e) => updateEntry(index, 'duration', e.target.value)}
+                                  placeholder="Duration (e.g., 2020-2024)"
+                                  className="w-full"
+                                />
+                              </div>
+                            ))}
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                const currentStr = typeof editForm.education === 'string' ? editForm.education : '';
+                                const newStr = currentStr ? currentStr + '\n, , ' : ', , ';
+                                setEditForm({ ...editForm, education: newStr });
+                              }}
+                              className="w-full"
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add New Education
+                            </Button>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  ) : profile?.education ? (
                     <div className="space-y-4">
-                      {Array.isArray(profile.education) &&
-                        profile.education.map((edu, i) => (
+                      {typeof profile.education === 'string' ? (
+                        profile.education.split('\n').filter(line => line.trim()).map((line, i) => {
+                          // Parse "Degree, Institution, Duration" format
+                          const parts = line.trim().split(',').map(p => p.trim());
+                          const degree = parts[0] || line.trim();
+                          const institution = parts[1] || '';
+                          const duration = parts.slice(2).join(',').trim() || '';
+                          return (
+                            <div
+                              key={i}
+                              className="border-l-2 border-primary/20 pl-4"
+                            >
+                              <h4 className="font-semibold">{degree}</h4>
+                              {institution && (
+                                <p className="text-muted-foreground">{institution}</p>
+                              )}
+                              {duration && (
+                                <p className="text-sm text-muted-foreground">{duration}</p>
+                              )}
+                            </div>
+                          );
+                        })
+                      ) : Array.isArray(profile.education) ? (
+                        profile.education.map((edu: any, i: number) => (
                           <div
                             key={i}
                             className="border-l-2 border-primary/20 pl-4"
@@ -2248,7 +2363,8 @@ const Profile: React.FC = () => {
                               {edu.start_year} – {edu.end_year}
                             </p>
                           </div>
-                        ))}
+                        ))
+                      ) : null}
                     </div>
                   ) : (
                     <p className="text-muted-foreground">
@@ -2432,18 +2548,28 @@ const Profile: React.FC = () => {
                   </CardHeader>
                   <CardContent>
                     {editing ? (
-                      <Textarea
+                      <Input
                         value={editForm.languages?.join(", ") || ""}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          // Don't split immediately - just store the raw string
+                          const value = e.target.value;
                           setEditForm({
                             ...editForm,
-                            languages: e.target.value
+                            languages: [value], // Store as single item temporarily
+                          });
+                        }}
+                        onBlur={(e) => {
+                          // Split only on blur to allow typing commas
+                          const value = e.target.value;
+                          setEditForm({
+                            ...editForm,
+                            languages: value
                               .split(",")
                               .map((lang) => lang.trim())
                               .filter((lang) => lang),
-                          })
-                        }
-                        placeholder="Languages (comma-separated)"
+                          });
+                        }}
+                        placeholder="e.g., English, Spanish, French"
                       />
                     ) : (
                       <div className="flex flex-wrap gap-2">
@@ -2469,18 +2595,28 @@ const Profile: React.FC = () => {
                   </CardHeader>
                   <CardContent>
                     {editing ? (
-                      <Textarea
-                        value={editForm.certifications?.join("\n") || ""}
-                        onChange={(e) =>
+                      <Input
+                        value={editForm.certifications?.join(", ") || ""}
+                        onChange={(e) => {
+                          // Don't split immediately - just store the raw string
+                          const value = e.target.value;
                           setEditForm({
                             ...editForm,
-                            certifications: e.target.value
-                              .split("\n")
+                            certifications: [value], // Store as single item temporarily
+                          });
+                        }}
+                        onBlur={(e) => {
+                          // Split only on blur to allow typing commas
+                          const value = e.target.value;
+                          setEditForm({
+                            ...editForm,
+                            certifications: value
+                              .split(",")
                               .map((cert) => cert.trim())
                               .filter((cert) => cert),
-                          })
-                        }
-                        placeholder="Certifications (one per line)"
+                          });
+                        }}
+                        placeholder="e.g., AWS Certified, PMP, CISSP"
                       />
                     ) : (
                       <div className="space-y-2">
@@ -2522,7 +2658,7 @@ const Profile: React.FC = () => {
                         try {
                           const preferences = JSON.parse(e.target.value);
                           setEditForm({ ...editForm, preferences });
-                        } catch {}
+                        } catch { }
                       }}
                       placeholder={`{
   "remote_work": true,

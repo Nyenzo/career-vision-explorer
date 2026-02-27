@@ -22,7 +22,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "@/components/ui/sonner";
-import { User, Mail, Briefcase, GraduationCap, MapPin, Phone, Upload, RefreshCcw } from "lucide-react";
+import {
+  User,
+  Mail,
+  Briefcase,
+  GraduationCap,
+  MapPin,
+  Phone,
+  Upload,
+  RefreshCcw,
+} from "lucide-react";
 
 // Define the profile schema directly here since it's not dependent on dynamic data
 const profileSchema = z.object({
@@ -56,7 +65,12 @@ interface EditProfileDialogProps {
   onSave: (data: ProfileFormValues) => void;
 }
 
-const EditProfileDialog = ({ open, onOpenChange, userData, onSave }: EditProfileDialogProps) => {
+const EditProfileDialog = ({
+  open,
+  onOpenChange,
+  userData,
+  onSave,
+}: EditProfileDialogProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [profileImage, setProfileImage] = useState(userData.profileImage || "");
 
@@ -79,7 +93,7 @@ const EditProfileDialog = ({ open, onOpenChange, userData, onSave }: EditProfile
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
+    if (!file.type.startsWith("image/")) {
       toast.error("Please select a valid image file");
       return;
     }
@@ -93,7 +107,7 @@ const EditProfileDialog = ({ open, onOpenChange, userData, onSave }: EditProfile
     reader.onload = (e) => {
       const result = e.target?.result as string;
       setProfileImage(result);
-      form.setValue('profileImage', result);
+      form.setValue("profileImage", result);
     };
     reader.readAsDataURL(file);
   };
@@ -103,7 +117,7 @@ const EditProfileDialog = ({ open, onOpenChange, userData, onSave }: EditProfile
     let retries = 3;
     while (retries > 0) {
       try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         await onSave({ ...data, profileImage });
         toast.success("Profile updated successfully!");
         onOpenChange(false);
@@ -112,8 +126,12 @@ const EditProfileDialog = ({ open, onOpenChange, userData, onSave }: EditProfile
         console.error("Profile update error: ", error);
         retries -= 1;
         if (retries === 0) {
-          const isNetworkError = error.message?.includes('network');
-          toast.error(isNetworkError ? "Network error, please try again later" : error?.response?.data?.detail || "Failed to update profile");
+          const isNetworkError = error.message?.includes("network");
+          toast.error(
+            isNetworkError
+              ? "Network error, please try again later"
+              : error?.response?.data?.detail || "Failed to update profile"
+          );
         }
       } finally {
         if (retries === 0) {
@@ -148,7 +166,9 @@ const EditProfileDialog = ({ open, onOpenChange, userData, onSave }: EditProfile
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => document.getElementById('profile-image-input')?.click()}
+                  onClick={() =>
+                    document.getElementById("profile-image-input")?.click()
+                  }
                 >
                   <Upload className="h-4 w-4 mr-2" />
                   Upload Photo
@@ -191,7 +211,11 @@ const EditProfileDialog = ({ open, onOpenChange, userData, onSave }: EditProfile
                       Email
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your email" type="email" {...field} />
+                      <Input
+                        placeholder="Enter your email"
+                        type="email"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -199,7 +223,6 @@ const EditProfileDialog = ({ open, onOpenChange, userData, onSave }: EditProfile
               />
             </div>
 
-            
             <FormField
               control={form.control}
               name="role"
@@ -210,7 +233,10 @@ const EditProfileDialog = ({ open, onOpenChange, userData, onSave }: EditProfile
                     Current Role/Title
                   </FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Senior Software Engineer" {...field} />
+                    <Input
+                      placeholder="e.g., Senior Software Engineer"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -263,7 +289,10 @@ const EditProfileDialog = ({ open, onOpenChange, userData, onSave }: EditProfile
                     Education
                   </FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., BSc Computer Science, University of Nairobi" {...field} />
+                    <Input
+                      placeholder="e.g., BSc Computer Science, University of Nairobi"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -280,7 +309,10 @@ const EditProfileDialog = ({ open, onOpenChange, userData, onSave }: EditProfile
                     Experience
                   </FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., 5+ years experience in software development" {...field} />
+                    <Input
+                      placeholder="e.g., 5+ years experience in software development"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -294,10 +326,10 @@ const EditProfileDialog = ({ open, onOpenChange, userData, onSave }: EditProfile
                 <FormItem>
                   <FormLabel>Professional Bio</FormLabel>
                   <FormControl>
-                    <Textarea 
+                    <Textarea
                       placeholder="Write a brief description about yourself, your skills, and career goals..."
                       className="min-h-[100px]"
-                      {...field} 
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />

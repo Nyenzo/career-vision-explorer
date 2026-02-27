@@ -11,8 +11,8 @@ import {
   Briefcase,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
+import NotificationDropdown from "@/components/shared/NotificationDropdown";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,16 +24,18 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 
 const Navbar = () => {
-  const isMobile = useIsMobile();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
+
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+
   const handleLogout = () => {
     logout();
+    setIsMenuOpen(false);
     navigate("/");
   };
 
@@ -53,30 +55,16 @@ const Navbar = () => {
     }
   };
 
-  const getDashboardLink = () => {
-    if (!isAuthenticated || !user) return null;
-    const dashboardUrl = getDashboardUrl();
-    const dashboardName =
-      user.account_type === "admin" ? "Admin Dashboard" : "Dashboard";
-    return {
-      name: dashboardName,
-      href: dashboardUrl,
-      icon: user.account_type === "admin" ? Shield : User,
-    };
-  };
-
   const isJobSeekerUser = user?.account_type === "job_seeker";
   const isEmployerUser = user?.account_type === "employer";
   const isActive = (path: string) => location.pathname === path;
 
-  // Icons for job seeker navbar - Removed Dashboard icon, Profile is now a direct icon
   const jobSeekerIcons = [
     { name: "Home", icon: Home, path: "/" },
     { name: "Jobs", icon: Briefcase, path: "/jobs" },
-    { name: "Profile", icon: User, path: "/jobseeker/dashboard" }, // Profile now goes directly to dashboard
+    { name: "Profile", icon: User, path: "/jobseeker/dashboard" },
   ];
 
-  // Employer navigation items
   const employerNavItems = [
     { name: "Freelancers", href: "/freelancers" },
     { name: "Insights", href: "/insights" },
@@ -86,12 +74,12 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full border-b border-border/40">
+    <nav className="bg-background/95 backdrop-blur sticky top-0 z-50 w-full border-b border-border/40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link to="/" className="flex-shrink-0 flex items-center gap-2">
+            <Link to="/" className="flex items-center gap-2">
               <img
                 src="/lovable-uploads/favicon.ico.jpg"
                 alt="Visiondrill Logo"
@@ -103,154 +91,67 @@ const Navbar = () => {
             </Link>
           </div>
 
-          {/* Desktop center navigation - Only show for authenticated users */}
+          {/* Desktop Center Nav - Employer */}
           <div className="hidden md:flex md:items-center md:justify-center flex-1">
-            <div className="flex items-center space-x-4">
-              {isAuthenticated &&
-                isEmployerUser &&
-                // Employer navigation items
-                employerNavItems.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                      isActive(item.href)
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                    }`}
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-            </div>
-          </div>
-
-          {/* Desktop right side - Job Seeker Navigation */}
-          {isAuthenticated && isJobSeekerUser && (
-            <div className="hidden md:flex md:items-center md:justify-end">
-              <div className="flex items-center space-x-2 bg-muted/50 rounded-xl p-1 border border-border/40">
-                {jobSeekerIcons.map(({ name, icon: Icon, path }) => (
-                  <motion.div
-                    key={name}
-                    onMouseEnter={() => setHovered(name)}
-                    onMouseLeave={() => setHovered(null)}
-                    onClick={() => navigate(path)}
-                    className={`relative flex items-center cursor-pointer rounded-lg transition-all duration-200 ${
-                      isActive(path)
-                        ? "bg-blue-600 text-white shadow-md"
-                        : hovered === name
-                        ? "bg-blue-600 text-white shadow-md"
-                        : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
-                    }`}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <div className="flex items-center p-3">
-                      <Icon size={20} />
-                      <AnimatePresence>
-                        {hovered === name && (
-                          <motion.span
-                            className="ml-2 text-sm font-medium whitespace-nowrap"
-                            initial={{ opacity: 0, width: 0 }}
-                            animate={{ opacity: 1, width: "auto" }}
-                            exit={{ opacity: 0, width: 0 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            {name}
-                          </motion.span>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </motion.div>
-                ))}
-
-                {/* Logout button - standalone without dropdown (changed to blue) */}
-                <motion.div
-                  onMouseEnter={() => setHovered("Logout")}
-                  onMouseLeave={() => setHovered(null)}
-                  onClick={handleLogout}
-                  className={`relative flex items-center cursor-pointer rounded-lg transition-all duration-200 ${
-                    hovered === "Logout"
-                      ? "bg-blue-600 text-white shadow-md"
-                      : "text-muted-foreground hover:bg-blue-500/20 hover:text-blue-600"
-                  }`}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <div className="flex items-center p-3">
-                    <LogOut size={20} />
-                    <AnimatePresence>
-                      {hovered === "Logout" && (
-                        <motion.span
-                          className="ml-2 text-sm font-medium whitespace-nowrap"
-                          initial={{ opacity: 0, width: 0 }}
-                          animate={{ opacity: 1, width: "auto" }}
-                          exit={{ opacity: 0, width: 0 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          Logout
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </motion.div>
-              </div>
-            </div>
-          )}
-
-          {/* Desktop right side - Employer & Other Users */}
-          {isAuthenticated && !isJobSeekerUser && (
-            <div className="hidden md:flex md:items-center md:justify-end space-x-4">
-              {/* Dashboard link for employers and other users */}
-              {getDashboardLink() && (
+            {isAuthenticated &&
+              isEmployerUser &&
+              employerNavItems.map((item) => (
                 <Link
-                  to={getDashboardLink()!.href}
+                  key={item.name}
+                  to={item.href}
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActive(getDashboardLink()!.href)
+                    isActive(item.href)
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   }`}
                 >
-                  {getDashboardLink()!.name}
+                  {item.name}
                 </Link>
-              )}
+              ))}
+          </div>
 
-              {/* User dropdown for employers and other users */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex items-center gap-2"
-                  >
-                    <User className="h-4 w-4" />
-                    {user?.name}
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate("/profile")}>
-                    <User className="h-4 w-4 mr-2" />
-                    Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={handleLogout}
-                    className="text-red-600 focus:text-red-600"
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          )}
+          {/* Desktop Right */}
+          <div className="hidden md:flex items-center space-x-4">
+            {isAuthenticated && (
+              <>
+                <NotificationDropdown />
 
-          {/* Desktop right side - Non-authenticated Users (Only Login/Signup) */}
-          {!isAuthenticated && (
-            <div className="hidden md:flex md:items-center md:justify-end">
-              <div className="flex items-center space-x-3">
+                {!isJobSeekerUser && (
+                  <Link
+                    to={getDashboardUrl()}
+                    className="px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-accent"
+                  >
+                    Dashboard
+                  </Link>
+                )}
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm">
+                      <User className="h-4 w-4 mr-1" />
+                      {user?.name}
+                      <ChevronDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate("/profile")}>
+                      Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={handleLogout}
+                      className="text-red-600"
+                    >
+                      Log out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            )}
+
+            {!isAuthenticated && (
+              <>
                 <Link to="/login">
                   <Button variant="ghost" size="sm">
                     Log in
@@ -259,26 +160,86 @@ const Navbar = () => {
                 <Link to="/signup">
                   <Button size="sm">Sign up</Button>
                 </Link>
-              </div>
-            </div>
-          )}
+              </>
+            )}
+          </div>
 
-          {/* Mobile menu toggle */}
-          <div className="flex md:hidden items-center space-x-2">
+          {/* Mobile Toggle */}
+          <div className="flex md:hidden items-center">
             <button
-              type="button"
               onClick={toggleMenu}
-              className="inline-flex items-center justify-center p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary transition-colors"
+              className="p-2 rounded-md hover:bg-accent transition"
             >
-              {isMenuOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
+              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
         </div>
       </div>
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="md:hidden bg-background border-t border-border/40 px-4 py-4 space-y-3"
+          >
+            {isAuthenticated ? (
+              <>
+                {isEmployerUser &&
+                  employerNavItems.map((item) => (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      onClick={() => setIsMenuOpen(false)}
+                      className="block px-3 py-2 rounded-md text-sm font-medium hover:bg-accent"
+                    >
+                      {item.name}
+                    </Link>
+                  ))}
+
+                {isJobSeekerUser &&
+                  jobSeekerIcons.map((item) => (
+                    <Link
+                      key={item.name}
+                      to={item.path}
+                      onClick={() => setIsMenuOpen(false)}
+                      className="block px-3 py-2 rounded-md text-sm font-medium hover:bg-accent"
+                    >
+                      {item.name}
+                    </Link>
+                  ))}
+
+                <button
+                  onClick={handleLogout}
+                  className="block w-full text-left px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:bg-accent"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block px-3 py-2 rounded-md text-sm font-medium hover:bg-accent"
+                >
+                  Log in
+                </Link>
+                <Link
+                  to="/signup"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block px-3 py-2 rounded-md text-sm font-medium hover:bg-accent"
+                >
+                  Sign up
+                </Link>
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 };
