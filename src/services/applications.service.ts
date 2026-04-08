@@ -11,7 +11,7 @@ export interface ApplicationFilters {
 class ApplicationsService {
   async getApplications(filters?: ApplicationFilters): Promise<PaginatedResponse<Application>> {
     const queryParams = new URLSearchParams();
-    
+
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
@@ -19,10 +19,10 @@ class ApplicationsService {
         }
       });
     }
-    
+
     const queryString = queryParams.toString();
-    const endpoint = queryString ? `/applications/?${queryString}` : '/applications/';
-    
+    const endpoint = queryString ? `/applications?${queryString}` : '/applications';
+
     return await apiClient.get<PaginatedResponse<Application>>(endpoint);
   }
 
@@ -33,16 +33,16 @@ class ApplicationsService {
   async createApplication(applicationData: ApplicationCreate, resumeFile: File | null): Promise<Application> {
     // If no resume file, send as JSON
     if (!resumeFile) {
-      return await apiClient.post<Application>('/applications/', applicationData);
+      return await apiClient.post<Application>('/applications', applicationData);
     }
-    
+
     // If resume file exists, use FormData
     const formData = new FormData();
     formData.append('job_id', applicationData.job_id);
     formData.append('cover_letter', applicationData.cover_letter);
     formData.append('resume_file', resumeFile);
 
-    return await apiClient.post<Application>('/applications/', formData);
+    return await apiClient.post<Application>('/applications', formData);
   }
 
   async updateApplication(applicationId: string, applicationData: ApplicationUpdate): Promise<Application> {
@@ -89,7 +89,7 @@ class ApplicationsService {
   async getEmployerApplications(): Promise<Application[]> {
     // The backend returns applications based on the authenticated user's role
     // For employers, it returns applications for their job postings
-    const response = await apiClient.get<PaginatedResponse<Application>>('/applications/');
+    const response = await apiClient.get<PaginatedResponse<Application>>('/applications');
     return response.applications || [];
   }
 

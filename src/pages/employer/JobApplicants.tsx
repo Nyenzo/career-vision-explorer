@@ -21,7 +21,7 @@ const JobApplicants = () => {
 
   const job = jobId ? getJob(jobId) : null;
   const allApplicants = jobId ? getApplicantsByJobId(jobId) : [];
-  
+
   const filteredApplicants = allApplicants.filter(applicant =>
     applicant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     applicant.email.toLowerCase().includes(searchQuery.toLowerCase())
@@ -49,10 +49,6 @@ const JobApplicants = () => {
     }
   };
 
-  const handleScheduleInterview = (applicantId: string) => {
-    updateApplicantStatus(applicantId, "Interview");
-    navigate("/employer/interviews/schedule");
-  };
 
   if (!job) {
     return (
@@ -173,7 +169,6 @@ const JobApplicants = () => {
                           <ApplicantProfileDialog
                             applicant={applicant}
                             onStatusChange={updateApplicantStatus}
-                            onScheduleInterview={handleScheduleInterview}
                           >
                             <Button variant="outline" size="sm">
                               View Profile

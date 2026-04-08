@@ -80,10 +80,7 @@ const Navbar = () => {
 
   const employerNavItems = [
     { name: "Freelancers", href: "/freelancers" },
-    { name: "Insights", href: "/insights" },
     { name: "Jobs", href: "/employer/jobs" },
-    { name: "Projects", href: "/employer/projects" },
-    { name: "Boosting Services", href: "/employer/boosting-services" },
   ];
 
   const freelancerNavItems = [

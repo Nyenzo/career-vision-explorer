@@ -10,10 +10,9 @@ import { ApplicantProfileDialog } from "@/components/employer/ApplicantProfileDi
 interface ApplicantTableProps {
   applicants: Applicant[];
   onStatusChange: (id: string, status: string) => void;
-  onScheduleInterview: (id: string) => void;
 }
 
-export const ApplicantTable = ({ applicants, onStatusChange, onScheduleInterview }: ApplicantTableProps) => {
+export const ApplicantTable = ({ applicants, onStatusChange }: ApplicantTableProps) => {
   const getScoreBadgeColor = (score: number) => {
     if (score >= 90) return "bg-green-100 text-green-800";
     if (score >= 80) return "bg-green-100 text-green-800";
@@ -105,7 +104,6 @@ export const ApplicantTable = ({ applicants, onStatusChange, onScheduleInterview
                   <ApplicantProfileDialog
                     applicant={applicant}
                     onStatusChange={onStatusChange}
-                    onScheduleInterview={onScheduleInterview}
                   >
                     <Button variant="outline" size="sm">
                       View Profile

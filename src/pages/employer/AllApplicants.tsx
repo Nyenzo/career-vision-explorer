@@ -25,10 +25,6 @@ const AllApplicants = () => {
     stats,
   } = useEmployerApplications();
 
-  const handleScheduleInterview = (applicantId: string) => {
-    reviewApplication(applicantId, "Reviewed");
-    navigate("/employer/interviews/schedule");
-  };
 
   const getScoreBadgeColor = (score: number) => {
     if (score >= 70) return "bg-green-100 text-green-700 border-green-200";
@@ -119,7 +115,6 @@ const AllApplicants = () => {
                       key={applicant.id}
                       applicant={applicant}
                       onStatusChange={reviewApplication}
-                      onScheduleInterview={handleScheduleInterview}
                     >
                       <TableRow className="cursor-pointer hover:bg-blue-50/50 transition-colors">
                         <TableCell>

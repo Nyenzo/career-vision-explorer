@@ -113,14 +113,6 @@ const Footer = () => {
                       Skills Assessment
                     </Link>
                   </li>
-                  <li>
-                    <Link
-                      to="/insights"
-                      className="text-base text-gray-500 hover:text-gray-900"
-                    >
-                      Market Insights
-                    </Link>
-                  </li>
                 </ul>
               </div>
               {/* Support */}

@@ -1,6 +1,5 @@
 
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/admin/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -8,23 +7,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Calendar, Clock, User, MapPin, Plus, Video, Phone } from "lucide-react";
+import { Search, Calendar, Clock, User, MapPin, Video, Phone } from "lucide-react";
 import { useInterviews } from "@/hooks/use-interviews";
 import { format } from "date-fns";
 
 const EmployerInterviews = () => {
-  const navigate = useNavigate();
   const { interviews, updateInterviewStatus } = useInterviews();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
   const filteredInterviews = interviews.filter(interview => {
     const matchesSearch = interview.applicantName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         interview.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         interview.interviewer.toLowerCase().includes(searchQuery.toLowerCase());
-    
+      interview.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      interview.interviewer.toLowerCase().includes(searchQuery.toLowerCase());
+
     const matchesStatus = statusFilter === "all" || interview.status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -72,10 +70,7 @@ const EmployerInterviews = () => {
             <h1 className="text-2xl font-bold">Interview Schedule</h1>
             <p className="text-gray-500">Manage all your scheduled interviews</p>
           </div>
-          <Button onClick={() => navigate("/employer/interviews/schedule")}>
-            <Plus className="h-4 w-4 mr-2" />
-            Schedule Interview
-          </Button>
+
         </div>
 
         {/* Stats Cards */}
@@ -152,13 +147,7 @@ const EmployerInterviews = () => {
                 <p className="text-gray-500 mt-2">
                   {searchQuery || statusFilter !== "all" ? "Try adjusting your search criteria." : "No interviews scheduled yet."}
                 </p>
-                <Button 
-                  onClick={() => navigate("/employer/interviews/schedule")} 
-                  className="mt-4"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Schedule Your First Interview
-                </Button>
+                <div className="mt-4" />
               </div>
             ) : (
               <Table>
@@ -213,15 +202,15 @@ const EmployerInterviews = () => {
                         <div className="flex items-center gap-2">
                           {interview.status === "Scheduled" && (
                             <>
-                              <Button 
-                                variant="outline" 
+                              <Button
+                                variant="outline"
                                 size="sm"
                                 onClick={() => updateInterviewStatus(interview.id, "Completed")}
                               >
                                 Mark Complete
                               </Button>
-                              <Button 
-                                variant="outline" 
+                              <Button
+                                variant="outline"
                                 size="sm"
                                 onClick={() => updateInterviewStatus(interview.id, "Cancelled")}
                               >

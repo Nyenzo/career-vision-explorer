@@ -6,9 +6,9 @@ type RouteMeta = {
   description: string;
 };
 
-const SITE_NAME = "VisionDrill";
+const SITE_NAME = "Visiondrill";
 const DEFAULT_DESCRIPTION =
-  "VisionDrill helps job seekers, employers, and freelancers navigate hiring, matching, and career growth.";
+  "Visiondrill helps job seekers, employers, and freelancers navigate hiring, matching, and career growth.";
 
 const ROUTE_METADATA: Record<string, RouteMeta> = {
   "/": {
@@ -29,11 +29,11 @@ const ROUTE_METADATA: Record<string, RouteMeta> = {
   },
   "/login": {
     title: `Login | ${SITE_NAME}`,
-    description: "Sign in to your VisionDrill account.",
+    description: "Sign in to your Visiondrill account.",
   },
   "/signup": {
     title: `Sign Up | ${SITE_NAME}`,
-    description: "Create your VisionDrill account to access personalized career tools.",
+    description: "Create your Visiondrill account to access personalized career tools.",
   },
 };
 

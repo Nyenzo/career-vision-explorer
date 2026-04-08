@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/admin/DashboardLayout";
 import { StatisticsCards } from "@/components/employer/StatisticsCards";
 import { RecentApplicantsTable } from "@/components/employer/RecentApplicantsTable";
-import ProjectsPage from "../EmployerProjects";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "@/components/ui/sonner";
@@ -62,15 +61,6 @@ const EmployerDashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Active Projects */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Active Projects</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ProjectsPage />
-              </CardContent>
-            </Card>
           </div>
         </DashboardLayout>
       </ApiErrorBoundary>

@@ -44,17 +44,10 @@ const EmployerDashboard = lazy(
   () => import("@/pages/employer/EmployerDashboard")
 );
 const EmployerJobs = lazy(() => import("@/pages/employer/EmployerJobs"));
-const EmployerProjects = lazy(() => import("@/pages/EmployerProjects"));
-const EmployerBoostingServices = lazy(
-  () => import("@/pages/BoostingServicesPage")
-);
 const JobApplicants = lazy(() => import("@/pages/employer/JobApplicants"));
 const AllApplicants = lazy(() => import("@/pages/employer/AllApplicants"));
 const EmployerInterviews = lazy(
   () => import("@/pages/employer/EmployerInterviews")
-);
-const InterviewSchedule = lazy(
-  () => import("@/pages/employer/InterviewSchedule")
 );
 
 // Jobseeker
@@ -92,7 +85,6 @@ const Privacy = lazy(() => import("@/pages/Privacy"));
 const Terms = lazy(() => import("@/pages/Terms"));
 const LearningPaths = lazy(() => import("@/pages/LearningPaths"));
 const Partners = lazy(() => import("@/pages/Partners"));
-const Insights = lazy(() => import("@/pages/Insights"));
 const InterviewPrep = lazy(() => import("@/pages/InterviewPrep"));
 const SkillGapAnalysis = lazy(() => import("@/pages/SkillGapAnalysis"));
 const EnhancedSkillAnalysis = lazy(
@@ -212,14 +204,6 @@ export const AppRoutes = () => {
             element={
               <Suspense fallback={<PageLoader />}>
                 <Terms />
-              </Suspense>
-            }
-          />
-          <Route
-            path="insights"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <Insights />
               </Suspense>
             }
           />
@@ -375,30 +359,6 @@ export const AppRoutes = () => {
             }
           />
           <Route
-            path="projects"
-            element={
-              <ProtectedRoute requiredRole="employer">
-                <DashboardLayout title="Employer Projects" role="employer">
-                  <Suspense fallback={<PageLoader />}>
-                    <EmployerProjects />
-                  </Suspense>
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="boosting-services"
-            element={
-              <ProtectedRoute requiredRole="employer">
-                <DashboardLayout title="Boosting Services" role="employer">
-                  <Suspense fallback={<PageLoader />}>
-                    <EmployerBoostingServices />
-                  </Suspense>
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
             path="applicants"
             element={
               <ProtectedRoute requiredRole="employer">
@@ -417,18 +377,6 @@ export const AppRoutes = () => {
                 <DashboardLayout title="Interviews" role="employer">
                   <Suspense fallback={<PageLoader />}>
                     <EmployerInterviews />
-                  </Suspense>
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="interviews/schedule"
-            element={
-              <ProtectedRoute requiredRole="employer">
-                <DashboardLayout title="Schedule Interview" role="employer">
-                  <Suspense fallback={<PageLoader />}>
-                    <InterviewSchedule />
                   </Suspense>
                 </DashboardLayout>
               </ProtectedRoute>

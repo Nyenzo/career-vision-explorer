@@ -65,10 +65,6 @@ export const RecentApplicantsTable = () => {
     }
   };
 
-  const handleScheduleInterview = (applicantId: string) => {
-    reviewApplication(applicantId, "Reviewed");
-    navigate("/employer/interviews/schedule");
-  };
 
   const handleViewAllApplicants = () => {
     navigate("/employer/applicants");
@@ -217,7 +213,6 @@ export const RecentApplicantsTable = () => {
                   key={applicant.id}
                   applicant={applicant}
                   onStatusChange={reviewApplication}
-                  onScheduleInterview={handleScheduleInterview}
                 >
                   <tr className="cursor-pointer hover:bg-blue-50/50 transition-colors border-gray-100">
                     <td className="px-4 py-2">
@@ -339,7 +334,6 @@ export const RecentApplicantsTable = () => {
               key={applicant.id}
               applicant={applicant}
               onStatusChange={reviewApplication}
-              onScheduleInterview={handleScheduleInterview}
             >
               <div className="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-2">
                 <div className="flex items-center justify-between">

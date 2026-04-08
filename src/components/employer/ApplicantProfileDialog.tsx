@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, ThumbsUp, ThumbsDown, Download, Mail, FileText, Briefcase, Check, X } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Download, Mail, FileText, Briefcase, Check, X } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { EmployerApplication } from "@/hooks/use-employer-applications";
 import { API_CONFIG } from "@/config/api.config";
@@ -19,14 +19,12 @@ import { API_CONFIG } from "@/config/api.config";
 interface ApplicantProfileDialogProps {
   applicant: EmployerApplication;
   onStatusChange: (id: string, status: 'Reviewed' | 'Accepted' | 'Rejected', notes?: string) => void;
-  onScheduleInterview: (id: string) => void;
   children: React.ReactNode;
 }
 
 export function ApplicantProfileDialog({
   applicant,
   onStatusChange,
-  onScheduleInterview,
   children
 }: ApplicantProfileDialogProps) {
   const [open, setOpen] = React.useState(false);
@@ -40,12 +38,6 @@ export function ApplicantProfileDialog({
   const handleReject = () => {
     onStatusChange(applicant.id, "Rejected");
     toast.success(`${applicant.applicantInfo.name} has been rejected.`);
-    setOpen(false);
-  };
-
-  const handleScheduleInterview = () => {
-    onScheduleInterview(applicant.id);
-    toast.success(`Interview scheduled with ${applicant.applicantInfo.name}`);
     setOpen(false);
   };
 
@@ -260,13 +252,6 @@ export function ApplicantProfileDialog({
             >
               <ThumbsDown className="h-4 w-4 mr-2" />
               Reject
-            </Button>
-            <Button
-              onClick={handleScheduleInterview}
-              variant="outline"
-            >
-              <Calendar className="h-4 w-4 mr-2" />
-              Schedule Interview
             </Button>
           </div>
           <Button
