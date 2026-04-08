@@ -19,29 +19,53 @@ interface StatCardProps {
 }
 
 const StatCard = ({ title, value, subtitle, icon, iconColor, bgColor, trend, onClick }: StatCardProps) => (
-  <Card 
-    onClick={onClick} 
-    className="cursor-pointer hover:shadow-md transition-all duration-200 border border-border bg-card"
+  <Card
+    onClick={onClick}
+    role="button"
+    tabIndex={0}
+    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
+    aria-label={`${title}: ${value}. ${subtitle}`}
+    className="cursor-pointer hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 border-0 shadow-md bg-gradient-to-br from-white to-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
   >
-    <CardContent className="p-3 sm:p-4 lg:p-6">
-      <div className="flex flex-col space-y-2">
-        <div className="flex items-center justify-between">
-          <div className={`${bgColor} p-2 rounded-lg`}>
-            <div className={iconColor}>{icon}</div>
-          </div>
-          <ArrowUpRight className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground opacity-60" />
-        </div>
-        <div className="space-y-1">
-          <p className="text-xs sm:text-sm font-medium text-muted-foreground truncate">{title}</p>
-          <p className="text-lg sm:text-2xl lg:text-3xl font-bold text-foreground">{value}</p>
-          <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
+    <CardContent className="p-6">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
+          <p className="text-3xl font-bold text-gray-900 mb-2">{value}</p>
+          <p className="text-sm text-gray-500">{subtitle}</p>
           {trend && (
-            <div className="flex items-center">
-              <TrendingUp className="h-3 w-3 text-success mr-1" />
-              <span className="text-xs font-medium text-success">{trend}</span>
+            <div className="flex items-center mt-2">
+              <TrendingUp className="h-4 w-4 text-green-600 mr-1" />
+              <span className="text-sm font-medium text-green-600">{trend}</span>
             </div>
           )}
         </div>
+        <div className={`${bgColor} p-3 rounded-xl`}>
+          <div className={iconColor}>{icon}</div>
+        </div>
+      </div>
+      <div className="flex items-center justify-end mt-4 opacity-60">
+        <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+      </div>
+    </CardContent>
+  </Card>
+);
+
+// Skeleton component for loading state
+const StatCardSkeleton = () => (
+  <Card className="border-0 shadow-md bg-gradient-to-br from-white to-gray-50">
+    <CardContent className="p-6">
+      <div className="flex items-start justify-between">
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-8 w-16" />
+          <Skeleton className="h-3 w-32" />
+          <Skeleton className="h-4 w-20" />
+        </div>
+        <Skeleton className="h-12 w-12 rounded-xl" />
+      </div>
+      <div className="flex items-center justify-end mt-4">
+        <Skeleton className="h-4 w-4" />
       </div>
     </CardContent>
   </Card>
@@ -89,46 +113,46 @@ export const StatisticsCards = () => {
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
       <StatCard
-        title="Active Jobs"
-        value={jobs.length}
-        subtitle={`${boostedListings} boosted`}
-        icon={<Briefcase className="h-4 w-4 sm:h-5 sm:w-5" />}
-        iconColor="text-primary"
-        bgColor="bg-primary/10"
-        trend="+12%"
+        title="Total Jobs Posted"
+        value={stats.totalJobs}
+        subtitle={stats.inactiveJobs > 0 ? `${stats.inactiveJobs} inactive` : "All active"}
+        icon={<Briefcase className="h-6 w-6" />}
+        iconColor="text-blue-600"
+        bgColor="bg-blue-50"
+        trend={percentageChanges.totalJobsChange > 0 ? `+${percentageChanges.totalJobsChange}% this month` : undefined}
         onClick={() => navigate("/employer/jobs")}
       />
       <StatCard
-        title="Applicants"
-        value={applicants.length}
-        subtitle={`+${weeklyNewApplicants} this week`}
-        icon={<Users className="h-4 w-4 sm:h-5 sm:w-5" />}
-        iconColor="text-secondary-foreground"
-        bgColor="bg-secondary/10"
-        trend="+23%"
+        title="Active Listings"
+        value={stats.activeJobs}
+        subtitle={`${Math.round(stats.applicationRate)}% application rate`}
+        icon={<TrendingUp className="h-6 w-6" />}
+        iconColor="text-green-600"
+        bgColor="bg-green-50"
+        trend={percentageChanges.activeJobsChange > 0 ? `+${percentageChanges.activeJobsChange}% this month` : undefined}
+        onClick={() => navigate("/employer/jobs?filter=active")}
+      />
+      <StatCard
+        title="Total Applications"
+        value={stats.totalApplications}
+        subtitle={`~${Math.round(stats.avgApplicationsPerJob)} per job`}
+        icon={<Users className="h-6 w-6" />}
+        iconColor="text-purple-600"
+        bgColor="bg-purple-50"
+        trend={percentageChanges.applicationsChange > 0 ? `+${percentageChanges.applicationsChange}% this month` : undefined}
         onClick={() => navigate("/employer/applicants")}
       />
       <StatCard
-        title="Interviews"
-        value={interviews.filter(i => i.status === "Scheduled").length}
-        subtitle={`${weeklyInterviews} this week`}
-        icon={<Calendar className="h-4 w-4 sm:h-5 sm:w-5" />}
-        iconColor="text-accent-foreground"
-        bgColor="bg-accent/10"
-        trend="+8%"
+        title="Interview Scheduled"
+        value="0"
+        subtitle="Coming soon"
+        icon={<Calendar className="h-6 w-6" />}
+        iconColor="text-amber-600"
+        bgColor="bg-amber-50"
+        trend={undefined}
         onClick={() => navigate("/employer/interviews")}
-      />
-      <StatCard
-        title="Views"
-        value={totalViews.toLocaleString()}
-        subtitle={`${viewsIncrease} monthly`}
-        icon={<Clock className="h-4 w-4 sm:h-5 sm:w-5" />}
-        iconColor="text-muted-foreground"
-        bgColor="bg-muted/50"
-        trend="+18%"
-        onClick={() => navigate("/employer/jobs")}
       />
     </div>
   );

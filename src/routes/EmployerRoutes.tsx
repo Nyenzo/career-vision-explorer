@@ -8,8 +8,7 @@ import {
   EmployerJobs,
   JobApplicants,
   AllApplicants,
-  EmployerInterviews,
-  InterviewSchedule
+  EmployerInterviews
 } from "./lazyImports";
 
 export const employerRoutes = [
@@ -45,13 +44,6 @@ export const employerRoutes = [
     <ProtectedRoute requiredRole="employer">
       <Suspense fallback={<PageLoader />}>
         <EmployerInterviews />
-      </Suspense>
-    </ProtectedRoute>
-  } />,
-  <Route key="interview-schedule" path="/employer/interviews/schedule" element={
-    <ProtectedRoute requiredRole="employer">
-      <Suspense fallback={<PageLoader />}>
-        <InterviewSchedule />
       </Suspense>
     </ProtectedRoute>
   } />

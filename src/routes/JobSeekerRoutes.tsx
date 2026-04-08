@@ -11,7 +11,6 @@ import {
   CareerPaths,
   LearningPaths,
   Partners,
-  Insights,
   FreelancerDashboard
 } from "./lazyImports";
 
@@ -62,13 +61,6 @@ export const jobSeekerRoutes = [
     <ProtectedRoute>
       <Suspense fallback={<PageLoader />}>
         <Partners />
-      </Suspense>
-    </ProtectedRoute>
-  } />,
-  <Route key="insights" path="/insights" element={
-    <ProtectedRoute>
-      <Suspense fallback={<PageLoader />}>
-        <Insights />
       </Suspense>
     </ProtectedRoute>
   } />,

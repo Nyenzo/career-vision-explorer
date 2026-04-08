@@ -1,36 +1,35 @@
 
 import { Save } from "lucide-react";
 import { AdminButton } from "@/components/ui/custom-button";
-import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
 
 interface SettingsHeaderProps {
   onSave: () => void;
-  isLoading?: boolean;
-  hasUnsavedChanges?: boolean;
 }
 
-export const SettingsHeader = ({ 
-  onSave, 
-  isLoading = false, 
-  hasUnsavedChanges = false 
-}: SettingsHeaderProps) => {
+export const SettingsHeader = ({ onSave }: SettingsHeaderProps) => {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = () => {
+    setIsSaving(true);
+    
+    // Simulate API delay
+    setTimeout(() => {
+      onSave();
+      setIsSaving(false);
+    }, 600);
+  };
+
   return (
     <div className="flex justify-between items-center mb-6">
-      <div className="flex items-center gap-3">
-        <h1 className="text-3xl font-bold">Visiondrill Settings</h1>
-        {hasUnsavedChanges && (
-          <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-200">
-            Unsaved Changes
-          </Badge>
-        )}
-      </div>
+      <h1 className="text-3xl font-bold">Visiondrill Settings</h1>
       <AdminButton 
         variant="primary"
         icon={<Save className="h-4 w-4" />}
-        onClick={onSave}
-        disabled={isLoading}
+        onClick={handleSave}
+        disabled={isSaving}
       >
-        {isLoading ? "Saving..." : "Save All Settings"}
+        {isSaving ? "Saving..." : "Save Settings"}
       </AdminButton>
     </div>
   );

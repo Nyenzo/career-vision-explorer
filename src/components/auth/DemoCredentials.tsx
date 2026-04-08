@@ -24,7 +24,7 @@ export const DemoCredentials = ({ loginType }: DemoCredentialsProps) => {
   
   return (
     <div className="w-full text-sm text-gray-500">
-      <p>Demo Credentials for {loginType === 'jobseeker' ? 'freelancer' : loginType} login:</p>
+      <p>Demo Credentials for {loginType} login:</p>
       <div className="mt-1 p-2 bg-gray-50 rounded-md">
         <p><strong>Email:</strong> {credentials.email}</p>
         <p><strong>Password:</strong> {credentials.password}</p>

@@ -96,51 +96,58 @@ export function JobListingsTable() {
   };
 
   return (
-    <div className="space-y-4">
-      {/* Compact Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 sm:gap-3">
-        <div className="bg-card p-3 sm:p-4 rounded-lg border border-border">
-          <div className="text-lg sm:text-xl font-bold text-primary">{stats.total}</div>
-          <div className="text-xs text-muted-foreground">Total Jobs</div>
+    <div className="space-y-6">
+      {/* Enhanced Header with Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="bg-white p-6 rounded-lg border shadow-sm">
+          <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
+          <div className="text-sm text-gray-600">Total Jobs</div>
         </div>
-        <div className="bg-card p-3 sm:p-4 rounded-lg border border-border">
-          <div className="text-lg sm:text-xl font-bold text-secondary-foreground">{stats.boosted}</div>
-          <div className="text-xs text-muted-foreground">Boosted</div>
+        <div className="bg-white p-6 rounded-lg border shadow-sm">
+          <div className="text-2xl font-bold text-green-600">{stats.boosted}</div>
+          <div className="text-sm text-gray-600">Boosted Jobs</div>
         </div>
-        <div className="bg-card p-3 sm:p-4 rounded-lg border border-border">
-          <div className="text-lg sm:text-xl font-bold text-accent-foreground">{stats.totalApplicants}</div>
-          <div className="text-xs text-muted-foreground">Applicants</div>
+        <div className="bg-white p-6 rounded-lg border shadow-sm">
+          <div className="text-2xl font-bold text-purple-600">{stats.totalApplicants}</div>
+          <div className="text-sm text-gray-600">Total Applicants</div>
         </div>
-        <div className="bg-card p-3 sm:p-4 rounded-lg border border-border">
-          <div className="text-lg sm:text-xl font-bold text-muted-foreground">{stats.totalViews}</div>
-          <div className="text-xs text-muted-foreground">Views</div>
+        <div className="bg-white p-6 rounded-lg border shadow-sm">
+          <div className="text-2xl font-bold text-orange-600">{stats.totalViews}</div>
+          <div className="text-sm text-gray-600">Total Views</div>
         </div>
-        <div className="bg-card p-3 sm:p-4 rounded-lg border border-border col-span-2 md:col-span-1">
-          <div className="text-lg sm:text-xl font-bold text-destructive">{stats.totalViews > 0 ? ((stats.totalApplicants / stats.totalViews) * 100).toFixed(1) : 0}%</div>
-          <div className="text-xs text-muted-foreground">Conversion</div>
+        <div className="bg-white p-6 rounded-lg border shadow-sm">
+          <div className="text-2xl font-bold text-red-600">{stats.totalViews > 0 ? ((stats.totalApplicants / stats.totalViews) * 100).toFixed(1) : 0}%</div>
+          <div className="text-sm text-gray-600">Conversion Rate</div>
         </div>
       </div>
 
-      {/* Compact Search and Filters */}
+      {/* Advanced Search and Filters */}
       <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-3">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Search className="h-5 w-5" />
+            Search & Filter Jobs
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col lg:flex-row gap-4">
             {/* Main Search */}
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="Search jobs..."
+                placeholder="Search jobs by title, location, or description..."
                 className="pl-10"
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
               />
             </div>
             
-            {/* Compact Filter Controls */}
-            <div className="flex gap-2 flex-wrap">
+            {/* Filter Controls */}
+            <div className="flex gap-3">
               <Select onValueChange={handleJobTypeFilter} defaultValue="all">
-                <SelectTrigger className="w-32 sm:w-36">
-                  <SelectValue placeholder="All Types" />
+                <SelectTrigger className="w-40">
+                  <Briefcase className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Job Type" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
@@ -151,14 +158,26 @@ export function JobListingsTable() {
                 </SelectContent>
               </Select>
 
+              <Select onValueChange={handleDateRangeFilter} defaultValue="all">
+                <SelectTrigger className="w-40">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Date Posted" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="7">Last 7 days</SelectItem>
+                  <SelectItem value="30">Last 30 days</SelectItem>
+                  <SelectItem value="90">Last 90 days</SelectItem>
+                </SelectContent>
+              </Select>
+
               <Button 
                 variant={filters.boostedOnly ? "default" : "outline"}
                 onClick={() => handleBoostedFilter(!filters.boostedOnly)}
-                size="sm"
-                className="px-3"
+                className="flex items-center gap-2"
               >
-                <TrendingUp className="h-3 w-3 mr-1" />
-                Boosted
+                <TrendingUp className="h-4 w-4" />
+                Boosted Only
               </Button>
             </div>
           </div>

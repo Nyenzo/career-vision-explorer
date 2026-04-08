@@ -75,59 +75,142 @@ export const RecentApplicantsTable = () => {
   };
 
   return (
-    <div className="space-y-3">
-      {/* Compact Header */}
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-        <div className="min-w-0">
-          <h3 className="text-base sm:text-lg font-semibold text-foreground">Recent Applications</h3>
-          <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
-            Latest candidate applications
+    <div className="space-y-4">
+      {/* Header: Search + Filters */}
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">
+            Recent Applications
+          </h3>
+          <p className="text-sm text-gray-500 mt-1">
+            View and manage the latest candidate applications
           </p>
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-48">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto items-start sm:items-center">
+          {/* Search */}
+          <div className="relative flex-1 sm:w-64 w-full">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               type="search"
-              placeholder="Search..."
-              className="pl-9 h-8 text-sm"
+              placeholder="Search applicants..."
+              className="pl-10 bg-gray-50 border-gray-200 focus:bg-white transition-colors w-full"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Button 
-            variant="outline" 
-            size="sm"
+
+          {/* Status Filter */}
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[140px] bg-gray-50 border-gray-200">
+              <SelectValue placeholder="Filter status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="pending">
+                <div className="flex items-center">
+                  <Clock className="h-3 w-3 mr-1 text-yellow-600" />
+                  Pending ({stats.pending})
+                </div>
+              </SelectItem>
+              <SelectItem value="reviewed">
+                <div className="flex items-center">
+                  <Eye className="h-3 w-3 mr-1 text-blue-600" />
+                  Reviewed ({stats.reviewed})
+                </div>
+              </SelectItem>
+              <SelectItem value="accepted">
+                <div className="flex items-center">
+                  <CheckCircle className="h-3 w-3 mr-1 text-green-600" />
+                  Accepted ({stats.accepted})
+                </div>
+              </SelectItem>
+              <SelectItem value="rejected">
+                <div className="flex items-center">
+                  <XCircle className="h-3 w-3 mr-1 text-gray-600" />
+                  Rejected ({stats.rejected})
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Job Filter */}
+          {uniqueJobs.length > 0 && (
+            <Select value={jobFilter} onValueChange={setJobFilter}>
+              <SelectTrigger className="w-[180px] bg-gray-50 border-gray-200">
+                <SelectValue placeholder="Filter by job" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Jobs</SelectItem>
+                {uniqueJobs.map((job) => (
+                  <SelectItem key={job.id} value={job.id}>
+                    {job.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
+          <Button
+            variant="outline"
             onClick={handleViewAllApplicants}
-            className="whitespace-nowrap h-8 px-3"
+            className="whitespace-nowrap hover:bg-blue-50 border-blue-200 text-blue-700"
           >
-            <ExternalLink className="h-3 w-3 mr-1" />
+            <ExternalLink className="h-4 w-4 mr-2" />
             View All
           </Button>
         </div>
       </div>
 
-      {/* Compact Table */}
-      <div className="bg-card rounded-lg border border-border overflow-hidden">
-        <Table>
-          <TableHeader className="bg-muted/50">
-            <TableRow>
-              <TableHead className="font-medium text-foreground text-sm">Candidate</TableHead>
-              <TableHead className="font-medium text-foreground text-sm hidden sm:table-cell">Position</TableHead>
-              <TableHead className="font-medium text-foreground text-sm hidden md:table-cell">Applied</TableHead>
-              <TableHead className="font-medium text-foreground text-sm text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {recentApplicants.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
-                  <div className="flex flex-col items-center">
-                    <Users className="h-8 w-8 text-muted-foreground mb-2" />
-                    <p className="text-sm">No recent applicants</p>
-                  </div>
-                </TableCell>
-              </TableRow>
+      {/* Table for Desktop */}
+      <div className="hidden sm:block bg-white rounded-lg border border-gray-200 overflow-x-auto">
+        <table className="min-w-full table-auto">
+          <thead className="bg-gray-50">
+            <tr className="border-gray-200">
+              <th className="px-4 py-2 text-left font-semibold text-gray-900">
+                Candidate
+              </th>
+              <th className="px-4 py-2 text-left font-semibold text-gray-900">
+                Position
+              </th>
+              <th className="px-4 py-2 text-left font-semibold text-gray-900">
+                Applied
+              </th>
+              <th className="px-4 py-2 text-left font-semibold text-gray-900">
+                Match Score
+              </th>
+              <th className="px-4 py-2 text-left font-semibold text-gray-900">
+                Status
+              </th>
+              <th className="px-4 py-2 text-right font-semibold text-gray-900">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              <tr>
+                <td colSpan={6} className="text-center py-8 text-gray-500">
+                  <RecentApplicationsTableSkeleton />
+                </td>
+              </tr>
+            ) : error ? (
+              <tr>
+                <td colSpan={6} className="text-center py-8 text-red-500">
+                  <XCircle className="h-8 w-8 mx-auto mb-2" />
+                  <p>Failed to load applications</p>
+                </td>
+              </tr>
+            ) : recentApplications.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="text-center py-8 text-gray-500">
+                  <Users className="h-12 w-12 text-gray-300 mb-2" />
+                  <p>No recent applicants found</p>
+                  <p className="text-sm">
+                    Applications will appear here as they come in
+                  </p>
+                </td>
+              </tr>
             ) : (
               recentApplications.map((applicant) => (
                 <ApplicantProfileDialog
@@ -136,45 +219,90 @@ export const RecentApplicantsTable = () => {
                   onStatusChange={reviewApplication}
                   onScheduleInterview={handleScheduleInterview}
                 >
-                  <TableRow className="cursor-pointer hover:bg-muted/50 transition-colors">
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center text-primary-foreground font-medium text-xs sm:text-sm">
-                          {applicant.name.charAt(0)}
+                  <tr className="cursor-pointer hover:bg-blue-50/50 transition-colors border-gray-100">
+                    <td className="px-4 py-2">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                          {applicant.applicantInfo.name.charAt(0).toUpperCase()}
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-foreground text-sm truncate">{applicant.name}</p>
-                          <p className="text-xs text-muted-foreground sm:hidden truncate">{applicant.position}</p>
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {applicant.applicantInfo.name}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {applicant.applicantInfo.email}
+                          </p>
                         </div>
                       </div>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <span className="text-foreground text-sm">{applicant.position}</span>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <span className="text-muted-foreground text-xs">{applicant.appliedTime}</span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button 
-                          size="sm" 
-                          variant="ghost"
-                          className="h-6 w-6 p-0"
+                    </td>
+                    <td className="px-4 py-2">{applicant.jobInfo.title}</td>
+                    <td className="px-4 py-2">{applicant.appliedDate}</td>
+                    <td className="px-4 py-2">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getScoreBadgeColor(
+                          applicant.match_score || 0,
+                        )}`}
+                      >
+                        {applicant.match_score || 0}% match
+                      </span>
+                    </td>
+                    <td className="px-4 py-2">
+                      <Badge
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusBadgeColor(
+                          applicant.status,
+                        )}`}
+                      >
+                        {applicant.status}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-2 text-right">
+                      <div className="flex flex-wrap sm:flex-nowrap items-center justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 w-8 p-0 hover:bg-blue-50 border-blue-200"
                         >
-                          <Eye className="h-3 w-3" />
+                          <Eye className="h-3 w-3 text-blue-600" />
                         </Button>
-                        {applicant.status === "Reviewing" && (
-                          <Button 
-                            size="sm" 
-                            variant="ghost"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleScheduleInterview(applicant.id);
-                            }}
-                            className="h-6 px-2 text-xs"
-                          >
-                            <Calendar className="h-3 w-3" />
-                          </Button>
+                        {applicant.status === "Pending" && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                reviewApplication(applicant.id, "Reviewed");
+                              }}
+                              className="h-8 px-3 text-xs hover:bg-blue-50 border-blue-200 text-blue-700"
+                            >
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Review
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                reviewApplication(applicant.id, "Accepted");
+                              }}
+                              className="h-8 px-3 text-xs hover:bg-green-50 border-green-200 text-green-700"
+                            >
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Accept
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                reviewApplication(applicant.id, "Rejected");
+                              }}
+                              className="h-8 px-3 text-xs hover:bg-red-50 border-red-200 text-red-700"
+                            >
+                              <XCircle className="h-3 w-3 mr-1" />
+                              Reject
+                            </Button>
+                          </>
                         )}
                       </div>
                     </td>

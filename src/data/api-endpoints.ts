@@ -51,39 +51,6 @@ export const apiEndpoints = [
     ]
   },
   {
-    category: "Theme API",
-    endpoints: [
-      { 
-        method: "GET", 
-        path: "/api/theme", 
-        description: "Get current theme settings (light mode only)",
-        example: `const theme = await ThemeApi.getTheme();`,
-        response: `{
-  "theme": "light",
-  "customization": {
-    "primaryColor": "#3b82f6",
-    "secondaryColor": "#64748b"
-  }
-}`
-      },
-      { 
-        method: "PUT", 
-        path: "/api/theme/customize", 
-        description: "Update theme customization (colors only)",
-        params: ["primaryColor", "secondaryColor", "accentColor"],
-        example: `const result = await ThemeApi.updateCustomization({
-  primaryColor: '#3b82f6',
-  secondaryColor: '#64748b',
-  accentColor: '#10b981'
-});`,
-        response: `{
-  "success": true,
-  "message": "Theme customization updated"
-}`
-      },
-    ]
-  },
-  {
     category: "Jobs API",
     endpoints: [
       { 
@@ -333,70 +300,6 @@ export const apiEndpoints = [
         description: "Submit skill assessment",
         params: ["id", "answers"],
         example: `const result = await SkillsApi.submitSkillAssessment('skill123', [0, 2, 1, 3]);`
-      },
-    ]
-  },
-  {
-    category: "Messaging API",
-    endpoints: [
-      { 
-        method: "GET", 
-        path: "/api/messages/freelancer-inbox", 
-        description: "Get messages from potential clients",
-        example: `const messages = await MessagingApi.getFreelancerInbox();`,
-        response: `[{
-  "id": "msg123",
-  "clientName": "TechCorp Ltd",
-  "subject": "Web Development Project",
-  "preview": "We're interested in your services...",
-  "timestamp": "2024-06-15T10:00:00Z",
-  "isRead": false,
-  "projectType": "Web Development",
-  "budget": "KES 50,000 - 100,000"
-}]`
-      },
-      { 
-        method: "GET", 
-        path: "/api/messages/employer-inbox", 
-        description: "Get messages from freelancers",
-        example: `const messages = await MessagingApi.getEmployerInbox();`,
-        response: `[{
-  "id": "msg456",
-  "freelancerName": "Sarah Johnson",
-  "freelancerRating": 4.9,
-  "subject": "Project Proposal",
-  "preview": "I'd love to work on your project...",
-  "timestamp": "2024-06-15T12:00:00Z",
-  "isRead": false,
-  "skills": ["React", "Node.js"],
-  "proposedRate": "KES 3,000/hour"
-}]`
-      },
-      { 
-        method: "POST", 
-        path: "/api/messages/send", 
-        description: "Send message to freelancer or client",
-        params: ["recipientId", "subject", "message", "projectType", "budget"],
-        example: `await MessagingApi.sendMessage({
-  recipientId: 'user123',
-  subject: 'Project Inquiry',
-  message: 'I would like to discuss...',
-  projectType: 'Web Development'
-});`
-      },
-      { 
-        method: "GET", 
-        path: "/api/messages/conversation/:userId", 
-        description: "Get conversation with specific user",
-        params: ["userId"],
-        example: `const conversation = await MessagingApi.getConversation('user123');`
-      },
-      { 
-        method: "PUT", 
-        path: "/api/messages/:id/read", 
-        description: "Mark message as read",
-        params: ["id"],
-        example: `await MessagingApi.markAsRead('msg123');`
       },
     ]
   }

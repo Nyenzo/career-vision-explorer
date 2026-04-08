@@ -26,8 +26,6 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Linkedin } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { LoginTabs } from "@/components/auth/LoginTabs";
-import { DemoCredentials } from "@/components/auth/DemoCredentials";
 
 const loginSchema = z.object({
   email: z.string().email({
@@ -41,8 +39,7 @@ const loginSchema = z.object({
 const Login = () => {
   const { login, signInWithLinkedIn } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [loginType, setLoginType] = useState<'admin' | 'jobseeker' | 'employer'>('jobseeker');
-  
+
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -106,7 +103,6 @@ const Login = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <LoginTabs loginType={loginType} setLoginType={setLoginType} />
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
@@ -185,8 +181,6 @@ const Login = () => {
                 </div>
               </form>
             </Form>
-            
-            <DemoCredentials loginType={loginType} />
           </CardContent>
         </Card>
       </div>

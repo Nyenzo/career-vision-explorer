@@ -115,14 +115,37 @@ export const RecentActivityCard = () => {
         <CardDescription>Your latest actions and updates</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-3">
-          {activities.map((activity, index) => (
-            <div key={index} className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100">
-              <div className="h-2 w-2 bg-blue-500 rounded-full animate-pulse"></div>
-              <span className="text-sm text-gray-700">{activity.text}</span>
-            </div>
-          ))}
-        </div>
+        {error && (
+          <div className="flex items-center gap-2 text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
+            <AlertCircle className="h-4 w-4" />
+            <span className="text-sm">Error: {error}</span>
+          </div>
+        )}
+        
+        {loading ? (
+          <div className="text-center py-4">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-sm text-gray-600">Loading recent activity...</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {activities.map((activity, index) => {
+              const IconComponent = activity.icon;
+              return (
+                <div key={index} className={`flex items-center gap-3 p-3 ${activity.colors.bg} rounded-lg transition-all duration-200 hover:shadow-sm`}>
+                  <div className="flex items-center gap-2">
+                    <div className={`h-2 w-2 ${activity.colors.dot} rounded-full`}></div>
+                    <IconComponent className={`h-4 w-4 ${activity.colors.text}`} />
+                  </div>
+                  <div className="flex-1">
+                    <span className={`text-sm ${activity.colors.text} font-medium`}>{activity.text}</span>
+                    <div className="text-xs text-gray-500 mt-1">{activity.time}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

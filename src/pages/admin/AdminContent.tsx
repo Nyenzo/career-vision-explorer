@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,16 +9,46 @@ import { FooterContentManagement } from "@/components/admin/content/FooterConten
 import { AboutPageManagement } from "@/components/admin/content/AboutPageManagement";
 import { useContentForm } from "@/hooks/useContentForm";
 import { Content, ContentStatus } from "@/types/content";
-import { useContent, ContentProvider } from "@/hooks/use-content";
 
-const AdminContentContent = () => {
+const AdminContent = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [editingContent, setEditingContent] = useState<Content | null>(null);
 
   const form = useContentForm();
-  const { contents, updateContent, addContent, deleteContent } = useContent();
+
+  // Mock content data - in a real app this would come from an API
+  const [contents, setContents] = useState<Content[]>([
+    {
+      id: "1",
+      title: "Homepage Hero Section",
+      slug: "homepage-hero",
+      type: "hero",
+      status: "published",
+      content: "Navigate your career journey with confidence and clarity",
+      excerpt: "Main hero text displayed on the homepage",
+      location: "homepage-hero",
+      authorId: "1",
+      authorName: "Admin User",
+      createdAt: "2024-03-15",
+      updatedAt: "2024-03-15"
+    },
+    {
+      id: "2",
+      title: "About Us Page Content",
+      slug: "about-us",
+      type: "page",
+      status: "published",
+      content: "At Visiondrill Career Explorer, we believe that everyone deserves to find meaningful work...",
+      excerpt: "Main content for the About Us page",
+      location: "about-page",
+      authorId: "1",
+      authorName: "Admin User",
+      createdAt: "2024-03-10",
+      updatedAt: "2024-03-12"
+    }
+  ]);
 
   const handleEdit = (content: Content) => {
     setEditingContent(content);
@@ -29,28 +58,40 @@ const AdminContentContent = () => {
       type: content.type,
       status: content.status,
       content: content.content,
-      excerpt: content.excerpt || "",
+      excerpt: content.excerpt,
       location: content.location || "",
     });
   };
 
   const handleDelete = (id: string) => {
-    deleteContent(id);
+    setContents(prev => prev.filter(c => c.id !== id));
   };
 
   const handleStatusChange = (id: string, status: ContentStatus) => {
-    updateContent(id, { status });
+    setContents(prev => prev.map(c => 
+      c.id === id ? { ...c, status, updatedAt: new Date().toISOString().split('T')[0] } : c
+    ));
   };
 
   const handleSubmit = (data: any) => {
     if (editingContent) {
-      updateContent(editingContent.id, data);
+      // Update existing content
+      setContents(prev => prev.map(c => 
+        c.id === editingContent.id 
+          ? { ...c, ...data, updatedAt: new Date().toISOString().split('T')[0] }
+          : c
+      ));
     } else {
-      addContent({
+      // Create new content
+      const newContent: Content = {
+        id: Date.now().toString(),
         ...data,
         authorId: "1",
         authorName: "Admin User",
-      });
+        createdAt: new Date().toISOString().split('T')[0],
+        updatedAt: new Date().toISOString().split('T')[0]
+      };
+      setContents(prev => [...prev, newContent]);
     }
     form.reset();
     setEditingContent(null);
@@ -75,63 +116,55 @@ const AdminContentContent = () => {
   });
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Content Management</h1>
-        <p className="text-muted-foreground">
-          Manage website content, pages, and footer information
-        </p>
-      </div>
-
-      <Tabs defaultValue="content" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="content">Content</TabsTrigger>
-          <TabsTrigger value="about">About Page</TabsTrigger>
-          <TabsTrigger value="footer">Footer</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="content" className="space-y-6">
-          <ContentStats contents={filteredContents} />
-          <ContentFilters
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            statusFilter={statusFilter}
-            setStatusFilter={setStatusFilter}
-            typeFilter={typeFilter}
-            setTypeFilter={setTypeFilter}
-          />
-          <ContentTable
-            contents={filteredContents}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onStatusChange={handleStatusChange}
-          />
-          <ContentForm 
-            form={form}
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            submitLabel={editingContent ? "Update Content" : "Create Content"}
-          />
-        </TabsContent>
-
-        <TabsContent value="about">
-          <AboutPageManagement />
-        </TabsContent>
-        
-        <TabsContent value="footer">
-          <FooterContentManagement />
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-};
-
-const AdminContent = () => {
-  return (
     <AdminLayout>
-      <ContentProvider>
-        <AdminContentContent />
-      </ContentProvider>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Content Management</h1>
+          <p className="text-muted-foreground">
+            Manage website content, pages, and footer information
+          </p>
+        </div>
+
+        <Tabs defaultValue="content" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsTrigger value="about">About Page</TabsTrigger>
+            <TabsTrigger value="footer">Footer</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="content" className="space-y-6">
+            <ContentStats contents={contents} />
+            <ContentFilters
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              typeFilter={typeFilter}
+              setTypeFilter={setTypeFilter}
+            />
+            <ContentTable
+              contents={filteredContents}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onStatusChange={handleStatusChange}
+            />
+            <ContentForm 
+              form={form}
+              onSubmit={handleSubmit}
+              onCancel={handleCancel}
+              submitLabel={editingContent ? "Update Content" : "Create Content"}
+            />
+          </TabsContent>
+
+          <TabsContent value="about">
+            <AboutPageManagement />
+          </TabsContent>
+          
+          <TabsContent value="footer">
+            <FooterContentManagement />
+          </TabsContent>
+        </Tabs>
+      </div>
     </AdminLayout>
   );
 };

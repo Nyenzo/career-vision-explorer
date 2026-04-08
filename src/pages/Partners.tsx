@@ -1,58 +1,108 @@
 import React, { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
-import { Card, CardContent } from "@/components/ui/card";
-import { Building, GraduationCap, UserCheck } from "lucide-react";
-import { usePartners, PartnersProvider } from "@/hooks/use-partners";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+  User, 
+  Mail, 
+  Phone, 
+  MapPin, 
+  Calendar, 
+  Briefcase, 
+  GraduationCap,
+  Globe,
+  Github,
+  Linkedin,
+  Edit3,
+  Save,
+  X
+} from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { profileService } from "@/services/profile.service";
+import { toast } from "sonner";
 
-const PartnersShowcase = () => {
-  const { partners, getPartnersByCategory } = usePartners();
-  
-  const employers = getPartnersByCategory("employer");
-  const education = getPartnersByCategory("education");
-  const recruiting = getPartnersByCategory("recruiting");
+const ProfilePage = () => {
+  const { user, isAuthenticated } = useAuth();
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({});
 
-  const partnerCategories = [
-    {
-      id: 1,
-      title: "Employers",
-      icon: <Building className="h-10 w-10 text-primary" />,
-      description: "Connect with top talent and showcase your company culture",
-      count: employers.length,
-      partners: employers.slice(0, 3),
-      features: [
-        "AI-powered candidate matching",
-        "Branded employer profile",
-        "Automated screening and scheduling",
-        "Advanced analytics dashboard"
-      ]
-    },
-    {
-      id: 2,
-      title: "Educational Institutions",
-      icon: <GraduationCap className="h-10 w-10 text-primary" />,
-      description: "Help your students launch successful careers",
-      count: education.length,
-      partners: education.slice(0, 3),
-      features: [
-        "Student outcome tracking",
-        "Curriculum optimization insights",
-        "Industry partnership opportunities",
-        "Career services integration"
-      ]
-    },
-    {
-      id: 3,
-      title: "Recruiting Agencies",
-      icon: <UserCheck className="h-10 w-10 text-primary" />,
-      description: "Streamline your recruiting process with AI",
-      count: recruiting.length,
-      partners: recruiting.slice(0, 3),
-      features: [
-        "Candidate database integration",
-        "Smart matching algorithms",
-        "Bulk job posting capability",
-        "Client reporting tools"
-      ]
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      loadProfile();
+    } else {
+      setLoading(false);
+    }
+  }, [isAuthenticated, user]);
+
+  const loadProfile = async () => {
+    try {
+      setLoading(true);
+      const profileData = await profileService.getProfile();
+      setProfile(profileData);
+      setEditForm(profileData);
+    } catch (error) {
+      console.error('Error loading profile:', error);
+      // Use mock data if API fails
+      const mockProfile = {
+        user_id: user?.user_id || "1",
+        name: user?.name || "John Doe",
+        email: user?.email || "john@example.com",
+        bio: "Passionate software developer with 5+ years of experience",
+        location: "San Francisco, CA",
+        experience_years: 5,
+        education: "Bachelor of Science in Computer Science",
+        phone: "+1 (555) 123-4567",
+        linkedin_url: "https://linkedin.com/in/johndoe",
+        github_url: "https://github.com/johndoe",
+        portfolio_url: "https://johndoe.dev",
+        account_type: user?.account_type || "job_seeker",
+        skills: ["JavaScript", "React", "Node.js", "Python", "TypeScript"],
+        work_experience: [
+          {
+            company: "Tech Corp",
+            position: "Senior Developer",
+            duration: "2022 - Present",
+            description: "Lead developer for frontend applications"
+          }
+        ],
+        projects: [
+          {
+            name: "E-commerce Platform",
+            description: "Full-stack e-commerce solution",
+            tech_stack: ["React", "Node.js", "MongoDB"],
+            url: "https://github.com/johndoe/ecommerce"
+          }
+        ],
+        languages: ["English", "Spanish"],
+        certifications: ["AWS Certified Developer"],
+        availability: "Available",
+        preferred_job_type: "Full-time",
+        salary_expectation: "$120,000 - $150,000",
+        created_at: "2024-01-01T00:00:00Z"
+      };
+      setProfile(mockProfile);
+      setEditForm(mockProfile);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      await profileService.updateProfile(editForm);
+      setProfile(editForm);
+      setEditing(false);
+      toast.success("Profile updated successfully!");
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error("Failed to update profile");
     }
   };
 
@@ -105,21 +155,18 @@ const PartnersShowcase = () => {
                 <Edit3 className="h-4 w-4" />
                 Edit Profile
               </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Partnership Categories */}
-      <section className="py-16 bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-extrabold text-foreground sm:text-4xl mb-4">
-              Partnership Opportunities
-            </h2>
-            <p className="mt-4 max-w-2xl text-xl text-muted-foreground mx-auto">
-              Join our ecosystem of {partners.length} partners across employers, educators, and recruiting agencies
-            </p>
+            ) : (
+              <div className="flex gap-2">
+                <Button onClick={handleSave} className="flex items-center gap-2">
+                  <Save className="h-4 w-4" />
+                  Save
+                </Button>
+                <Button variant="outline" onClick={handleCancel} className="flex items-center gap-2">
+                  <X className="h-4 w-4" />
+                  Cancel
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -211,42 +258,73 @@ const PartnersShowcase = () => {
                         Joined {new Date(profile?.created_at).toLocaleDateString()}
                       </span>
                     </div>
-                    <h3 className="text-xl font-bold mb-2 text-foreground">{category.title}</h3>
-                    <p className="text-sm text-primary font-medium mb-2">{category.count} active partners</p>
-                    <p className="text-muted-foreground mb-6">{category.description}</p>
-                    
-                    {/* Partner Logos */}
-                    {category.partners.length > 0 && (
-                      <div className="flex gap-2 mb-4 flex-wrap justify-center">
-                        {category.partners.map((partner) => (
-                          <div key={partner.id} className="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-200">
-                            <img 
-                              src={partner.logo} 
-                              alt={partner.name}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.src = `https://images.unsplash.com/photo-1560441347-3a9c2e1e7e5c?auto=format&fit=crop&w=48&h=48`;
-                              }}
-                            />
+                  </div>
+
+                  <Separator className="my-4" />
+
+                  {/* Social Links */}
+                  <div className="space-y-3">
+                    {editing ? (
+                      <>
+                        <div className="flex items-center gap-3">
+                          <Linkedin className="h-4 w-4 text-muted-foreground" />
+                          <Input
+                            value={editForm.linkedin_url || ''}
+                            onChange={(e) => setEditForm({...editForm, linkedin_url: e.target.value})}
+                            placeholder="LinkedIn URL"
+                            className="text-sm"
+                          />
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Github className="h-4 w-4 text-muted-foreground" />
+                          <Input
+                            value={editForm.github_url || ''}
+                            onChange={(e) => setEditForm({...editForm, github_url: e.target.value})}
+                            placeholder="GitHub URL"
+                            className="text-sm"
+                          />
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Globe className="h-4 w-4 text-muted-foreground" />
+                          <Input
+                            value={editForm.portfolio_url || ''}
+                            onChange={(e) => setEditForm({...editForm, portfolio_url: e.target.value})}
+                            placeholder="Portfolio URL"
+                            className="text-sm"
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {profile?.linkedin_url && (
+                          <div className="flex items-center gap-3">
+                            <Linkedin className="h-4 w-4 text-muted-foreground" />
+                            <a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer" 
+                               className="text-sm text-blue-600 hover:underline">
+                              LinkedIn
+                            </a>
                           </div>
-                        ))}
-                      </div>
+                        )}
+                        {profile?.github_url && (
+                          <div className="flex items-center gap-3">
+                            <Github className="h-4 w-4 text-muted-foreground" />
+                            <a href={profile.github_url} target="_blank" rel="noopener noreferrer"
+                               className="text-sm text-blue-600 hover:underline">
+                              GitHub
+                            </a>
+                          </div>
+                        )}
+                        {profile?.portfolio_url && (
+                          <div className="flex items-center gap-3">
+                            <Globe className="h-4 w-4 text-muted-foreground" />
+                            <a href={profile.portfolio_url} target="_blank" rel="noopener noreferrer"
+                               className="text-sm text-blue-600 hover:underline">
+                              Portfolio
+                            </a>
+                          </div>
+                        )}
+                      </>
                     )}
-                    
-                    <ul className="space-y-2 text-left mb-6 w-full">
-                      {category.features.map((feature, index) => (
-                        <li key={index} className="flex items-start">
-                          <svg className="h-5 w-5 mr-2 text-primary mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          <span className="text-muted-foreground">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <Button className="mt-auto bg-primary hover:bg-primary/90 text-primary-foreground font-medium">
-                      Learn More
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -412,12 +490,4 @@ const PartnersShowcase = () => {
   );
 };
 
-const Partners = () => {
-  return (
-    <PartnersProvider>
-      <PartnersShowcase />
-    </PartnersProvider>
-  );
-};
-
-export default Partners;
+export default ProfilePage;

@@ -5,6 +5,7 @@ export const Index = lazy(() => import("@/pages/Index"));
 export const Login = lazy(() => import("@/pages/Login"));
 export const Signup = lazy(() => import("@/pages/Signup"));
 export const Jobs = lazy(() => import("@/pages/Jobs"));
+export const JobSeekerDashboard = lazy(() => import("@/pages/jobseeker/JobSeekerDashboard"));
 export const JobDetails = lazy(() => import("@/pages/JobDetails"));
 export const PublicProfile = lazy(() => import("@/pages/PublicProfile"));
 export const VideoMeeting = lazy(() => import("@/pages/VideoMeeting"));
@@ -16,7 +17,6 @@ export const CareerPaths = lazy(() => import("@/pages/CareerPaths"));
 // Lazy load admin pages
 export const AdminLogin = lazy(() => import("@/pages/admin/AdminLogin"));
 export const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
-export const JobSeekerDashboard = lazy(() => import("@/pages/admin/JobSeekerDashboard"));
 export const AdminAPI = lazy(() => import("@/pages/admin/AdminAPI"));
 
 // Lazy load employer pages
@@ -32,7 +32,6 @@ export const Privacy = lazy(() => import("@/pages/Privacy"));
 export const Terms = lazy(() => import("@/pages/Terms"));
 export const LearningPaths = lazy(() => import("@/pages/LearningPaths"));
 export const Partners = lazy(() => import("@/pages/Partners"));
-export const Insights = lazy(() => import("@/pages/Insights"));
 export const JobSeekerSettings = lazy(() => import("@/pages/jobseeker/JobSeekerSettings"));
 export const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
 export const AdminJobseekers = lazy(() => import("@/pages/admin/AdminJobseekers"));
@@ -50,7 +49,6 @@ export const EmployerJobs = lazy(() => import("@/pages/employer/EmployerJobs"));
 export const JobApplicants = lazy(() => import("@/pages/employer/JobApplicants"));
 export const AllApplicants = lazy(() => import("@/pages/employer/AllApplicants"));
 export const EmployerInterviews = lazy(() => import("@/pages/employer/EmployerInterviews"));
-export const InterviewSchedule = lazy(() => import("@/pages/employer/InterviewSchedule"));
 
 export const AdminFreelancers = lazy(() => import("@/pages/admin/AdminFreelancers"));
 export const FreelancerProfile = lazy(() => import("@/pages/FreelancerProfile"));

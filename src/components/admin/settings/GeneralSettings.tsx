@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -23,15 +23,10 @@ export const GeneralSettings = ({
   const { toast } = useToast();
   const [settings, setSettings] = useState(initialSettings);
 
-  // Update local state when props change (for real-time sync)
-  useEffect(() => {
-    setSettings(initialSettings);
-  }, [initialSettings]);
-
   const handleChange = (key: string, value: any) => {
     const updatedSettings = { ...settings, [key]: value };
     setSettings(updatedSettings);
-    onSettingsChange({ [key]: value });
+    onSettingsChange(updatedSettings);
   };
 
   return (

@@ -1,66 +1,58 @@
 import React from "react";
-import { Briefcase, Eye, Calendar, Star, MessageCircle } from "lucide-react";
-import { StatCard } from "./StatCard";
-import { useNavigate } from "react-router-dom";
+import { Calendar, Star } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { useJobApplications } from "@/hooks/use-job-applications";
+import { useAuth } from "@/hooks/use-auth";
 
 export const QuickStatsCards = () => {
-  const navigate = useNavigate();
+  const { profile, isLoading: authLoading } = useAuth();
 
-  const stats = [
-    {
-      icon: Briefcase,
-      value: "12",
-      label: "Applications",
-      gradient: "bg-primary",
-      onClick: () => {
-        // Navigate to applications tab in dashboard
-        const event = new CustomEvent('switchTab', { detail: 'applications' });
-        window.dispatchEvent(event);
-      }
-    },
-    {
-      icon: Calendar,
-      value: "2",
-      label: "Interviews",
-      gradient: "bg-purple-500",
-      onClick: () => {
-        // Navigate to interviews tab in dashboard
-        const event = new CustomEvent('switchTab', { detail: 'interviews' });
-        window.dispatchEvent(event);
-      }
-    },
-    {
-      icon: Eye,
-      value: "24",
-      label: "Profile Views",
-      gradient: "bg-green-500",
-      onClick: () => navigate("/profile")
-    },
-    {
-      icon: MessageCircle,
-      value: "5",
-      label: "Messages",
-      gradient: "bg-orange-500",
-      onClick: () => {
-        // Navigate to messages tab in dashboard
-        const event = new CustomEvent('switchTab', { detail: 'messages' });
-        window.dispatchEvent(event);
-      }
-    }
-  ];
+  const { applications, isLoading: applicationsLoading } = useJobApplications();
+
+  // Get profile score value
+  const getProfileScore = () => {
+    if (authLoading) return "...";
+    if (!profile) return "0%";
+    return `${profile.profile_completion_percentage ?? 0}%`;
+  };
+
+  // Get interviews count
+  const getInterviewsValue = () => {
+    if (applicationsLoading) return "...";
+    return "0";
+  };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      {stats.map((stat, index) => (
-        <StatCard
-          key={index}
-          icon={stat.icon}
-          value={stat.value}
-          label={stat.label}
-          gradient={stat.gradient}
-          onClick={stat.onClick}
-        />
-      ))}
+    <div className="flex items-center gap-4 w-full">
+      {/* Interviews Card */}
+      <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg flex-1">
+        <CardContent className="p-4">
+          <div className="flex flex-col items-center text-center space-y-2">
+            <div className="p-3 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600">
+              <Calendar className="h-6 w-6 text-white" />
+            </div>
+            <p className="text-2xl font-bold text-gray-900">
+              {getInterviewsValue()}
+            </p>
+            <p className="text-sm text-gray-600">Interviews</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Profile Score Card */}
+      <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg flex-1">
+        <CardContent className="p-4">
+          <div className="flex flex-col items-center text-center space-y-2">
+            <div className="p-3 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600">
+              <Star className="h-6 w-6 text-white" />
+            </div>
+            <p className="text-2xl font-bold text-gray-900">
+              {getProfileScore()}
+            </p>
+            <p className="text-sm text-gray-600">Profile Score</p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
