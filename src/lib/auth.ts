@@ -2,7 +2,7 @@
 // Mock authentication system
 // In a production app, this would be replaced with a real authentication system
 
-type UserRole = 'admin' | 'jobseeker' | 'employer' | 'subadmin';
+type UserRole = 'admin' | 'jobseeker' | 'employer' | 'freelancer';
 
 interface User {
   id: string;
@@ -16,8 +16,8 @@ interface AuthState {
   isAuthenticated: boolean;
 }
 
-// Mock users for demonstration - will be extended dynamically
-let MOCK_USERS = [
+// Default mock users for demonstration
+const DEFAULT_USERS = [
   {
     id: '1',
     email: 'admin@visiondrill.com',
@@ -47,6 +47,29 @@ let MOCK_USERS = [
     role: 'subadmin' as UserRole,
   },
 ];
+
+// Initialize users from localStorage or use defaults
+const initializeUsers = () => {
+  const storedUsers = localStorage.getItem('visiondrillUsers');
+  if (storedUsers) {
+    try {
+      return JSON.parse(storedUsers);
+    } catch (e) {
+      console.error('Error parsing stored users:', e);
+    }
+  }
+  // If no stored users or error parsing, use defaults and store them
+  localStorage.setItem('visiondrillUsers', JSON.stringify(DEFAULT_USERS));
+  return DEFAULT_USERS;
+};
+
+// Mock users for demonstration - will be extended dynamically
+let MOCK_USERS = initializeUsers();
+
+// Helper function to persist users to localStorage
+const persistUsers = () => {
+  localStorage.setItem('visiondrillUsers', JSON.stringify(MOCK_USERS));
+};
 
 // Initialize auth state from localStorage if available
 const getInitialAuthState = (): AuthState => {
@@ -92,6 +115,9 @@ export const createUser = (userData: {
 
   // Add to mock users array
   MOCK_USERS.push(newUser);
+
+  // Persist users to localStorage
+  persistUsers();
 
   // Store additional user data in localStorage for profile completion
   const profileData = {

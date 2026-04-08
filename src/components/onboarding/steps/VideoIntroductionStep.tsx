@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Check, Upload, Video } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-
+import { TypingQuestion } from "./TypingQuestion";
 interface VideoIntroductionStepProps {
   videoFile: File | null;
   onVideoUpload: (file: File) => void;
@@ -59,7 +59,11 @@ export const VideoIntroductionStep = ({
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium">Add a video introduction</h3>
+      <h3 className="text-lg font-medium">Add a video introduction  (Optional)</h3>
+      <TypingQuestion
+        question="Add a video introduction"
+        typingSpeed={25}>
+      <h3 className="text-lg font-medium">Add a video introduction (Optional)</h3>
       <p className="text-sm text-gray-500">
         Record a 30-60 second introduction. Our AI will analyze your communication style.
       </p>
@@ -78,7 +82,7 @@ export const VideoIntroductionStep = ({
           />
           <Button variant="outline" className="w-full">
             <Upload className="mr-2 h-4 w-4" />
-            Upload Video
+            Upload Video (Optional)
           </Button>
         </div>
       </div>
@@ -100,6 +104,7 @@ export const VideoIntroductionStep = ({
           <p>{videoAnalysisResult}</p>
         </div>
       )}
+      </TypingQuestion>
     </div>
   );
 };

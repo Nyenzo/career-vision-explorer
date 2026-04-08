@@ -103,7 +103,7 @@ export function JobFormDialog({ open, onOpenChange, job, mode }: JobFormDialogPr
   }, [job, mode, form]);
 
   const onSubmit = (data: JobFormData) => {
-    const formattedData: Omit<AdminJob, "id" | "postedDate" | "applications"> = {
+    const formattedData: Omit<AdminJob, "job_id" | "postedDate" | "applications"> = {
       title: data.title,
       company: data.company,
       location: data.location,
@@ -119,7 +119,7 @@ export function JobFormDialog({ open, onOpenChange, job, mode }: JobFormDialogPr
     if (mode === "create") {
       addJob(formattedData);
     } else if (job) {
-      updateJob(job.id, formattedData);
+      updateJob(job.job_id, formattedData);
     }
 
     onOpenChange(false);

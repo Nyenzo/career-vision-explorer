@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Clock, Star } from "lucide-react";
 
 interface Job {
-  id: string;
+  job_id: string;
   title: string;
   company: string;
   location: string;
@@ -74,10 +74,10 @@ export const JobsList = ({ jobs, isJobApplied, isJobSaved, onApply, onSave }: Jo
       <div className="space-y-6">
         {jobs.map(job => (
           <JobCard
-            key={job.id}
+            key={job.job_id}
             job={job}
-            isApplied={isJobApplied(job.id)}
-            isSaved={isJobSaved(job.id)}
+            isApplied={isJobApplied(job.job_id)}
+            isSaved={isJobSaved(job.job_id)}
             onApply={onApply}
             onSave={onSave}
           />

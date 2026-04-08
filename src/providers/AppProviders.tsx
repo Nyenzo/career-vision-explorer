@@ -20,7 +20,7 @@ const queryClient = new QueryClient({
   },
 });
 
-export const AppProviders = ({ children }: { children: React.ReactNode }) => {
+export const AppProviders = ({ children }: { children: ReactNode }) => {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="light" storageKey="visiondrillTheme">

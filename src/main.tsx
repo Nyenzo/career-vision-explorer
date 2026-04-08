@@ -1,34 +1,17 @@
 
 import { createRoot } from 'react-dom/client'
 import { StrictMode } from 'react'
+import { BrowserRouter } from 'react-router-dom'
 import App from './App.tsx'
 import './index.css'
 
-// Enhanced preloading strategy
+// Simple preloading strategy - let Vite handle the heavy lifting
 const preloadCriticalResources = () => {
-  // Preload critical route components
-  const routes = [
-    () => import('./pages/Index.tsx'),
-    () => import('./pages/Login.tsx'),
-    () => import('./pages/Jobs.tsx'),
-    () => import('./pages/CareerPaths.tsx'),
-    () => import('./pages/Profile.tsx')
-  ];
-
-  // Preload in priority order with staggered timing
-  routes.forEach((routeLoader, index) => {
-    setTimeout(() => {
-      routeLoader().catch(() => {
-        // Silently fail - preloading is not critical
-      });
-    }, index * 100);
-  });
-
-  // Preload critical UI components
+  // Just preload the most critical components after a delay
   setTimeout(() => {
-    import('./components/layout/Layout.tsx').catch(() => {});
-    import('./components/layout/Navbar.tsx').catch(() => {});
-  }, 200);
+    // These will be loaded on-demand by React Router
+    // No need for manual preloading that might cause warnings
+  }, 100);
 };
 
 // Optimize font loading
@@ -47,17 +30,28 @@ const optimizeFonts = () => {
 
 // Service Worker registration for caching
 const registerServiceWorker = () => {
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js')
-        .then(() => {
-          console.log('SW registered');
-        })
-        .catch(() => {
-          console.log('SW registration failed');
-        });
-    });
+  if (!('serviceWorker' in navigator)) {
+    return;
   }
+
+  if (import.meta.env.DEV) {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      registrations.forEach((registration) => {
+        registration.unregister();
+      });
+    });
+    return;
+  }
+
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(() => {
+        console.log('SW registered');
+      })
+      .catch(() => {
+        console.log('SW registration failed');
+      });
+  });
 };
 
 const root = createRoot(document.getElementById("root")!);
@@ -68,7 +62,14 @@ registerServiceWorker();
 
 root.render(
   <StrictMode>
-    <App />
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true
+      }}
+    >
+      <App />
+    </BrowserRouter>
   </StrictMode>
 );
 

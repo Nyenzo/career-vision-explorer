@@ -1,88 +1,38 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { applicationsService } from '@/services';
+import { Application } from '@/types/api';
+import { useMemo } from 'react';
 
-import { create } from "zustand";
-import { toast } from "sonner";
+const APPLICATIONS_QUERY_KEY = 'applications';
 
-export interface JobApplication {
-  id: string;
-  jobId: string;
-  jobTitle: string;
-  company: string;
-  appliedDate: string;
-  status: "Applied" | "Reviewing" | "Interview" | "Hired" | "Rejected";
-  notes?: string;
-}
-
-interface JobApplicationStore {
-  applications: JobApplication[];
-  addApplication: (application: Omit<JobApplication, 'id' | 'appliedDate' | 'status'> & { status?: JobApplication['status'] }) => void;
-  updateApplicationStatus: (id: string, status: JobApplication['status']) => void;
-  getApplicationsByStatus: (status: JobApplication['status']) => JobApplication[];
-  getApplicationForJob: (jobId: string) => JobApplication | undefined;
-}
-
-const initialApplications: JobApplication[] = [
-  {
-    id: "1",
-    jobId: "1",
-    jobTitle: "Senior Frontend Developer",
-    company: "TechCorp",
-    appliedDate: "2024-06-10",
-    status: "Reviewing",
-  },
-  {
-    id: "2",
-    jobId: "2",
-    jobTitle: "UX Designer",
-    company: "DesignStudio",
-    appliedDate: "2024-06-12",
-    status: "Applied",
-  },
-  {
-    id: "3",
-    jobId: "3",
-    jobTitle: "Backend Engineer",
-    company: "DevCorp",
-    appliedDate: "2024-06-08",
-    status: "Interview",
-  },
-];
-
-export const useJobApplications = create<JobApplicationStore>((set, get) => ({
-  applications: initialApplications,
-  
-  addApplication: (application) => {
-    const newApplication: JobApplication = {
-      ...application,
-      id: Date.now().toString(),
-      appliedDate: new Date().toISOString().split('T')[0],
-      status: application.status || "Applied",
-    };
-    
-    set((state) => ({
-      applications: [...state.applications, newApplication],
-    }));
-    
-    toast.success(`Applied to ${application.jobTitle} successfully!`);
-  },
-  
-  updateApplicationStatus: (id, status) => {
-    set((state) => ({
-      applications: state.applications.map((app) =>
-        app.id === id ? { ...app, status } : app
-      ),
-    }));
-    
-    const application = get().applications.find(app => app.id === id);
-    if (application) {
-      toast.success(`Application status updated to ${status}`);
+export const useJobApplications = () => {
+  const { data: applications = [], isLoading, error, refetch } = useQuery<Application[], Error>({
+    queryKey: [APPLICATIONS_QUERY_KEY],
+    queryFn: () => applicationsService.getMyApplications(),
+    retry: (failureCount, error) => {
+      // Don't retry on 403 errors (forbidden)
+      if (error.message?.includes('403') || error.message?.includes('Only job seekers')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+    onError: (error) => {
+      // Silently handle 403 errors for non-job seekers
+      if (error.message?.includes('403') || error.message?.includes('Only job seekers')) {
+        console.log('User is not a job seeker, applications not available');
+      }
     }
-  },
-  
-  getApplicationsByStatus: (status) => {
-    return get().applications.filter(app => app.status === status);
-  },
-  
-  getApplicationForJob: (jobId) => {
-    return get().applications.find(app => app.jobId === jobId);
-  },
-}));
+  });
+
+  const getApplicationForJob = useMemo(() => {
+    return (jobId: string) => applications.find(app => app.job_id === jobId);
+  }, [applications]);
+
+  return {
+    applications,
+    isLoading,
+    error: error ? error.message : null,
+    refetch,
+    getApplicationForJob,
+  };
+};

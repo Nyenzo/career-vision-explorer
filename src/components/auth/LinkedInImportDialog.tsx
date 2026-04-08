@@ -15,7 +15,7 @@ interface LinkedInImportDialogProps {
   onOpenChange: (open: boolean) => void;
   onConnect: () => void;
   isLoading: boolean;
-  selectedRole: "jobseeker" | "employer";
+  selectedRole: "jobseeker" | "employer" | "freelancer";
 }
 
 const LinkedInImportDialog: React.FC<LinkedInImportDialogProps> = ({
@@ -42,7 +42,31 @@ const LinkedInImportDialog: React.FC<LinkedInImportDialogProps> = ({
                 After importing from LinkedIn, you will need to:
               </p>
               <ul className="text-sm text-gray-600 list-disc list-inside space-y-1">
-                <li>Add your phone number</li>
+                <li>Add your phone number (required)</li>
+              </ul>
+            </>
+          )}
+          {selectedRole === "freelancer" && (
+            <>
+              <p className="text-sm text-gray-600">
+                We'll import from LinkedIn and pre-fill:
+              </p>
+              <ul className="text-sm text-gray-600 list-disc list-inside space-y-1">
+                <li>Your professional title</li>
+                <li>Basic information for your freelancer profile</li>
+                <li>You can add hourly rate and portfolio after import</li>
+              </ul>
+            </>
+          )}
+          {selectedRole === "employer" && (
+            <>
+              <p className="text-sm text-gray-600">
+                We'll import from LinkedIn:
+              </p>
+              <ul className="text-sm text-gray-600 list-disc list-inside space-y-1">
+                <li>Your company information</li>
+                <li>Industry details</li>
+                <li>You'll need to verify company name (required)</li>
               </ul>
             </>
           )}

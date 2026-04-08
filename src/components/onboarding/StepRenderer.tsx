@@ -59,10 +59,24 @@ export const StepRenderer = ({
     
     case 3:
       return (
-        <SalaryExpectationsStep 
-          value={data.salaryExpectations} 
-          onChange={(value) => updateField("salaryExpectations", value)} 
-        />
+   
+        <>
+       
+         <SalaryExpectationsStep 
+            value={data.salaryExpectations} 
+            onChange={(value) => updateField("salaryExpectations", value)} 
+          />
+          <div className="mt-4">
+            <label className="block text-sm font-medium">Desired Salary (Optional)</label>
+            <input
+              type="number"
+              placeholder="e.g., 60000"
+              className="mt-1 block w-full border rounded-md px-3 py-2"
+              value={data.desiredSalary || ""}
+              onChange={(e) => updateField("desiredSalary", e.target.value ? Number(e.target.value) : undefined)}
+            />
+          </div>
+          </>
       );
     
     case 4:

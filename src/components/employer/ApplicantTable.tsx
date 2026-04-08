@@ -48,79 +48,81 @@ export const ApplicantTable = ({ applicants, onStatusChange, onScheduleInterview
   }
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Candidate</TableHead>
-          <TableHead>Position</TableHead>
-          <TableHead>Contact</TableHead>
-          <TableHead>Applied</TableHead>
-          <TableHead>Match Score</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {applicants.map((applicant) => (
-          <TableRow key={applicant.id}>
-            <TableCell>
-              <div>
-                <div className="font-medium">{applicant.name}</div>
-                {applicant.notes && (
-                  <div className="text-sm text-gray-500 truncate max-w-xs">
-                    {applicant.notes}
-                  </div>
-                )}
-              </div>
-            </TableCell>
-            <TableCell>{applicant.position}</TableCell>
-            <TableCell>
-              <div className="space-y-1">
-                <div className="flex items-center text-sm">
-                  <Mail className="h-3 w-3 mr-1" />
-                  {applicant.email}
-                </div>
-                {applicant.phone && (
-                  <div className="flex items-center text-sm">
-                    <Phone className="h-3 w-3 mr-1" />
-                    {applicant.phone}
-                  </div>
-                )}
-              </div>
-            </TableCell>
-            <TableCell>{applicant.appliedTime}</TableCell>
-            <TableCell>
-              <Badge className={getScoreBadgeColor(applicant.matchScore)}>
-                {applicant.matchScore}%
-              </Badge>
-            </TableCell>
-            <TableCell>
-              <Badge className={getStatusBadgeColor(applicant.status)}>
-                {applicant.status}
-              </Badge>
-            </TableCell>
-            <TableCell>
-              <div className="flex items-center gap-2">
-                <ApplicantProfileDialog
-                  applicant={applicant}
-                  onStatusChange={onStatusChange}
-                  onScheduleInterview={onScheduleInterview}
-                >
-                  <Button variant="outline" size="sm">
-                    View Profile
-                  </Button>
-                </ApplicantProfileDialog>
-                {applicant.resumeUrl && (
-                  <Button variant="outline" size="sm">
-                    <Download className="h-3 w-3 mr-1" />
-                    Resume
-                  </Button>
-                )}
-              </div>
-            </TableCell>
+    <div className="overflow-x-auto rounded-md">
+      <Table className="min-w-[700px]">
+        <TableHeader>
+          <TableRow>
+            <TableHead scope="col">Candidate</TableHead>
+            <TableHead scope="col">Position</TableHead>
+            <TableHead scope="col">Contact</TableHead>
+            <TableHead scope="col">Applied</TableHead>
+            <TableHead scope="col">Match Score</TableHead>
+            <TableHead scope="col">Status</TableHead>
+            <TableHead scope="col">Actions</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {applicants.map((applicant) => (
+            <TableRow key={applicant.id}>
+              <TableCell>
+                <div>
+                  <div className="font-medium">{applicant.name}</div>
+                  {applicant.notes && (
+                    <div className="text-sm text-gray-500 truncate max-w-xs">
+                      {applicant.notes}
+                    </div>
+                  )}
+                </div>
+              </TableCell>
+              <TableCell>{applicant.position}</TableCell>
+              <TableCell>
+                <div className="space-y-1">
+                  <div className="flex items-center text-sm">
+                    <Mail className="h-3 w-3 mr-1" aria-hidden="true" />
+                    {applicant.email}
+                  </div>
+                  {applicant.phone && (
+                    <div className="flex items-center text-sm">
+                      <Phone className="h-3 w-3 mr-1" aria-hidden="true" />
+                      {applicant.phone}
+                    </div>
+                  )}
+                </div>
+              </TableCell>
+              <TableCell>{applicant.appliedTime}</TableCell>
+              <TableCell>
+                <Badge className={getScoreBadgeColor(applicant.matchScore)}>
+                  {applicant.matchScore}%
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <Badge className={getStatusBadgeColor(applicant.status)}>
+                  {applicant.status}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <ApplicantProfileDialog
+                    applicant={applicant}
+                    onStatusChange={onStatusChange}
+                    onScheduleInterview={onScheduleInterview}
+                  >
+                    <Button variant="outline" size="sm">
+                      View Profile
+                    </Button>
+                  </ApplicantProfileDialog>
+                  {applicant.resumeUrl && (
+                    <Button variant="outline" size="sm">
+                      <Download className="h-3 w-3 mr-1" aria-hidden="true" />
+                      Resume
+                    </Button>
+                  )}
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 };

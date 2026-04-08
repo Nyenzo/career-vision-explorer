@@ -1,7 +1,6 @@
-
-import React from "react";
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/admin/DashboardLayout";
-import { JobPostHeader } from "@/components/employer/JobPostHeader";
 import { StatisticsCards } from "@/components/employer/StatisticsCards";
 import { RecentApplicantsTable } from "@/components/employer/RecentApplicantsTable";
 import { JobListingsTable } from "@/components/employer/JobListingsTable";

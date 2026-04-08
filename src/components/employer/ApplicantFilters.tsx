@@ -11,26 +11,27 @@ interface ApplicantFiltersProps {
   onStatusFilterChange: (value: string) => void;
 }
 
-export const ApplicantFilters = ({ 
-  searchQuery, 
-  statusFilter, 
-  onSearchChange, 
-  onStatusFilterChange 
+export const ApplicantFilters = ({
+  searchQuery,
+  statusFilter,
+  onSearchChange,
+  onStatusFilterChange
 }: ApplicantFiltersProps) => {
   return (
-    <div className="flex items-center gap-4">
-      <div className="relative w-64">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full">
+      <div className="relative flex-1 min-w-0">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" aria-hidden="true" />
         <Input
           type="search"
           placeholder="Search applicants..."
-          className="pl-8"
+          className="pl-8 w-full"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
+          aria-label="Search applicants"
         />
       </div>
       <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-        <SelectTrigger className="w-32">
+        <SelectTrigger className="w-full sm:w-40">
           <SelectValue placeholder="Status" />
         </SelectTrigger>
         <SelectContent>

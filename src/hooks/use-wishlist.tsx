@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { toast } from "sonner";
 
 export interface WishlistJob {
-  id: string;
+  job_id: string;
   title: string;
   company: string;
   location: string;
@@ -30,7 +30,7 @@ export const useWishlist = create<WishlistStore>((set, get) => ({
   
   addToWishlist: (job) => {
     const { wishlistJobs } = get();
-    if (!wishlistJobs.find(w => w.id === job.id)) {
+if (!wishlistJobs.find(w => w.job_id === job.job_id)) {
       const newWishlistJob: WishlistJob = {
         ...job,
         dateSaved: new Date().toISOString()
@@ -42,15 +42,15 @@ export const useWishlist = create<WishlistStore>((set, get) => ({
   
   removeFromWishlist: (jobId) => {
     const { wishlistJobs } = get();
-    const jobToRemove = wishlistJobs.find(job => job.id === jobId);
+const jobToRemove = wishlistJobs.find(job => job.job_id === jobId);
     if (jobToRemove) {
-      set({ wishlistJobs: wishlistJobs.filter(job => job.id !== jobId) });
+set({ wishlistJobs: wishlistJobs.filter(job => job.job_id !== jobId) });
       toast.success(`${jobToRemove.title} removed from wishlist`);
     }
   },
   
   isJobInWishlist: (jobId) => {
-    return get().wishlistJobs.some(job => job.id === jobId);
+return get().wishlistJobs.some(job => job.job_id === jobId);
   },
   
   clearWishlist: () => {

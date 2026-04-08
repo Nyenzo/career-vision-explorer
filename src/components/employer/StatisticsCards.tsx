@@ -1,11 +1,11 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Briefcase, Users, Calendar, Clock, TrendingUp, ArrowUpRight } from "lucide-react";
+import { Briefcase, Users, Calendar, Clock, TrendingUp, ArrowUpRight, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useJobPosts } from "@/hooks/use-job-posts";
-import { useApplicants } from "@/hooks/use-applicants";
-import { useInterviews } from "@/hooks/use-interviews";
+import { useEmployerStats } from "@/hooks/use-employer-stats";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 interface StatCardProps {
   title: string;
@@ -49,26 +49,44 @@ const StatCard = ({ title, value, subtitle, icon, iconColor, bgColor, trend, onC
 
 export const StatisticsCards = () => {
   const navigate = useNavigate();
-  const { jobs } = useJobPosts();
-  const { applicants } = useApplicants();
-  const { interviews } = useInterviews();
-  
-  // Calculate boosted listings
-  const boostedListings = jobs.filter(job => job.isBoosted).length;
-  
-  // Calculate weekly new applicants
-  const weeklyNewApplicants = applicants.filter(app => 
-    app.appliedTime.includes("day") && parseInt(app.appliedTime) <= 7
-  ).length;
-  
-  // Calculate weekly interviews
-  const weeklyInterviews = interviews.filter(int => 
-    new Date(int.scheduledDate) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-  ).length;
-  
-  // Calculate total views
-  const totalViews = jobs.reduce((total, job) => total + job.views, 0);
-  const viewsIncrease = "+18%"; // This would typically be calculated from historical data
+  const { stats, isLoading, error, percentageChanges } = useEmployerStats();
+
+  // Show loading skeletons
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {[1, 2, 3, 4].map((index) => (
+          <StatCardSkeleton key={index} />
+        ))}
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <Alert variant="destructive" className="max-w-2xl">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error loading statistics</AlertTitle>
+        <AlertDescription>
+          {error || "Failed to load employer statistics. Please try again later."}
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  // Show empty state if no stats
+  if (!stats) {
+    return (
+      <Alert className="max-w-2xl">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>No statistics available</AlertTitle>
+        <AlertDescription>
+          Start posting jobs to see your employer statistics.
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">

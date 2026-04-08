@@ -49,13 +49,13 @@ import { JobFormDialog } from "@/components/admin/JobFormDialog";
 
 const AdminJobs = () => {
   const { toast } = useToast();
-  const { 
-    filteredJobs, 
-    searchQuery, 
-    statusFilter, 
-    setSearchQuery, 
-    setStatusFilter, 
-    deleteJob 
+  const {
+    filteredJobs,
+    searchQuery,
+    statusFilter,
+    setSearchQuery,
+    setStatusFilter,
+    deleteJob
   } = useAdminJobs();
 
   const [selectedJob, setSelectedJob] = useState<AdminJob | null>(null);
@@ -131,7 +131,7 @@ const AdminJobs = () => {
 
   const confirmDelete = () => {
     if (selectedJob) {
-      deleteJob(selectedJob.id);
+      deleteJob(selectedJob.job_id);
       setIsDeleteDialogOpen(false);
       setSelectedJob(null);
     }
@@ -170,7 +170,7 @@ const AdminJobs = () => {
         </div>
 
         {/* Comprehensive Stats Dashboard */}
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card>
             <CardContent className="p-6">
               <div className="text-2xl font-bold text-green-600">{stats.active}</div>
@@ -230,9 +230,9 @@ const AdminJobs = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              
+
               {/* Filter Row */}
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger>
                     <Filter className="h-4 w-4 mr-2" />
@@ -298,8 +298,8 @@ const AdminJobs = () => {
                   </SelectContent>
                 </Select>
 
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => {
                     setSearchQuery("");
                     setStatusFilter("all");
@@ -343,92 +343,94 @@ const AdminJobs = () => {
                 </Button>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Job Details</TableHead>
-                    <TableHead>Company & Department</TableHead>
-                    <TableHead>Location & Type</TableHead>
-                    <TableHead>Posted Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Performance</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {fullyFilteredJobs.map((job) => (
-                    <TableRow key={job.id} className="hover:bg-gray-50">
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="font-medium">{job.title}</div>
-                          <div className="text-sm text-gray-500">{job.experience}</div>
-                          <div className="text-sm text-gray-500">{job.salary}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="font-medium">{job.company}</div>
-                          <div className="text-sm text-gray-500">{job.department}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1 text-sm">
-                            <MapPin className="h-3 w-3" />
-                            {job.location}
-                          </div>
-                          <div className="flex items-center gap-1 text-sm text-gray-500">
-                            <Briefcase className="h-3 w-3" />
-                            {job.type}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{job.postedDate}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(job.status)} variant="outline">
-                          {job.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="text-sm font-medium">{job.applications} applications</div>
-                          <div className="text-xs text-gray-500">
-                            {job.applications > stats.averageApplications ? "Above avg" : "Below avg"}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleViewJob(job)}
-                            className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleEditJob(job)}
-                            className="text-green-600 hover:text-green-800 hover:bg-green-50"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleDeleteJob(job)}
-                            className="text-red-600 hover:text-red-800 hover:bg-red-50"
-                          >
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+              <div className="overflow-x-auto rounded-md">
+                <Table className="min-w-[750px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead scope="col">Job Details</TableHead>
+                      <TableHead scope="col">Company &amp; Department</TableHead>
+                      <TableHead scope="col">Location &amp; Type</TableHead>
+                      <TableHead scope="col">Posted Date</TableHead>
+                      <TableHead scope="col">Status</TableHead>
+                      <TableHead scope="col">Performance</TableHead>
+                      <TableHead scope="col" className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {fullyFilteredJobs.map((job) => (
+                      <TableRow key={job.job_id} className="hover:bg-gray-50">
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="font-medium">{job.title}</div>
+                            <div className="text-sm text-gray-500">{job.experience}</div>
+                            <div className="text-sm text-gray-500">{job.salary}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="font-medium">{job.company}</div>
+                            <div className="text-sm text-gray-500">{job.department}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1 text-sm">
+                              <MapPin className="h-3 w-3" />
+                              {job.location}
+                            </div>
+                            <div className="flex items-center gap-1 text-sm text-gray-500">
+                              <Briefcase className="h-3 w-3" />
+                              {job.type}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>{job.postedDate}</TableCell>
+                        <TableCell>
+                          <Badge className={getStatusColor(job.status)} variant="outline">
+                            {job.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="text-sm font-medium">{job.applications} applications</div>
+                            <div className="text-xs text-gray-500">
+                              {job.applications > stats.averageApplications ? "Above avg" : "Below avg"}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleViewJob(job)}
+                              className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditJob(job)}
+                              className="text-green-600 hover:text-green-800 hover:bg-green-50"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteJob(job)}
+                              className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -450,7 +452,7 @@ const AdminJobs = () => {
               {selectedJob?.company} • {selectedJob?.location}
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedJob && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
@@ -522,7 +524,7 @@ const AdminJobs = () => {
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{selectedJob?.title}" at {selectedJob?.company}? 
+              Are you sure you want to delete "{selectedJob?.title}" at {selectedJob?.company}?
               This action cannot be undone and will remove all associated applications.
             </DialogDescription>
           </DialogHeader>

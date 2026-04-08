@@ -66,12 +66,12 @@ const FeatureSection = () => {
           {enabledFeatures.map((feature, index) => {
             const Icon = feature.icon;
             return (
-              <div 
+              <div
                 key={index}
                 className="group relative bg-card rounded-2xl p-8 shadow-sm hover:shadow-xl transition-all duration-300 border border-border/50 hover:border-primary/20 hover:-translate-y-1"
               >
                 <div className={`${feature.bgColor} w-16 h-16 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                  <Icon className={`h-8 w-8 ${feature.iconColor}`} />
+                  <Icon className={`h-8 w-8 ${feature.iconColor}`} aria-hidden="true" />
                 </div>
                 <h3 className="text-xl font-bold mb-4 text-foreground group-hover:text-primary transition-colors">
                   {feature.title}
@@ -79,7 +79,7 @@ const FeatureSection = () => {
                 <p className="text-muted-foreground leading-relaxed">
                   {feature.description}
                 </p>
-                
+
                 {/* Decorative element */}
                 <div className="absolute top-4 right-4 w-2 h-2 bg-primary/20 rounded-full group-hover:bg-primary/40 transition-colors"></div>
               </div>
@@ -89,8 +89,8 @@ const FeatureSection = () => {
 
         <div className="text-center">
           <Link to="/jobs">
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 py-6 text-lg shadow-xl hover:shadow-2xl transition-all duration-300"
             >
               Discover More

@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true
+  },
+  "include": [
+    "src/vite-env.d.ts",
+    "src/hooks/use-auth.tsx",
+    "src/services/ai.service.ts",
+    "src/lib/session-auth-storage.ts",
+    "src/components/ui/chart.tsx",
+    "src/components/seo/RouteMetadata.tsx"
+  ]
+}

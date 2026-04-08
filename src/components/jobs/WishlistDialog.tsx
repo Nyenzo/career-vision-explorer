@@ -66,9 +66,9 @@ export const WishlistDialog = ({ children }: WishlistDialogProps) => {
         <div className="space-y-4">
           {wishlistJobs.map((job) => (
             <WishlistJobCard 
-              key={job.id} 
+key={job.job_id} 
               job={job} 
-              onRemove={() => removeFromWishlist(job.id)}
+              onRemove={() => removeFromWishlist(job.job_id)}
             />
           ))}
         </div>
@@ -102,7 +102,7 @@ const WishlistJobCard = ({ job, onRemove }: WishlistJobCardProps) => {
             <p className="text-sm text-gray-600">{job.company}</p>
           </div>
           <div className="flex gap-2">
-            <Link to={`/jobs/${job.id}`}>
+<Link to={`/jobs/${job.job_id}`}>
               <Button variant="outline" size="sm">
                 <ExternalLink className="h-4 w-4 mr-1" />
                 View

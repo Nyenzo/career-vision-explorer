@@ -131,7 +131,7 @@ export const SkillsTable = ({ onEdit, onView }: SkillsTableProps) => {
           </TableHeader>
           <TableBody>
             {filteredSkills.map((skill) => (
-              <TableRow key={skill.id}>
+              <TableRow key={skill.skill_id}>
                 <TableCell className="font-medium">
                   <div>
                     <div className="font-semibold">{skill.name}</div>
@@ -186,7 +186,7 @@ export const SkillsTable = ({ onEdit, onView }: SkillsTableProps) => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => deleteSkill(skill.id)}
+                      onClick={() => deleteSkill(skill.skill_id)}
                       className="text-red-600 hover:text-red-800"
                     >
                       <Trash2 className="h-4 w-4" />

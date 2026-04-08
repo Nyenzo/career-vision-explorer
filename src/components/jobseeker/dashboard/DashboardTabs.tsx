@@ -8,7 +8,7 @@ import { LearningPathsTab } from "./LearningPathsTab";
 import { useState, useEffect } from "react";
 
 interface DashboardTabsProps {
-  onViewApplication: (application: any) => void;
+  onViewApplication?: (application: any) => void;
 }
 
 export const DashboardTabs = ({ onViewApplication }: DashboardTabsProps) => {

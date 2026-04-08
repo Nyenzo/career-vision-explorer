@@ -37,42 +37,47 @@ import { EditJobDialog } from "./EditJobDialog";
 import { BoostJobDialog } from "./BoostJobDialog";
 import { deleteJobDialog } from "@/lib/utils";
 import { Eye, Edit, Trash, List, Search, Filter, MapPin, Briefcase, Plus, TrendingUp } from "lucide-react";
-import { useJobPosts, JobPost } from "@/hooks/use-job-posts";
+import { useEmployerJobs } from "@/hooks/use-employer-jobs";
 import { formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
 
 export function JobListingsTable() {
-  const { filteredJobs, removeJob, updateFilters, filters } = useJobPosts();
+  const { filteredJobs, loading, error, deleteJob, setSearchQuery, setStatusFilter } = useEmployerJobs();
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState(filters.searchQuery || "");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filters, setFilters] = useState({
+    jobType: undefined as string | undefined,
+    boostedOnly: false,
+    dateRange: undefined as number | undefined,
+  });
   
   const handleViewApplicants = (jobId: string) => {
     navigate(`/employer/jobs/${jobId}/applicants`);
   };
   
-  const handleDelete = (job: JobPost) => {
+  const handleDelete = (jobId: string, jobTitle: string) => {
     deleteJobDialog({
-      title: `Delete ${job.title}?`,
+      title: `Delete ${jobTitle}?`,
       description: "This will permanently delete this job listing and cannot be undone.",
-      onConfirm: () => removeJob(job.id),
+      onConfirm: () => deleteJob(jobId),
     });
   };
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
-    updateFilters({ searchQuery: value });
+    setSearchQuery(value);
   };
 
   const handleJobTypeFilter = (type: string) => {
-    updateFilters({ jobType: type === "all" ? undefined : type });
+    setFilters(prev => ({ ...prev, jobType: type === "all" ? undefined : type }));
   };
 
   const handleDateRangeFilter = (days: string) => {
-    updateFilters({ dateRange: days === "all" ? undefined : parseInt(days) });
+    setFilters(prev => ({ ...prev, dateRange: days === "all" ? undefined : parseInt(days) }));
   };
 
   const handleBoostedFilter = (boostedOnly: boolean) => {
-    updateFilters({ boostedOnly });
+    setFilters(prev => ({ ...prev, boostedOnly }));
   };
 
   // Sort jobs to show boosted ones first
@@ -86,7 +91,7 @@ export function JobListingsTable() {
     total: filteredJobs.length,
     boosted: filteredJobs.filter(job => job.isBoosted).length,
     active: filteredJobs.length, // Assuming all are active for employer view
-    totalApplicants: filteredJobs.reduce((sum, job) => sum + job.applicants, 0),
+    totalApplicants: filteredJobs.reduce((sum, job) => sum + job.applications, 0),
     totalViews: filteredJobs.reduce((sum, job) => sum + job.views, 0)
   };
 
@@ -171,7 +176,14 @@ export function JobListingsTable() {
           </div>
         </CardHeader>
         <CardContent>
-          {sortedJobs.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Briefcase className="h-8 w-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium mb-2">Loading jobs...</h3>
+            </div>
+          ) : filteredJobs.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Briefcase className="h-8 w-8 text-gray-400" />
@@ -204,15 +216,19 @@ export function JobListingsTable() {
               </TableHeader>
               <TableBody>
                 {sortedJobs.map((job) => (
-                  <TableRow key={job.id} className={job.isBoosted ? "bg-green-50 border-green-200" : ""}>
+                  <TableRow key={job.id}>
                     <TableCell>
                       <div className="space-y-1">
                         <div className="font-medium flex items-center gap-2">
                           {job.title}
-                          {job.isBoosted && (
-                            <Badge className="bg-green-100 text-green-800 text-xs">
-                              Boosted
-                            </Badge>
+                          {job.status === "active" && (
+                            <Badge className="bg-green-100 text-green-800 text-xs">Active</Badge>
+                          )}
+                          {job.status === "draft" && (
+                            <Badge className="bg-yellow-100 text-yellow-800 text-xs">Draft</Badge>
+                          )}
+                          {job.status === "expired" && (
+                            <Badge className="bg-red-100 text-red-800 text-xs">Closed</Badge>
                           )}
                         </div>
                         <div className="text-sm text-muted-foreground">{job.salary}</div>
@@ -232,12 +248,12 @@ export function JobListingsTable() {
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
-                        {formatDistanceToNow(new Date(job.datePosted), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(job.postedDate), { addSuffix: true })}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
-                        <div className="text-sm font-medium">{job.applicants} applicants</div>
+                        <div className="text-sm font-medium">{job.applications} applicants</div>
                         <div className="text-sm text-muted-foreground">{job.views} views</div>
                       </div>
                     </TableCell>
@@ -267,7 +283,7 @@ export function JobListingsTable() {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem 
                               className="text-red-600"
-                              onClick={() => handleDelete(job)}
+                              onClick={() => handleDelete(job.id, job.title)}
                             >
                               <Trash className="mr-2 h-4 w-4" />
                               Delete

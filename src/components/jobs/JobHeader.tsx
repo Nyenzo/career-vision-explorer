@@ -11,6 +11,7 @@ interface JobHeaderProps {
     type: string;
     posted: string;
     matchScore: number;
+    match_score?: number;
     companyInfo?: {
       logoUrl?: string;
     };
@@ -18,18 +19,19 @@ interface JobHeaderProps {
 }
 
 export const JobHeader = ({ job }: JobHeaderProps) => {
-  return (
+
+const score = Math.round((job.matchScore ?? job.similarity_score ?? 0) * (job.matchScore <= 1 || job.similarity_score <= 1 ? 100 : 1));  return (
     <Card className="career-card">
       {/* Match Score Bar */}
       <div className="h-2 bg-muted rounded-t-xl">
         <div 
           className={`h-full rounded-t-xl ${
-            job.matchScore >= 90 ? 'bg-green-500' : 
-            job.matchScore >= 80 ? 'bg-blue-500' : 
-            job.matchScore >= 70 ? 'bg-yellow-500' : 
+           score>= 90 ? 'bg-green-500' : 
+            score >= 80 ? 'bg-blue-500' : 
+            score >= 70 ? 'bg-yellow-500' : 
             'bg-orange-500'
           }`} 
-          style={{ width: `${job.matchScore}%` }}
+          style={{ width: `${score}%` }}
         ></div>
       </div>
       
@@ -90,12 +92,12 @@ export const JobHeader = ({ job }: JobHeaderProps) => {
           <div className="flex items-center gap-3">
             <div className="text-right">
               <Badge className={`text-lg px-4 py-2 font-bold ${
-                job.matchScore >= 90 ? 'bg-green-500 hover:bg-green-600' : 
-                job.matchScore >= 80 ? 'bg-blue-500 hover:bg-blue-600' : 
-                job.matchScore >= 70 ? 'bg-yellow-500 hover:bg-yellow-600' : 
+                score >= 90 ? 'bg-green-500 hover:bg-green-600' : 
+                score >= 80 ? 'bg-blue-500 hover:bg-blue-600' : 
+                score >= 70 ? 'bg-yellow-500 hover:bg-yellow-600' : 
                 'bg-orange-500 hover:bg-orange-600'
               } text-white`}>
-                {job.matchScore}% Match
+                {score}% Match
               </Badge>
             </div>
             <BarChart3 className="h-8 w-8 text-muted-foreground" />

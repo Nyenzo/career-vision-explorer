@@ -1,79 +1,56 @@
-
 import { ReactNode, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "@/components/ui/sonner";
+import { PageLoaderSkeleton } from "@/components/ui/skeleton-loaders";
 
 interface ProtectedRouteProps {
-  children: ReactNode;
-  requiredRole?: "admin" | "jobseeker" | "employer";
+  children: React.ReactNode;
+  requiredRole?: "admin" | "job_seeker" | "employer" | "freelancer";
 }
 
-export const ProtectedRoute = ({ 
-  children, 
-  requiredRole
+export const ProtectedRoute = ({
+  children,
+  requiredRole,
 }: ProtectedRouteProps) => {
-  const { isAuthenticated, hasRole, isLoading, user } = useAuth();
+  const { user, profile, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  
+  const normalizeRole = (role?: string) => {
+    if (!role) return "";
+    const normalized = role.trim().toLowerCase().replace(/[-\s]+/g, "_");
+    if (normalized === "jobseeker") return "job_seeker";
+    return normalized;
+  };
+  const getDashboardPath = (role?: string) => {
+    const normalizedRole = normalizeRole(role);
+    if (normalizedRole === "admin") return "/admin/dashboard";
+    if (normalizedRole === "employer") return "/employer/dashboard";
+    if (normalizedRole === "freelancer") return "/freelancer/dashboard";
+    if (normalizedRole === "job_seeker") return "/jobseeker/dashboard";
+    return "/dashboard";
+  };
+  const effectiveRole = normalizeRole(profile?.active_role || user?.account_type);
+
   useEffect(() => {
     if (!isLoading) {
       if (!isAuthenticated) {
-        toast.error("Authentication Required", {
-          description: "Please log in to access this page",
-        });
-        
-        // Redirect to appropriate login page
-        const loginUrl = location.pathname.startsWith('/admin') ? '/admin/login' : '/login';
-        navigate(`${loginUrl}?returnUrl=${encodeURIComponent(location.pathname)}`);
-      } else if (requiredRole && !hasRole(requiredRole)) {
-        // Role-specific error message
-        const roleMessage = `You need ${requiredRole} permissions to access this page`;
-        
-        toast.error("Access Denied", {
-          description: roleMessage,
-        });
-        
-        // Redirect based on current role
-        if (user) {
-          const dashboardUrl = getDashboardUrl(user.role);
-          navigate(dashboardUrl);
-        } else {
-          navigate("/login");
-        }
+        navigate("/login", { replace: true });
+      } else if (requiredRole && effectiveRole !== requiredRole) {
+        navigate(getDashboardPath(effectiveRole), { replace: true });
       }
     }
-  }, [isAuthenticated, hasRole, isLoading, navigate, requiredRole, location.pathname, user]);
-  
-  // Helper function to get appropriate dashboard URL
-  const getDashboardUrl = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return '/admin/dashboard';
-      case 'employer':
-        return '/employer/dashboard';
-      case 'jobseeker':
-        return '/jobseeker/dashboard';
-      default:
-        return '/';
-    }
-  };
-  
-  // Show a loading indicator while checking authentication
+  }, [isAuthenticated, isLoading, requiredRole, navigate, effectiveRole]);
+
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <PageLoaderSkeleton />;
   }
-  
-  // If not authenticated or doesn't have required role, don't render children
-  if (!isAuthenticated || (requiredRole && !hasRole(requiredRole))) {
+
+  if (
+    !isAuthenticated ||
+    (requiredRole && effectiveRole !== requiredRole)
+  ) {
     return null;
   }
-  
-  // If authenticated and has required role, render children
+
   return <>{children}</>;
 };

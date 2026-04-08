@@ -7,6 +7,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { WorkPreference } from "../types";
+import { TypingQuestion } from "./TypingQuestion";
+
 
 interface WorkPreferenceStepProps {
   value: WorkPreference;
@@ -16,6 +18,9 @@ interface WorkPreferenceStepProps {
 export const WorkPreferenceStep = ({ value, onChange }: WorkPreferenceStepProps) => {
   return (
     <div className="space-y-4">
+      <TypingQuestion
+        question="What's your preferred work style?"
+        typingSpeed={25}>
       <h3 className="text-lg font-medium">What's your preferred work style?</h3>
       <Select
         value={value || "remote"}
@@ -30,6 +35,7 @@ export const WorkPreferenceStep = ({ value, onChange }: WorkPreferenceStepProps)
           <SelectItem value="hybrid">Hybrid</SelectItem>
         </SelectContent>
       </Select>
+      </TypingQuestion>
     </div>
   );
 };

@@ -3,24 +3,27 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Heart, Share2, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
-
-interface JobActionsProps {
-  job: {
-    id: string;
-    salary: string;
-  };
-  isApplied: boolean;
-  isSaved: boolean;
-  onApply: () => void;
-  onSave: () => void;
-}
-
-export const JobActions = ({ job, isApplied, isSaved, onApply, onSave }: JobActionsProps) => {
-  const handleShare = () => {
+ 
+ interface JobActionsProps {
+   job: {
+     id?: string;
+     salary?: string;
+     job_id?: string;
+     salary_range: string | null;
+   };
+   isApplied: boolean;
+   isSaved: boolean;
+   onApply: () => void;
+   onSave: () => void;
+ }
+ 
+ export const JobActions = ({ job, isApplied, isSaved, onApply, onSave }: JobActionsProps) => {
+   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
     toast.success("Job link copied to clipboard");
   };
 
+  const displaySalary =  job.salary ?? job.salary_range ?? 'Not specified';
   return (
     <Card className="career-card">
       <CardHeader>
@@ -29,7 +32,7 @@ export const JobActions = ({ job, isApplied, isSaved, onApply, onSave }: JobActi
       <CardContent className="space-y-6">
         <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border border-blue-100">
           <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-            {job.salary}
+            {displaySalary}
           </div>
           <div className="text-sm text-muted-foreground">Salary Range</div>
         </div>

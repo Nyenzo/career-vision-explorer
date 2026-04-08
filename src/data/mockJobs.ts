@@ -1,5 +1,6 @@
 
 interface Job {
+  job_id: string;
   id: string;
   title: string;
   company: string;
@@ -18,6 +19,7 @@ interface Job {
 
 export const mockJobs: Job[] = [
   {
+    job_id: "1",
     id: "1",
     title: "Frontend Developer",
     company: "Tech Solutions Ltd",
@@ -34,6 +36,7 @@ export const mockJobs: Job[] = [
     }
   },
   {
+    job_id: "2",
     id: "2",
     title: "Software Engineer",
     company: "Innovative Systems",
@@ -50,6 +53,7 @@ export const mockJobs: Job[] = [
     }
   },
   {
+    job_id: "3",
     id: "3",
     title: "UX Designer",
     company: "Creative Digital Agency",
@@ -66,6 +70,7 @@ export const mockJobs: Job[] = [
     }
   },
   {
+    job_id: "4",
     id: "4",
     title: "Data Analyst",
     company: "Data Insights Co",
@@ -82,6 +87,7 @@ export const mockJobs: Job[] = [
     }
   },
   {
+    job_id: "5",
     id: "5",
     title: "Senior Product Manager",
     company: "TechCorp Inc.",

@@ -1,23 +1,23 @@
 
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Layout from "@/components/layout/Layout";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
 } from "@/components/ui/card";
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
 } from "@/components/ui/form";
 import {
   Select,
@@ -30,7 +30,7 @@ import { toast } from "@/components/ui/sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Linkedin } from "lucide-react";
+import { Linkedin, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import OnboardingWizard from "@/components/onboarding/OnboardingWizard";
 import ProfileImageUpload from "@/components/auth/ProfileImageUpload";
@@ -47,93 +47,186 @@ const signupSchema = z.object({
   password: z.string().min(8, {
     message: "Password must be at least 8 characters.",
   }),
-  role: z.enum(["jobseeker", "employer"], {
+  confirmPassword: z.string().min(8, {
+    message: "Password must be at least 8 characters.",
+  }),
+  role: z.enum(["jobseeker", "employer", "freelancer"], {
     required_error: "Please select your role.",
   }),
   countryCode: z.string().optional(),
   phoneNumber: z.string().optional(),
-  profileImage: z.string().min(1, {
-    message: "Profile image is required.",
-  }),
-}).refine((data) => {
-  // Phone number is required only for job seekers
-  if (data.role === "jobseeker") {
-    return data.countryCode && data.countryCode.length > 0 && 
-           data.phoneNumber && data.phoneNumber.length > 0 && 
-           /^\d+$/.test(data.phoneNumber);
+  profileImage: z.string().optional(),
+  videoUrl: z.string().optional(),
+  // Freelancer fields
+  professionalTitle: z.string().optional(),
+  hourlyRate: z.string().optional(),
+  portfolioUrl: z.string().url().optional().or(z.literal('')),
+  // Employer fields
+  companyName: z.string().optional(),
+  companyWebsite: z.string().url().optional().or(z.literal('')),
+  industry: z.string().optional(),
+}).superRefine((data, ctx) => {
+  // Password confirmation validation
+  if (data.password !== data.confirmPassword) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Passwords do not match.',
+      path: ['confirmPassword'],
+    });
   }
-  return true;
-}, {
-  message: "Phone number is required for job seekers.",
-  path: ["phoneNumber"],
+  // Job seeker validation
+  if (data.role === 'jobseeker') {
+    if (!data.phoneNumber || data.phoneNumber.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Phone number is required for job seekers.',
+        path: ['phoneNumber'],
+      });
+    }
+  }
+  // Employer validation
+  if (data.role === 'employer') {
+    if (!data.companyName || data.companyName.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Company name is required for employers.',
+        path: ['companyName'],
+      });
+    }
+  }
 });
 
 const Signup = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { register, login } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [linkedInImportOpen, setLinkedInImportOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [profileImage, setProfileImage] = useState<string>("");
   const [linkedInDataImported, setLinkedInDataImported] = useState(false);
   const [newUserData, setNewUserData] = useState<any>(null);
-  
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const location = useLocation()
+
   const form = useForm<z.infer<typeof signupSchema>>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
       name: "",
       email: "",
       password: "",
+      confirmPassword: "",
       role: "jobseeker",
       countryCode: "+254",
       phoneNumber: "",
       profileImage: "",
+      // Freelancer fields
+      professionalTitle: "",
+      hourlyRate: "",
+      portfolioUrl: "",
+      // Employer fields
+      companyName: "",
+      companyWebsite: "",
+      industry: "",
     },
   });
 
   const selectedRole = form.watch("role");
+  const password = form.watch("password");
+  const confirmPassword = form.watch("confirmPassword");
 
   const handleImageChange = (imageUrl: string) => {
     setProfileImage(imageUrl);
     form.setValue('profileImage', imageUrl);
   };
-  
+
   const onSubmit = async (values: z.infer<typeof signupSchema>) => {
+    console.log('🚀 Form submitted with values:', values);
     setIsLoading(true);
-    console.log('Creating account with values:', values);
-    
+
     try {
+      // Use default profile image if none provided
+      const finalProfileImage = values.profileImage || 'https://via.placeholder.com/150/4F46E5/FFFFFF?text=' + values.name.charAt(0);
+
+      console.log('📝 Registering user with data:', {
+        name: values.name,
+        email: values.email,
+        role: values.role,
+        finalProfileImage
+      });
+
+      // Map frontend role to backend role
+      const accountType = values.role === 'jobseeker' ? 'job_seeker' : values.role === 'employer' ? 'employer' : 'freelancer';
+
+      // Prepare registration data based on user role
+      const registrationData: any = {
+        name: values.name,
+        email: values.email,
+        password: values.password,
+        account_type: accountType
+      };
+
+      // Add role-specific data
+      if (values.role === 'employer') {
+        // Store employer-specific data in preferences
+        registrationData.preferences = {
+          companyName: values.companyName,
+          companyWebsite: values.companyWebsite,
+          industry: values.industry
+        };
+      } else if (values.role === 'freelancer') {
+        // Add freelancer-specific fields
+        registrationData.bio = values.professionalTitle;
+        registrationData.preferences = {
+          hourlyRate: values.hourlyRate,
+          portfolioUrl: values.portfolioUrl
+        };
+      } else if (values.role === 'jobseeker') {
+        // Add job seeker phone number to preferences
+        registrationData.preferences = {
+          countryCode: values.countryCode,
+          phoneNumber: values.phoneNumber
+        };
+      }
+
+      // Register the new user using the real backend
+      await register(registrationData);
+
+      console.log('✅ User registered successfully');
+
       // Store new user data for onboarding
-      setNewUserData(values);
-      
+      setNewUserData({ ...values, profileImage: finalProfileImage });
+
       // Show success message
       toast.success("Account Created Successfully!", {
-        description: "You can now log in with your new credentials.",
+        description: "Welcome to Visiondrill! Let's set up your profile.",
       });
-      
-      // Auto-login the user with their new credentials
-      const loginSuccess = await login(values.email, values.password);
-      
-      if (loginSuccess) {
-        toast.success("Welcome to Visiondrill!", {
-          description: "Let's set up your profile to find the perfect opportunities.",
-        });
-        setShowOnboarding(true);
-      } else {
-        // If auto-login fails, still allow manual login
-        toast.info("Account Created", {
-          description: "Please log in with your new credentials.",
-        });
-        navigate("/login");
-      }
-    } catch (error) {
-      console.error('Signup error:', error);
-      toast.error("Signup Failed", {
-        description: "Failed to create account. Please try again.",
+
+      console.log('✅ Registration includes auto-login');
+      toast.success("Welcome to Visiondrill!", {
+        description: "Let's set up your profile to find the perfect opportunities.",
+      });
+      setShowOnboarding(true);
+    } catch (error: any) {
+      console.error('💥 Signup error:', error);
+      toast.error("Registration Failed", {
+        description: error.message || "Failed to create account. Please try again.",
       });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const onSubmitError = (errors: any) => {
+    // Show specific validation errors to user
+    Object.keys(errors).forEach(field => {
+      const error = errors[field];
+      if (error?.message) {
+        toast.error("Form Validation Error", {
+          description: `${field}: ${error.message}`,
+        });
+      }
+    });
   };
 
   const handleLinkedInSignup = () => {
@@ -142,49 +235,53 @@ const Signup = () => {
 
   const handleLinkedInConnect = async () => {
     setIsLoading(true);
-    
+
     try {
+      // Generate unique email to avoid conflicts
+      const timestamp = Date.now();
       const linkedInData = {
         name: 'John Doe',
-        email: 'john.doe@example.com',
+        email: `john.doe${timestamp}@example.com`,
         password: 'linkedinpass123',
         profileImage: 'https://via.placeholder.com/150',
         role: selectedRole
       };
-      
-      toast.success("LinkedIn Data Imported", {
-        description: selectedRole === "jobseeker" 
-          ? "Please add your phone number to complete registration."
-          : "Registration complete! Setting up your profile...",
-      });
-      
+
       // Pre-fill form with LinkedIn data
       form.setValue('name', linkedInData.name);
       form.setValue('email', linkedInData.email);
       form.setValue('password', linkedInData.password);
       form.setValue('profileImage', linkedInData.profileImage);
       setProfileImage(linkedInData.profileImage);
-      
+
+      // Pre-fill role-specific fields based on LinkedIn data
+      if (selectedRole === 'freelancer') {
+        // Simulate extracting professional info from LinkedIn
+        form.setValue('professionalTitle', 'Senior Software Developer'); // Would be extracted from LinkedIn
+        form.setValue('hourlyRate', '$75'); // Could be suggested based on title
+        form.setValue('portfolioUrl', 'https://linkedin.com/in/johndoe'); // LinkedIn profile as portfolio
+      } else if (selectedRole === 'employer') {
+        // Simulate extracting company info from LinkedIn
+        form.setValue('companyName', 'Tech Solutions Inc'); // Would be extracted from LinkedIn
+        form.setValue('companyWebsite', 'https://techsolutions.com');
+        form.setValue('industry', 'Technology');
+      }
+
       setLinkedInImportOpen(false);
       setLinkedInDataImported(true);
-      
-      if (selectedRole === "employer") {
-        // For employers, complete registration immediately since no phone needed
-        setTimeout(async () => {
-          const loginSuccess = await login(linkedInData.email, linkedInData.password);
-          if (loginSuccess) {
-            toast.success("Account created successfully!", {
-              description: "Let's set up your profile to find the perfect opportunities.",
-            });
-            setNewUserData(linkedInData);
-            setShowOnboarding(true);
-          }
-        }, 500);
-      } else {
-        toast.info("LinkedIn Import Complete", {
-          description: "Profile information and photo imported. Please add your phone number to continue.",
-        });
+
+      // Show appropriate message based on role
+      let description = "LinkedIn data imported successfully!";
+      if (selectedRole === "jobseeker") {
+        description += " Please add your phone number to complete registration.";
+      } else if (selectedRole === "freelancer") {
+        description += " Review your professional details and complete registration.";
+      } else if (selectedRole === "employer") {
+        description += " Please verify your company information.";
       }
+
+      toast.success("LinkedIn Data Imported", { description });
+
     } catch (error) {
       console.error('LinkedIn signup error:', error);
       toast.error("LinkedIn Import Failed", {
@@ -197,19 +294,21 @@ const Signup = () => {
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
-    
+
     // Redirect based on user role
     if (newUserData?.role === 'employer') {
       navigate('/employer/dashboard');
+    } else if (newUserData?.role === 'freelancer') {
+      navigate('/freelancer/dashboard');
     } else {
       navigate('/jobseeker/dashboard');
     }
-    
+
     toast.success("Welcome to Visiondrill!", {
       description: "Your profile has been set up successfully.",
     });
   };
-  
+
   return (
     <Layout>
       <div className="max-w-md mx-auto px-4 py-12">
@@ -217,7 +316,7 @@ const Signup = () => {
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-center">Create Account</CardTitle>
             <CardDescription className="text-center">
-              {linkedInDataImported 
+              {linkedInDataImported
                 ? selectedRole === "jobseeker"
                   ? "Add your phone number to complete registration"
                   : "Complete your profile to finish registration"
@@ -227,7 +326,7 @@ const Signup = () => {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="space-y-4">
                 <ProfileImageUpload
                   profileImage={profileImage}
                   onImageChange={handleImageChange}
@@ -240,8 +339,8 @@ const Signup = () => {
                     <FormItem>
                       <FormLabel>Full Name</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="John Doe" 
+                        <Input
+                          placeholder="John Doe"
                           {...field}
                           className="transition-all focus:ring-2 focus:ring-career-blue"
                           disabled={linkedInDataImported}
@@ -251,7 +350,7 @@ const Signup = () => {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="email"
@@ -259,8 +358,8 @@ const Signup = () => {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="john@example.com" 
+                        <Input
+                          placeholder="john@example.com"
                           {...field}
                           className="transition-all focus:ring-2 focus:ring-career-blue"
                           disabled={linkedInDataImported}
@@ -286,6 +385,7 @@ const Signup = () => {
                         <SelectContent>
                           <SelectItem value="jobseeker">Job Seeker</SelectItem>
                           <SelectItem value="employer">Employer</SelectItem>
+                          <SelectItem value="freelancer">Freelancer</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -300,7 +400,123 @@ const Signup = () => {
                     phoneNumberName="phoneNumber"
                   />
                 )}
-                
+
+                {selectedRole === "freelancer" && (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="professionalTitle"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Professional Title (Optional)</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g., Full Stack Developer"
+                              {...field}
+                              className="transition-all focus:ring-2 focus:ring-career-blue"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="hourlyRate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Hourly Rate (Optional)</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g., $50"
+                              {...field}
+                              className="transition-all focus:ring-2 focus:ring-career-blue"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="portfolioUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Portfolio URL (Optional)</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="https://yourportfolio.com"
+                              {...field}
+                              className="transition-all focus:ring-2 focus:ring-career-blue"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                )}
+
+                {selectedRole === "employer" && (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="companyName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Company Name <span className="text-red-500">*</span></FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Your Company Name"
+                              {...field}
+                              className="transition-all focus:ring-2 focus:ring-career-blue"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="companyWebsite"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Company Website (Optional)</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="https://yourcompany.com"
+                              {...field}
+                              className="transition-all focus:ring-2 focus:ring-career-blue"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="industry"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Industry (Optional)</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g., Technology, Healthcare"
+                              {...field}
+                              className="transition-all focus:ring-2 focus:ring-career-blue"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                )}
+
                 <FormField
                   control={form.control}
                   name="password"
@@ -308,33 +524,80 @@ const Signup = () => {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="password" 
-                          placeholder="••••••••" 
-                          {...field}
-                          className="transition-all focus:ring-2 focus:ring-career-blue"
-                          disabled={linkedInDataImported}
-                        />
+                        <div className="relative">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="••••••••"
+                            {...field}
+                            className="transition-all focus:ring-2 focus:ring-career-blue pr-10"
+                            disabled={linkedInDataImported}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            aria-label={showPassword ? "Hide password" : "Show password"}
+                            aria-pressed={showPassword}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                            disabled={linkedInDataImported}
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
+                          </button>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
-                <Button 
-                  type="submit" 
+
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm Password</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type={showConfirmPassword ? "text" : "password"}
+                            placeholder="••••••••"
+                            {...field}
+                            className="transition-all focus:ring-2 focus:ring-career-blue pr-10"
+                            disabled={linkedInDataImported}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                            aria-pressed={showConfirmPassword}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                            disabled={linkedInDataImported}
+                          >
+                            {showConfirmPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
+                          </button>
+                        </div>
+                      </FormControl>
+                      {confirmPassword && password !== confirmPassword && (
+                        <p className="text-sm text-red-500 mt-1">Passwords do not match</p>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button
+                  type="submit"
                   className="w-full bg-career-blue hover:bg-career-blue/90 transition-colors"
                   disabled={isLoading}
                 >
                   {isLoading ? "Creating Account..." : "Create Account"}
                 </Button>
-                
+
                 {!linkedInDataImported && (
                   <div className="text-center">
                     <p className="text-sm text-gray-500">Or sign up with</p>
                     <div className="mt-2">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         onClick={handleLinkedInSignup}
                         className="w-full flex items-center justify-center gap-2 transition-colors hover:bg-gray-50"
                         disabled={isLoading}
@@ -345,7 +608,7 @@ const Signup = () => {
                     </div>
                   </div>
                 )}
-                
+
                 <div className="text-center mt-4">
                   <p className="text-sm text-gray-500">
                     Already have an account?{" "}
@@ -358,11 +621,15 @@ const Signup = () => {
             </Form>
           </CardContent>
         </Card>
-        
-        {showOnboarding && (
-          <OnboardingWizard onComplete={handleOnboardingComplete} />
+
+        {showOnboarding && newUserData && (
+          <OnboardingWizard
+            onComplete={handleOnboardingComplete}
+            userRole={newUserData.role}
+            signupData={newUserData}
+          />
         )}
-        
+
         <LinkedInImportDialog
           open={linkedInImportOpen}
           onOpenChange={setLinkedInImportOpen}

@@ -1,181 +1,271 @@
-
-import { create } from "zustand";
-import { toast } from "sonner";
+import { useState, useEffect, createContext, useContext } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { apiClient } from '@/lib/api-client';
 
 export interface AdminJob {
-  id: string;
+  job_id: string;
   title: string;
   company: string;
   location: string;
-  postedDate: string;
-  status: "active" | "draft" | "expired";
-  applications: number;
-  description: string;
-  requirements: string[];
-  salary: string;
-  type: "full-time" | "part-time" | "contract" | "internship";
-  experience: string;
+  type: 'full-time' | 'part-time' | 'contract' | 'internship';
   department: string;
+  status: 'active' | 'draft' | 'expired';
+  applications: number;
+  postedDate: string;
+  salary?: string;
+  description?: string;
+  requirements?: string[];
+  skills?: string[];
+  remote_allowed?: boolean;
+  created_by?: string;
+  updated_at?: string;
 }
 
-interface AdminJobsStore {
+interface AdminJobsContextType {
   jobs: AdminJob[];
   filteredJobs: AdminJob[];
   searchQuery: string;
   statusFilter: string;
-  addJob: (job: Omit<AdminJob, "id" | "postedDate" | "applications">) => void;
-  updateJob: (id: string, job: Partial<AdminJob>) => void;
-  deleteJob: (id: string) => void;
+  loading: boolean;
+  error: string | null;
   setSearchQuery: (query: string) => void;
   setStatusFilter: (status: string) => void;
-  getJobById: (id: string) => AdminJob | undefined;
+  refreshJobs: () => Promise<void>;
+  createJob: (jobData: Partial<AdminJob>) => Promise<AdminJob>;
+  updateJob: (id: string, jobData: Partial<AdminJob>) => Promise<AdminJob>;
+  deleteJob: (id: string) => Promise<void>;
+  getJobStats: () => Promise<any>;
 }
 
-const initialJobs: AdminJob[] = [
+const AdminJobsContext = createContext<AdminJobsContextType | undefined>(undefined);
+
+// Mock data for development until backend integration is complete
+const mockJobs: AdminJob[] = [
   {
-    id: "1",
-    title: "Senior Frontend Developer",
-    company: "TechCorp Inc.",
-    location: "San Francisco, CA",
-    postedDate: "2023-05-12",
-    status: "active",
-    applications: 24,
-    description: "We are looking for a Senior Frontend Developer with React experience to join our team. You'll be working on our flagship product and collaborating with designers and backend engineers.",
-    requirements: ["5+ years React experience", "TypeScript proficiency", "Modern CSS frameworks", "Testing experience"],
-    salary: "$120,000 - $150,000",
-    type: "full-time",
-    experience: "Senior",
-    department: "Engineering"
+    job_id: '1',
+    title: 'Senior Frontend Developer',
+    company: 'Tech Corp',
+    location: 'San Francisco, CA',
+    type: 'full-time',
+    department: 'Engineering',
+    status: 'active',
+    applications: 45,
+    postedDate: '2024-01-15',
+    salary: '$120,000 - $160,000',
+    description: 'We are looking for a senior frontend developer...',
+    requirements: ['React', 'TypeScript', '5+ years experience'],
+    skills: ['React', 'TypeScript', 'JavaScript', 'CSS'],
+    remote_allowed: true
   },
   {
-    id: "2", 
-    title: "Product Manager",
-    company: "InnovateSoft",
-    location: "New York, NY",
-    postedDate: "2023-05-10",
-    status: "active",
-    applications: 18,
-    description: "InnovateSoft is seeking a Product Manager to lead our product development initiatives. The ideal candidate has 5+ years of experience in SaaS products.",
-    requirements: ["Product management experience", "Agile methodologies", "Stakeholder management", "Data analysis skills"],
-    salary: "$100,000 - $130,000",
-    type: "full-time",
-    experience: "Mid-Senior",
-    department: "Product"
-  },
-  {
-    id: "3",
-    title: "Data Scientist",
-    company: "DataViz Analytics", 
-    location: "Remote",
-    postedDate: "2023-05-08",
-    status: "draft",
-    applications: 0,
-    description: "Join our data science team to work on cutting-edge machine learning models. We're looking for someone with a strong background in statistics and Python programming.",
-    requirements: ["Python/R proficiency", "Machine learning experience", "Statistical analysis", "Data visualization"],
-    salary: "$110,000 - $140,000",
-    type: "full-time",
-    experience: "Mid-Senior",
-    department: "Data"
-  },
-  {
-    id: "4",
-    title: "UX Designer",
-    company: "CreativeMinds",
-    location: "Chicago, IL", 
-    postedDate: "2023-04-15",
-    status: "expired",
+    job_id: '2',
+    title: 'Backend Developer',
+    company: 'StartupXYZ',
+    location: 'New York, NY',
+    type: 'full-time',
+    department: 'Engineering',
+    status: 'active',
     applications: 32,
-    description: "As a UX Designer at CreativeMinds, you'll be responsible for creating intuitive and engaging user experiences for our clients across various industries.",
-    requirements: ["Design portfolio", "Figma/Sketch proficiency", "User research experience", "Prototyping skills"],
-    salary: "$80,000 - $100,000",
-    type: "full-time",
-    experience: "Mid-Level",
-    department: "Design"
+    postedDate: '2024-01-10',
+    salary: '$100,000 - $140,000',
+    description: 'Join our backend team to build scalable systems...',
+    requirements: ['Python', 'FastAPI', '3+ years experience'],
+    skills: ['Python', 'FastAPI', 'PostgreSQL', 'Docker']
+  },
+  {
+    job_id: '3',
+    title: 'Product Manager',
+    company: 'InnovateLabs',
+    location: 'Austin, TX',
+    type: 'full-time',
+    department: 'Product',
+    status: 'draft',
+    applications: 0,
+    postedDate: '2024-01-12',
+    salary: '$90,000 - $130,000',
+    description: 'Lead product development initiatives...',
+    requirements: ['Product Management', 'Agile', '2+ years experience'],
+    skills: ['Product Management', 'Agile', 'Analytics', 'User Research']
   }
 ];
 
-export const useAdminJobs = create<AdminJobsStore>((set, get) => ({
-  jobs: initialJobs,
-  filteredJobs: initialJobs,
-  searchQuery: "",
-  statusFilter: "all",
+export function AdminJobsProvider({ children }: { children: React.ReactNode }) {
+  const [jobs, setJobs] = useState<AdminJob[]>(mockJobs);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  addJob: (jobData) => {
-    const newJob: AdminJob = {
-      ...jobData,
-      id: crypto.randomUUID(),
-      postedDate: new Date().toISOString().split('T')[0],
-      applications: 0,
-    };
-
-    set((state) => {
-      const newJobs = [...state.jobs, newJob];
-      return {
-        jobs: newJobs,
-        filteredJobs: filterJobs(newJobs, state.searchQuery, state.statusFilter),
-      };
-    });
-
-    toast.success(`Job "${jobData.title}" has been created successfully`);
-  },
-
-  updateJob: (id, updates) => {
-    set((state) => {
-      const newJobs = state.jobs.map(job => 
-        job.id === id ? { ...job, ...updates } : job
-      );
-      return {
-        jobs: newJobs,
-        filteredJobs: filterJobs(newJobs, state.searchQuery, state.statusFilter),
-      };
-    });
-
-    const job = get().jobs.find(j => j.id === id);
-    toast.success(`Job "${job?.title}" has been updated successfully`);
-  },
-
-  deleteJob: (id) => {
-    const job = get().jobs.find(j => j.id === id);
-    
-    set((state) => {
-      const newJobs = state.jobs.filter(j => j.id !== id);
-      return {
-        jobs: newJobs,
-        filteredJobs: filterJobs(newJobs, state.searchQuery, state.statusFilter),
-      };
-    });
-
-    toast.success(`Job "${job?.title}" has been deleted successfully`);
-  },
-
-  setSearchQuery: (query) => {
-    set((state) => ({
-      searchQuery: query,
-      filteredJobs: filterJobs(state.jobs, query, state.statusFilter),
-    }));
-  },
-
-  setStatusFilter: (status) => {
-    set((state) => ({
-      statusFilter: status,
-      filteredJobs: filterJobs(state.jobs, state.searchQuery, status),
-    }));
-  },
-
-  getJobById: (id) => {
-    return get().jobs.find(job => job.id === id);
-  },
-}));
-
-function filterJobs(jobs: AdminJob[], searchQuery: string, statusFilter: string): AdminJob[] {
-  return jobs.filter(job => {
-    const matchesSearch = searchQuery === "" || 
+  // Filter jobs based on search query and status
+  const filteredJobs = jobs.filter(job => {
+    const matchesSearch = searchQuery === '' || 
       job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       job.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
       job.location.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesStatus = statusFilter === "all" || job.status === statusFilter;
-
+    
+    const matchesStatus = statusFilter === 'all' || job.status === statusFilter;
+    
     return matchesSearch && matchesStatus;
   });
+
+  const refreshJobs = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Try to fetch from backend first
+      const response = await apiClient.get<AdminJob[]>('/jobs');
+      setJobs(response);
+    } catch (err) {
+      console.warn('Backend not available, using mock data:', err);
+      // Use mock data if backend is not available
+      setJobs(mockJobs);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createJob = async (jobData: Partial<AdminJob>): Promise<AdminJob> => {
+    setLoading(true);
+    try {
+      // Try backend first
+      const newJob = await apiClient.post<AdminJob>('/jobs', jobData);
+      setJobs(prev => [...prev, newJob]);
+      toast({
+        title: "Success",
+        description: "Job created successfully",
+      });
+      return newJob;
+    } catch (err) {
+      console.warn('Backend not available, creating mock job:', err);
+      // Create mock job
+      const newJob: AdminJob = {
+        job_id: Date.now().toString(),
+        title: jobData.title || 'New Job',
+        company: jobData.company || 'Company',
+        location: jobData.location || 'Location',
+        type: jobData.type || 'full-time',
+        department: jobData.department || 'General',
+        status: jobData.status || 'draft',
+        applications: 0,
+        postedDate: new Date().toISOString().split('T')[0],
+        ...jobData
+      };
+      setJobs(prev => [...prev, newJob]);
+      toast({
+        title: "Success",
+        description: "Job created successfully (mock)",
+      });
+      return newJob;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateJob = async (id: string, jobData: Partial<AdminJob>): Promise<AdminJob> => {
+    setLoading(true);
+    try {
+      // Try backend first
+      const updatedJob = await apiClient.put<AdminJob>(`/jobs/${id}`, jobData);
+      setJobs(prev => prev.map(job => job.job_id === id ? updatedJob : job));
+      toast({
+        title: "Success",
+        description: "Job updated successfully",
+      });
+      return updatedJob;
+    } catch (err) {
+      console.warn('Backend not available, updating mock job:', err);
+      // Update mock job
+      setJobs(prev => prev.map(job => 
+        job.job_id === id ? { ...job, ...jobData } : job
+      ));
+      const updatedJob = jobs.find(job => job.job_id === id);
+      if (updatedJob) {
+        toast({
+          title: "Success",
+          description: "Job updated successfully (mock)",
+        });
+        return { ...updatedJob, ...jobData };
+      }
+      throw new Error('Job not found');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteJob = async (id: string): Promise<void> => {
+    setLoading(true);
+    try {
+      // Try backend first
+      await apiClient.delete(`/jobs/${id}`);
+      setJobs(prev => prev.filter(job => job.job_id !== id));
+      toast({
+        title: "Success",
+        description: "Job deleted successfully",
+      });
+    } catch (err) {
+      console.warn('Backend not available, deleting mock job:', err);
+      // Delete mock job
+      setJobs(prev => prev.filter(job => job.job_id !== id));
+      toast({
+        title: "Success",
+        description: "Job deleted successfully (mock)",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getJobStats = async () => {
+    try {
+      // Try backend first
+      return await apiClient.get('/jobs/stats');
+    } catch (err) {
+      console.warn('Backend not available, using mock stats:', err);
+      // Return mock stats
+      return {
+        total: jobs.length,
+        active: jobs.filter(j => j.status === 'active').length,
+        draft: jobs.filter(j => j.status === 'draft').length,
+        expired: jobs.filter(j => j.status === 'expired').length,
+        total_applications: jobs.reduce((sum, j) => sum + j.applications, 0)
+      };
+    }
+  };
+
+  useEffect(() => {
+    refreshJobs();
+  }, []);
+
+  const value: AdminJobsContextType = {
+    jobs,
+    filteredJobs,
+    searchQuery,
+    statusFilter,
+    loading,
+    error,
+    setSearchQuery,
+    setStatusFilter,
+    refreshJobs,
+    createJob,
+    updateJob,
+    deleteJob,
+    getJobStats
+  };
+
+  return (
+    <AdminJobsContext.Provider value={value}>
+      {children}
+    </AdminJobsContext.Provider>
+  );
 }
+
+export function useAdminJobs() {
+  const context = useContext(AdminJobsContext);
+  if (context === undefined) {
+    throw new Error('useAdminJobs must be used within an AdminJobsProvider');
+  }
+  return context;
+}
+
+export { AdminJob };

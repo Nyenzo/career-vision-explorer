@@ -86,6 +86,25 @@ export const useJobsFilter = (jobs: Job[]) => {
   });
   const [filtersVisible, setFiltersVisible] = useState(false);
 
+  const normalize = (value?: string) => (value || "").toLowerCase().trim();
+
+  const isRemoteLocation = (location: string) => {
+    const normalized = normalize(location);
+    return normalized.includes("remote") || normalized.includes("work from home");
+  };
+
+  const isHybridLocation = (location: string) => {
+    const normalized = normalize(location);
+    return normalized.includes("hybrid");
+  };
+
+  const isOnsiteLocation = (location: string) => {
+    const normalized = normalize(location);
+    return !isRemoteLocation(normalized) && !isHybridLocation(normalized);
+  };
+
+  const normalizeJobType = (type: string) => normalize(type).replace(/\s+/g, "");
+
   const resetFilters = () => {
     setFilter({
       remote: false,
@@ -123,99 +142,114 @@ export const useJobsFilter = (jobs: Job[]) => {
 
   const filteredJobs = useMemo(() => {
     return jobs.filter(job => {
+      const normalizedTitle = normalize(job.title);
+      const normalizedCompany = normalize(job.company);
+      const normalizedLocation = normalize(job.location);
+      const normalizedType = normalizeJobType(job.type);
+      const normalizedExperienceLevel = normalize(job.experienceLevel);
+
       // Search filter
-      if (searchTerm && !job.title.toLowerCase().includes(searchTerm.toLowerCase()) && 
-          !job.company.toLowerCase().includes(searchTerm.toLowerCase()) &&
-          !job.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()))) {
-        return false;
-      }
-      
-      // Location filters from search bar
-      if (locationFilters.remote && !job.location.toLowerCase().includes("remote")) {
-        return false;
-      }
-      if (locationFilters.onsite && (job.location.toLowerCase().includes("remote") || job.location.toLowerCase().includes("hybrid"))) {
-        return false;
-      }
-      if (locationFilters.hybrid && !job.location.toLowerCase().includes("hybrid")) {
-        return false;
-      }
-      if (locationFilters.nairobi && !job.location.toLowerCase().includes("nairobi")) {
-        return false;
-      }
-      if (locationFilters.mombasa && !job.location.toLowerCase().includes("mombasa")) {
-        return false;
-      }
-      if (locationFilters.kisumu && !job.location.toLowerCase().includes("kisumu")) {
+      const normalizedSearch = normalize(searchTerm);
+      if (
+        normalizedSearch &&
+        !normalizedTitle.includes(normalizedSearch) &&
+        !normalizedCompany.includes(normalizedSearch) &&
+        !job.skills.some(skill => normalize(skill).includes(normalizedSearch))
+      ) {
         return false;
       }
 
-      // Job type filters from search bar
-      if (jobTypeFilters.fullTime && !job.type.toLowerCase().includes("full-time")) {
-        return false;
+      // Location filters from search bar (OR within this group)
+      const selectedLocationFilters = Object.entries(locationFilters)
+        .filter(([, selected]) => selected)
+        .map(([key]) => key);
+      if (selectedLocationFilters.length > 0) {
+        const locationMatch = selectedLocationFilters.some((key) => {
+          if (key === "remote") return isRemoteLocation(normalizedLocation);
+          if (key === "onsite") return isOnsiteLocation(normalizedLocation);
+          if (key === "hybrid") return isHybridLocation(normalizedLocation);
+          return normalizedLocation.includes(key);
+        });
+
+        if (!locationMatch) {
+          return false;
+        }
       }
-      if (jobTypeFilters.partTime && !job.type.toLowerCase().includes("part-time")) {
-        return false;
+
+      // Job type filters from search bar (OR within this group)
+      const selectedJobTypes = Object.entries(jobTypeFilters)
+        .filter(([, selected]) => selected)
+        .map(([key]) => key);
+      if (selectedJobTypes.length > 0) {
+        const jobTypeMatch = selectedJobTypes.some((typeKey) => {
+          if (typeKey === "fullTime") return normalizedType.includes("fulltime");
+          if (typeKey === "partTime") return normalizedType.includes("parttime");
+          if (typeKey === "contract") return normalizedType.includes("contract");
+          if (typeKey === "internship") return normalizedType.includes("internship");
+          if (typeKey === "freelance") return normalizedType.includes("freelance");
+          return false;
+        });
+
+        if (!jobTypeMatch) {
+          return false;
+        }
       }
-      if (jobTypeFilters.contract && !job.type.toLowerCase().includes("contract")) {
-        return false;
+
+      // Work style filters (from advanced filters) - OR within this group
+      const selectedWorkStyles = [
+        filter.remote ? "remote" : null,
+        filter.hybrid ? "hybrid" : null,
+        filter.inPerson ? "inPerson" : null,
+      ].filter(Boolean) as string[];
+      if (selectedWorkStyles.length > 0) {
+        const workStyleMatch = selectedWorkStyles.some((style) => {
+          if (style === "remote") return isRemoteLocation(normalizedLocation);
+          if (style === "hybrid") return isHybridLocation(normalizedLocation);
+          if (style === "inPerson") return isOnsiteLocation(normalizedLocation);
+          return false;
+        });
+
+        if (!workStyleMatch) {
+          return false;
+        }
       }
-      if (jobTypeFilters.internship && !job.type.toLowerCase().includes("internship")) {
-        return false;
-      }
-      if (jobTypeFilters.freelance && !job.type.toLowerCase().includes("freelance")) {
-        return false;
-      }
-      
-      // Work Style filters (from advanced filters)
-      if (filter.remote && !job.location.toLowerCase().includes("remote")) {
-        return false;
-      }
-      
-      if (filter.hybrid && !job.location.toLowerCase().includes("hybrid")) {
-        return false;
-      }
-      
-      if (filter.inPerson && (job.location.toLowerCase().includes("remote") || job.location.toLowerCase().includes("hybrid"))) {
-        return false;
-      }
-      
+
       // Job Type filters (from advanced filters)
-      if (filter.fullTime && !job.type.toLowerCase().includes("full-time")) {
+      if (filter.fullTime && !normalizedType.includes("fulltime")) {
         return false;
       }
-      
-      if (filter.contract && !job.type.toLowerCase().includes("contract")) {
+
+      if (filter.contract && !normalizedType.includes("contract")) {
         return false;
       }
-      
-      // Experience Level filters
-      if (filter.entryLevel && job.experienceLevel !== "Entry Level") {
-        return false;
+
+      // Experience level filters (OR within this group)
+      const selectedExperienceLevels = [
+        filter.entryLevel ? "entry" : null,
+        filter.midLevel ? "mid" : null,
+        filter.senior ? "senior" : null,
+        filter.executive ? "executive" : null,
+      ].filter(Boolean) as string[];
+      if (selectedExperienceLevels.length > 0) {
+        const experienceMatch = selectedExperienceLevels.some((level) =>
+          normalizedExperienceLevel.includes(level),
+        );
+
+        if (!experienceMatch) {
+          return false;
+        }
       }
-      
-      if (filter.midLevel && job.experienceLevel !== "Mid Level") {
-        return false;
-      }
-      
-      if (filter.senior && job.experienceLevel !== "Senior") {
-        return false;
-      }
-      
-      if (filter.executive && job.experienceLevel !== "Executive") {
-        return false;
-      }
-      
+
       // High match filter
       if (filter.highMatch && job.matchScore < 80) {
         return false;
       }
-      
+
       // Salary range filter
       if (salaryRange !== "all") {
         const minSalary = parseInt(job.salary.match(/\d+/g)?.[0] || "0");
         const maxSalary = parseInt(job.salary.match(/\d+/g)?.[1] || "0");
-        
+
         if (salaryRange === "0-50" && minSalary > 50) {
           return false;
         } else if (salaryRange === "50-100" && (minSalary > 100 || maxSalary < 50)) {
@@ -226,22 +260,22 @@ export const useJobsFilter = (jobs: Job[]) => {
           return false;
         }
       }
-      
+
       // Skills filters
       if (selectedSkills.javascript && !job.skills.some(skill => skill.toLowerCase() === "javascript")) {
         return false;
       }
-      
+
       if (selectedSkills.react && !job.skills.some(skill => skill.toLowerCase() === "react")) {
         return false;
       }
-      
+
       return true;
     });
   }, [jobs, searchTerm, filter, salaryRange, selectedSkills, locationFilters, jobTypeFilters]);
 
-  const activeFiltersCount = Object.values(filter).filter(Boolean).length + 
-    (salaryRange !== "all" ? 1 : 0) + 
+  const activeFiltersCount = Object.values(filter).filter(Boolean).length +
+    (salaryRange !== "all" ? 1 : 0) +
     Object.values(selectedSkills).filter(Boolean).length +
     Object.values(locationFilters).filter(Boolean).length +
     Object.values(jobTypeFilters).filter(Boolean).length;

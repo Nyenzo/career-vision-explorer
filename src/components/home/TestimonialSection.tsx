@@ -31,20 +31,24 @@ const TestimonialSection = ({ testimonials }: TestimonialProps) => {
             <Card key={testimonial.id} className="group relative bg-card rounded-3xl shadow-sm hover:shadow-2xl transition-all duration-500 border border-border/50 hover:border-primary/20 hover:-translate-y-2 overflow-hidden">
               {/* Gradient accent */}
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-primary/60"></div>
-              
+
               <CardContent className="p-8">
                 {/* Quote icon */}
                 <div className="flex justify-center mb-6">
                   <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                    <Quote className="h-6 w-6 text-primary" />
+                    <Quote className="h-6 w-6 text-primary" aria-hidden="true" />
                   </div>
                 </div>
 
                 {/* Rating */}
                 {testimonial.rating && (
-                  <div className="flex justify-center gap-1 mb-6">
+                  <div
+                    className="flex justify-center gap-1 mb-6"
+                    role="img"
+                    aria-label={`${testimonial.rating} out of 5 stars`}
+                  >
                     {Array.from({ length: testimonial.rating }, (_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" aria-hidden="true" />
                     ))}
                   </div>
                 )}
@@ -57,9 +61,9 @@ const TestimonialSection = ({ testimonials }: TestimonialProps) => {
                 {/* Author info */}
                 <div className="flex items-center gap-4">
                   <div className="flex-shrink-0">
-                    <img 
-                      src={testimonial.image || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&h=100"} 
-                      alt={`${testimonial.author} profile`}
+                    <img
+                      src={testimonial.image || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&h=100"}
+                      alt={testimonial.author ? `${testimonial.author}'s profile photo` : "Anonymous reviewer profile photo"}
                       className="w-12 h-12 rounded-full object-cover border-2 border-primary/20"
                     />
                   </div>

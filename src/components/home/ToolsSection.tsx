@@ -23,10 +23,19 @@ const ToolsSection = () => {
 
         <div className="mt-12">
           <Tabs defaultValue="skills" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 rounded-xl p-1 glassmorphism">
-              <TabsTrigger value="skills" className="rounded-lg">Skills Assessment</TabsTrigger>
-              <TabsTrigger value="market" className="rounded-lg">Market Insights</TabsTrigger>
-              <TabsTrigger value="planning" className="rounded-lg">Career Planning</TabsTrigger>
+            <TabsList className="flex flex-col sm:grid w-full sm:grid-cols-3 rounded-xl p-1 glassmorphism">
+              <TabsTrigger value="skills" className="rounded-lg">
+                <span className="hidden sm:inline">Skills Assessment</span>
+                <span className="sm:hidden">Skills</span>
+              </TabsTrigger>
+              <TabsTrigger value="market" className="rounded-lg">
+                <span className="hidden sm:inline">Market Insights</span>
+                <span className="sm:hidden">Market</span>
+              </TabsTrigger>
+              <TabsTrigger value="planning" className="rounded-lg">
+                <span className="hidden sm:inline">Career Planning</span>
+                <span className="sm:hidden">Planning</span>
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="skills" className="mt-8 p-6 bg-gray-50 rounded-lg glassmorphism">
               <div className="grid md:grid-cols-2 gap-8 items-center">

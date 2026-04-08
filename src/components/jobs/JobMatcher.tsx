@@ -24,7 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Search, Building, MapPin, BookOpen, TrendingUp, HeartHandshake, ChevronDown, ChevronUp } from "lucide-react";
 
 interface Job {
-  id: number;
+  job_id: number;
   title: string;
   company: string;
   location: string;
@@ -59,7 +59,7 @@ const JobMatcher = () => {
     setTimeout(() => {
       const mockJobs: Job[] = [
         {
-          id: 1,
+          job_id: 1,
           title: "Senior Frontend Engineer",
           company: "TechNova",
           location: "Nairobi, Kenya",
@@ -89,7 +89,7 @@ const JobMatcher = () => {
           ]
         },
         {
-          id: 2,
+          job_id: 2,
           title: "UX/UI Designer",
           company: "CreativeHubs",
           location: "Remote",
@@ -118,7 +118,7 @@ const JobMatcher = () => {
           ]
         },
         {
-          id: 3,
+          job_id: 3,
           title: "Full Stack Developer",
           company: "FinTech Solutions",
           location: "Nairobi, Kenya",
@@ -147,7 +147,7 @@ const JobMatcher = () => {
           ]
         },
         {
-          id: 4,
+          job_id: 4,
           title: "Product Manager",
           company: "InnovateTech",
           location: "Hybrid - Nairobi",
@@ -316,7 +316,7 @@ const JobMatcher = () => {
       {jobs.length > 0 && (
         <div className="space-y-4">
           {jobs.map((job) => (
-            <Card key={job.id} className="overflow-hidden">
+            <Card key={job.job_id} className="overflow-hidden">
               <div className="border-l-4 border-blue-500">
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start">
@@ -359,7 +359,7 @@ const JobMatcher = () => {
                       ))}
                     </div>
                     
-                    {expandedJobId === job.id && (
+                    {expandedJobId === job.job_id && (
                       <div className="border-t pt-3 mt-3 space-y-4">
                         <div>
                           <h4 className="text-sm font-medium mb-2">Required Skills</h4>
@@ -417,9 +417,9 @@ const JobMatcher = () => {
                   <Button 
                     variant="outline" 
                     className="w-full sm:w-auto"
-                    onClick={() => toggleJobExpand(job.id)}
+                    onClick={() => toggleJobExpand(job.job_id)}
                   >
-                    {expandedJobId === job.id ? (
+                    {expandedJobId === job.job_id ? (
                       <>
                         Show Less
                         <ChevronUp className="ml-1 h-4 w-4" />

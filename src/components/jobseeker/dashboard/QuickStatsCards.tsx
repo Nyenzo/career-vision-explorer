@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Briefcase, Eye, Calendar, Star, MessageCircle } from "lucide-react";
 import { StatCard } from "./StatCard";

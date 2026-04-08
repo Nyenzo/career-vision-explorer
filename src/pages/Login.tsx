@@ -1,25 +1,26 @@
 
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
 } from "@/components/ui/card";
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
 } from "@/components/ui/form";
 import { toast } from "@/components/ui/sonner";
 import Layout from "@/components/layout/Layout";
+import { AuthPageSkeleton } from "@/components/ui/skeleton-loaders";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -38,8 +39,7 @@ const loginSchema = z.object({
 });
 
 const Login = () => {
-  const navigate = useNavigate();
-  const { login, user } = useAuth();
+  const { login, signInWithLinkedIn } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [loginType, setLoginType] = useState<'admin' | 'jobseeker' | 'employer'>('jobseeker');
   
@@ -50,58 +50,51 @@ const Login = () => {
       password: "",
     },
   });
-  
+
   const onSubmit = async (values: z.infer<typeof loginSchema>) => {
     setIsLoading(true);
-    
+
     try {
-      const success = await login(values.email, values.password);
-      
-      if (success) {
-        toast.success("Welcome back!", {
-          description: "You've been successfully logged in.",
-        });
-        
-        // Redirect based on user role
-        if (user?.role === 'admin') {
-          navigate("/admin/dashboard");
-        } else if (user?.role === 'employer') {
-          navigate("/employer/dashboard");
-        } else if (user?.role === 'jobseeker') {
-          navigate("/jobseeker/dashboard");
-        } else {
-          navigate("/jobs");
-        }
-      } else {
-        toast.error("Login Failed", {
-          description: "Invalid email or password. Please check your credentials.",
-        });
-      }
-    } catch (error) {
+      await login({
+        email: values.email,
+        password: values.password
+      });
+
+      toast.success("Welcome back!", {
+        description: "You've been successfully logged in.",
+      });
+    } catch (error: any) {
       console.error('Login error:', error);
-      toast.error("Login Error", {
-        description: "An unexpected error occurred. Please try again.",
+      toast.error("Login Failed", {
+        description: error.message || "Invalid email or password. Please check your credentials.",
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleLinkedInLogin = () => {
-    setIsLoading(true);
-    toast.info("LinkedIn Authentication", {
-      description: "Please complete authorization in the popup window.",
-    });
-    // In a real app, this would trigger OAuth flow
-    setTimeout(() => {
-      setIsLoading(false);
-      toast.success("Login Successful", {
-        description: "You've been logged in with LinkedIn.",
+  const handleLinkedInLogin = async () => {
+    try {
+      setIsLoading(true);
+      toast.info("LinkedIn Authentication", {
+        description: "Redirecting to LinkedIn for authentication...",
       });
-      navigate("/jobs");
-    }, 1500);
+
+      await signInWithLinkedIn();
+      // The OAuth flow will redirect the user, so we don't need to navigate here
+    } catch (error: any) {
+      console.error('LinkedIn login error:', error);
+      toast.error("LinkedIn Authentication Failed", {
+        description: error.message || "Failed to initiate LinkedIn authentication. Please try again.",
+      });
+      setIsLoading(false);
+    }
   };
-  
+
+  if (isLoading) {
+    return <AuthPageSkeleton />;
+  }
+
   return (
     <Layout>
       <div className="max-w-md mx-auto px-4 py-12">
@@ -123,8 +116,8 @@ const Login = () => {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="john@example.com" 
+                        <Input
+                          placeholder="john@example.com"
                           {...field}
                           className="transition-all focus:ring-2 focus:ring-career-blue"
                         />
@@ -133,7 +126,7 @@ const Login = () => {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="password"
@@ -141,9 +134,9 @@ const Login = () => {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="password" 
-                          placeholder="••••••••" 
+                        <Input
+                          type="password"
+                          placeholder="••••••••"
                           {...field}
                           className="transition-all focus:ring-2 focus:ring-career-blue"
                         />
@@ -152,20 +145,20 @@ const Login = () => {
                     </FormItem>
                   )}
                 />
-                
-                <Button 
-                  type="submit" 
-                  className="w-full bg-career-blue hover:bg-career-blue/90 transition-colors" 
+
+                <Button
+                  type="submit"
+                  className="w-full bg-career-blue hover:bg-career-blue/90 transition-colors"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Logging in..." : "Log In"}
+                  Log In
                 </Button>
-                
+
                 <div className="text-center">
                   <p className="text-sm text-gray-500">Or sign in with</p>
                   <div className="mt-2">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="w-full flex items-center justify-center gap-2 transition-colors hover:bg-gray-50"
                       onClick={handleLinkedInLogin}
                       disabled={isLoading}
@@ -176,7 +169,7 @@ const Login = () => {
                     </Button>
                   </div>
                 </div>
-                
+
                 <div className="text-center mt-4 space-y-2">
                   <p className="text-sm text-gray-500">
                     Don't have an account?{" "}

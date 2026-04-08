@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { AdminProfile } from "@/pages/admin/AdminProfiles";
 import { Link } from "react-router-dom";
+import { TableRowSkeleton } from "@/components/ui/skeleton-loaders";
 
 interface ProfileTableProps {
   profiles: AdminProfile[];
@@ -52,7 +53,17 @@ export const ProfileTable = ({
   isLoading,
 }: ProfileTableProps) => {
   if (isLoading) {
-    return <div className="flex justify-center py-8">Loading profiles...</div>;
+    return (
+      <div className="rounded-md border">
+        <Table>
+          <TableBody>
+            {Array.from({ length: 5 }).map((_, index) => (
+              <TableRowSkeleton key={index} columns={8} />
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
   }
 
   return (
@@ -72,7 +83,7 @@ export const ProfileTable = ({
         </TableHeader>
         <TableBody>
           {profiles.map((profile) => (
-            <TableRow key={profile.id}>
+            <TableRow key={profile.user_id}>
               <TableCell>
                 <div className="flex items-center space-x-3">
                   <Avatar className="h-10 w-10">
@@ -112,7 +123,7 @@ export const ProfileTable = ({
                     {profile.isPublic ? "Public" : "Private"}
                   </Badge>
                   {profile.isPublic && (
-                    <Link to={`/profile/${profile.id}`} target="_blank">
+                    <Link to={`/profile/${profile.user_id}`} target="_blank">
                       <Button variant="ghost" size="sm">
                         <ExternalLink className="h-3 w-3" />
                       </Button>

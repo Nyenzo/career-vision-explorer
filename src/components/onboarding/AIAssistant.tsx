@@ -13,10 +13,16 @@ export const AIAssistant = ({ message }: AIAssistantProps) => {
     setIsTyping(true);
     setDisplayedMessage("");
     
+    const startDelay = setTimeout(() => {
+
+    
     let index = 0;
     const intervalId = setInterval(() => {
       if (index < message.length) {
-        setDisplayedMessage((prev) => prev + message.charAt(index));
+        setDisplayedMessage(prev => {
+          const newMessage = message.substring(0, index + 1);
+          return newMessage;
+        });
         index++;
       } else {
         setIsTyping(false);
@@ -25,7 +31,9 @@ export const AIAssistant = ({ message }: AIAssistantProps) => {
     }, 15);
     
     return () => clearInterval(intervalId);
-  }, [message]);
+  }, 50);
+    return () => clearTimeout(startDelay)
+  }, [message])
 
   return (
     <div className="bg-gray-50 rounded-lg p-4 mb-4 relative">

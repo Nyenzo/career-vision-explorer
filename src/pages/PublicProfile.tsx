@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { ProfileCardSkeleton } from "@/components/ui/skeleton-loaders";
 import { 
   User, 
   MapPin, 
@@ -119,8 +120,10 @@ const PublicProfile = () => {
     return (
       <Layout>
         <div className="container py-8">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-lg">Loading profile...</div>
+          <div className="min-h-[400px] flex items-center justify-center">
+            <div className="w-full max-w-4xl">
+              <ProfileCardSkeleton />
+            </div>
           </div>
         </div>
       </Layout>

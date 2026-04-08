@@ -3,7 +3,7 @@ import { useState, createContext, useContext, ReactNode } from 'react';
 import { toast } from 'sonner';
 
 export interface Skill {
-  id: string;
+  skill_id: string;
   name: string;
   category: string;
   description: string;

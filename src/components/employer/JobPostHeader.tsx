@@ -1,11 +1,17 @@
-
 import React from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { NewJobPostDialog } from "./NewJobPostDialog";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import NewJobPostDialog from "@/components/employer/NewJobPostDialog";
+
 import { FilterDropdown } from "./FilterDropdown";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { useJobPosts } from "@/hooks/use-job-posts";
+import useJobPosts from "@/hooks/use-job-posts";
 
 export function JobPostHeader() {
   const { updateFilters, filters } = useJobPosts();
@@ -23,7 +29,9 @@ export function JobPostHeader() {
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
           <CardTitle>Job Management</CardTitle>
-          <CardDescription>Create, edit, and manage your job postings</CardDescription>
+          <CardDescription>
+            Create, edit, and manage your job postings
+          </CardDescription>
         </div>
         <NewJobPostDialog />
       </CardHeader>
@@ -35,7 +43,7 @@ export function JobPostHeader() {
               type="search"
               placeholder="Search job listings..."
               className="pl-8"
-              value={filters.searchQuery || ''}
+              value={filters.searchQuery || ""}
               onChange={(e) => handleSearchChange(e.target.value)}
             />
           </div>
