@@ -102,7 +102,7 @@ export interface Profile {
   email: string;
   skills: string[];
   resume_link?: string;
-  account_type: "job_seeker" | "employer" | "admin" | "freelancer";
+  account_type: "job_seeker" | "employer";
   created_at: string;
   updated_at: string;
   // Enhanced fields
@@ -153,54 +153,7 @@ export interface Profile {
   company_description?: string;
   company_culture?: string;
 
-  // Freelancer-specific fields (only present when account_type is 'freelancer')
-  freelancer_data?: {
-    freelancer_id: string;
-    title: string;
-    hourly_rate?: number;
-    available_for_hire: boolean;
-    rating: number;
-    total_reviews: number;
-    total_projects: number;
-    last_active?: string;
-    portfolio_items?: Array<{
-      id: string;
-      title: string;
-      description: string;
-      image_url: string;
-      project_url?: string;
-      tags: string[];
-      created_at: string;
-    }>;
-    pricing?: {
-      basic_package?: {
-        name: string;
-        price: number;
-        description: string;
-        features: string[];
-        delivery_days: number;
-        revisions: number;
-      };
-      standard_package?: {
-        name: string;
-        price: number;
-        description: string;
-        features: string[];
-        delivery_days: number;
-        revisions: number;
-      };
-      premium_package?: {
-        name: string;
-        price: number;
-        description: string;
-        features: string[];
-        delivery_days: number;
-        revisions: number;
-      };
-    };
-  };
 
-  // Company-specific nested object
   company_data?: CompanyData;
 }
 
@@ -334,47 +287,7 @@ export interface ProfileUpdate {
   company_description?: string;
   company_culture?: string;
 
-  // Freelancer-specific fields
-  freelancer_data?: {
-    title?: string;
-    hourly_rate?: number;
-    available_for_hire?: boolean;
-    portfolio_items?: Array<{
-      title: string;
-      description: string;
-      image_url: string;
-      project_url?: string;
-      tags: string[];
-    }>;
-    pricing?: {
-      basic_package?: {
-        name: string;
-        price: number;
-        description: string;
-        features: string[];
-        delivery_days: number;
-        revisions: number;
-      };
-      standard_package?: {
-        name: string;
-        price: number;
-        description: string;
-        features: string[];
-        delivery_days: number;
-        revisions: number;
-      };
-      premium_package?: {
-        name: string;
-        price: number;
-        description: string;
-        features: string[];
-        delivery_days: number;
-        revisions: number;
-      };
-    };
-  };
 
-  // Company-specific nested object
   company_data?: {
     company_name?: string;
     company_website?: string;

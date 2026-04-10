@@ -1,5 +1,5 @@
 
-import DashboardLayout from "@/components/admin/DashboardLayout";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 import { EmployerSettingsProvider } from "@/contexts/EmployerSettingsContext";
 import { EmployerSettingsContent } from "@/components/employer/settings/EmployerSettingsContent";
 

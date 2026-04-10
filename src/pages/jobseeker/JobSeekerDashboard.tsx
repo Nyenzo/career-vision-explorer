@@ -47,13 +47,6 @@ const JobSeekerDashboard = () => {
   const upcomingInterviews = getUpcomingInterviews();
   const nextInterview = upcomingInterviews[0];
 
-  // Founder matching stats (mocked - replace with real data)
-  const founderStats = {
-    matchScore: 85,
-    profileViews: 12,
-    mutualMatches: 3,
-    profileCompleteness: 70,
-  };
 
   const handleSaveProfile = async (data: any) => {
     console.log("Saving profile:", data);
@@ -165,42 +158,6 @@ const JobSeekerDashboard = () => {
             {/* Left Column */}
             <div className="space-y-6">
               <ProfileCompletionCard />
-              {/* Founder Matching Card */}
-
-              <Card className="border-blue-200 hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Users className="h-5 w-5 text-blue-600" />
-                    Find Co-Founders
-                    <Badge
-                      variant="outline"
-                      className="ml-auto bg-blue-50 text-blue-700 border-blue-200"
-                    >
-                      New
-                    </Badge>
-                  </CardTitle>
-                  <CardDescription>
-                    Connect with potential co-founders for your startup
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="p-3 border rounded-lg space-y-2 bg-gradient-to-r from-blue-50 to-white">
-                    <h4 className="font-medium text-sm">
-                      Build Your Dream Team
-                    </h4>
-                    <p className="text-xs text-muted-foreground">
-                      Find technical, business, and marketing co-founders who
-                      match your skills and vision
-                    </p>
-                  </div>
-                  <Button
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                    onClick={() => navigate("/founder/onboarding")}
-                  >
-                    Explore Co-Founder Matching
-                  </Button>
-                </CardContent>
-              </Card>
             </div>
 
             {/* Right Column */}

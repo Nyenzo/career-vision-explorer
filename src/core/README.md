@@ -1,1 +1,0 @@
-This directory contains the core logic of the application, including API calls, hooks, and type definitions.

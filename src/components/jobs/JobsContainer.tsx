@@ -33,10 +33,10 @@ export const JobsContainer = ({ jobs }: JobsContainerProps) => {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [applicationDialogOpen, setApplicationDialogOpen] = useState(false);
   
-  const { isJobSeeker, isFreelancer } = useAuth();
+  const { isJobSeeker } = useAuth();
   
-  // Allow both job seekers and freelancers to view and apply for jobs
-  const canApplyForJobs = isJobSeeker() || isFreelancer();
+  // Allow job seekers to view and apply for jobs
+  const canApplyForJobs = isJobSeeker();
   
   // Always call hooks unconditionally (Rules of Hooks)
   const { getApplicationForJob: getAppFn } = useJobApplications();

@@ -25,7 +25,7 @@ class LinkedInOAuthService {
    * @param usePopup - Whether to use popup or redirect (popup not recommended for Supabase OAuth)
    * @returns Promise with authorization URL or redirects to LinkedIn
    */
-  async startOAuthFlow(accountType: 'job_seeker' | 'employer' | 'freelancer' = 'job_seeker', usePopup: boolean = false): Promise<void> {
+  async startOAuthFlow(accountType: 'job_seeker' | 'employer' = 'job_seeker', usePopup: boolean = false): Promise<void> {
     try {
       // Check if we should use Supabase directly (frontend-only) or backend
       if (isSupabaseConfigured() && supabase) {
