@@ -8,7 +8,7 @@ type RouteMeta = {
 
 const SITE_NAME = "Visiondrill";
 const DEFAULT_DESCRIPTION =
-  "Visiondrill helps job seekers, employers, and freelancers navigate hiring, matching, and career growth.";
+  "Visiondrill helps job seekers and employers navigate hiring, matching, and career growth.";
 
 const ROUTE_METADATA: Record<string, RouteMeta> = {
   "/": {

@@ -122,13 +122,9 @@ class AuthService {
     localStorage.setItem("refresh_token", refreshToken);
   }
 
-  hasRole(role: "job_seeker" | "employer" | "admin" | "freelancer"): boolean {
+  hasRole(role: "job_seeker" | "employer"): boolean {
     const user = this.getStoredUser();
     return user?.account_type === role;
-  }
-
-  isAdmin(): boolean {
-    return this.hasRole("admin");
   }
 
   isEmployer(): boolean {
@@ -137,10 +133,6 @@ class AuthService {
 
   isJobSeeker(): boolean {
     return this.hasRole("job_seeker");
-  }
-
-  isFreelancer(): boolean {
-    return this.hasRole("freelancer");
   }
 
   async changePassword(data: PasswordChangeRequest): Promise<{ message: string }> {
@@ -159,17 +151,6 @@ class AuthService {
     return apiClient.post<{ message: string }>("/auth/delete-account", data);
   }
 
-  async registerAdmin(userData: UserRegister): Promise<TokenResponse> {
-    const response = await apiClient.post<TokenResponse>("/auth/register/admin", userData);
-    this.setSession(response);
-    return response;
-  }
-
-  async registerFirstAdmin(userData: UserRegister): Promise<TokenResponse> {
-    const response = await apiClient.post<TokenResponse>("/auth/register/first-admin", userData);
-    this.setSession(response);
-    return response;
-  }
 
   /** 🔹 LinkedIn OAuth via Supabase */
   async signInWithLinkedIn(): Promise<void> {
@@ -205,7 +186,6 @@ class AuthService {
       (localStorage.getItem("oauth_account_type") as
         | "job_seeker"
         | "employer"
-        | "freelancer"
         | null) || "job_seeker";
 
     if (code && isSupabaseConfigured() && supabase) {

@@ -4,7 +4,7 @@ export interface User {
   user_id: string;
   name: string;
   email: string;
-  account_type: "admin" | "job_seeker" | "employer" | "freelancer";
+  account_type: "job_seeker" | "employer";
   skills?: string[];
   resume_link?: string;
 }
@@ -31,7 +31,7 @@ export interface UserRegister {
   name: string;
   email: string;
   password: string;
-  account_type: "job_seeker" | "employer" | "freelancer";
+  account_type: "job_seeker" | "employer";
 }
 
 export interface RefreshTokenRequest {

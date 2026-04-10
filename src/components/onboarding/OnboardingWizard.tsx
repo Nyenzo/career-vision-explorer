@@ -15,13 +15,12 @@ import { submitOnboardingData } from "@/services/onboarding.service";
 import { ProgressIndicator } from "./ProgressIndicator";
 import { StepNavigation } from "./StepNavigation";
 import { StepRenderer } from "./StepRenderer";
-import { FreelancerStepRenderer } from "./FreelancerStepRenderer";
 import { EmployerStepRenderer } from "./EmployerStepRenderer";
 import { OnboardingData } from "./types";
 
 interface OnboardingWizardProps {
   onComplete: () => void;
-  userRole?: 'jobseeker' | 'employer' | 'freelancer';
+  userRole?: 'jobseeker' | 'employer';
   signupData?: any; // Data from signup form including role-specific fields
 }
 
@@ -41,15 +40,12 @@ const OnboardingWizard = ({ onComplete, userRole = 'jobseeker', signupData }: On
   const [videoAnalyzing, setVideoAnalyzing] = useState(false);
   const [videoAnalysisResult, setVideoAnalysisResult] = useState<string | null>(null);
 const [aiResponses, setAiResponses] = useState<string[]>([
-    userRole === 'freelancer' 
-      ? "Welcome to Visiondrill! I'm here to help you set up your freelancer profile. Let's showcase your skills and services to connect with potential clients."
-      : userRole === 'employer'
+    userRole === 'employer'
       ? "Welcome to Visiondrill! I'm here to help you set up your company profile and find the best talent for your team. Let's start by gathering information about your company."
       : "Hello Welcome to Visiondrill! I'm here to help you set up your profile and find the perfect career opportunities. "
   ]);
-  
-  // Different user types have different number of steps
-  const totalSteps = userRole === 'employer' ? 6 : userRole === 'freelancer' ? 6 : 5;
+
+  const totalSteps = userRole === 'employer' ? 6 : 5;
   const progress = ((currentStep + 1) / (totalSteps + 1)) * 100;
   
   const updateField = <K extends keyof OnboardingData>(field: K, value: OnboardingData[K]) => {
@@ -87,9 +83,7 @@ const [aiResponses, setAiResponses] = useState<string[]>([
   ];
 
   const responses =
-    userRole === "freelancer"
-      ? freelancerResponses
-      : userRole === "employer"
+    userRole === "employer"
       ? employerResponses
       : jobSeekerResponses;
 
@@ -122,11 +116,6 @@ const [aiResponses, setAiResponses] = useState<string[]>([
         title: "Company Profile Created Successfully!",
         description: "Your company profile is ready. Start posting jobs to find the best talent!",
         redirect: "/employer/dashboard"
-      },
-      freelancer: {
-        title: "Freelancer Profile Created Successfully!",
-        description: "Your profile is ready. Start browsing projects and connecting with clients!",
-        redirect: "/freelancer/dashboard"
       },
       jobseeker: {
         title: "Profile Created Successfully!",
@@ -211,8 +200,6 @@ const [aiResponses, setAiResponses] = useState<string[]>([
             <DialogDescription>
               {userRole === 'employer' 
                 ? "Let's set up your company profile to attract the best talent."
-                : userRole === 'freelancer'
-                ? "Let's create your freelancer profile to connect with potential clients."
                 : "Let's set up your profile so we can find the perfect opportunities for you."}
             </DialogDescription>
           </DialogHeader>
@@ -225,18 +212,7 @@ const [aiResponses, setAiResponses] = useState<string[]>([
  
           
           <div className="mb-6 space-y-4">
-{userRole === 'freelancer' ? (
-              <FreelancerStepRenderer
-                currentStep={currentStep}
-                data={data}
-                updateField={updateField}
-                handleNext={handleNext}
-                handleVideoUpload={handleVideoUpload}
-                openVideoRecording={() => setVideoRecordingOpen(true)}
-                videoAnalyzing={videoAnalyzing}
-                videoAnalysisResult={videoAnalysisResult}
-              />
-            ) : userRole === 'employer' ? (
+           {userRole === 'employer' ? (
               <EmployerStepRenderer
                 currentStep={currentStep}
                 data={data}

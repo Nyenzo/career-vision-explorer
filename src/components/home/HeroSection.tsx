@@ -38,7 +38,7 @@ const HeroSection = () => {
             <div className="mx-auto max-w-md px-4 sm:max-w-2xl sm:px-6 lg:px-0 lg:max-w-none">
               <img
                 className="w-full rounded-xl shadow-xl ring-1 ring-white/20 glassmorphism"
-                src="https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=600&h=400"
+                src="/images/hero-dashboard.jpg"
                 alt="Career planning dashboard"
               />
             </div>

@@ -3,13 +3,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Menu,
   X,
-  Shield,
   User,
-  LogOut,
   ChevronDown,
-  Home,
-  Briefcase,
-  LayoutDashboard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -26,7 +21,6 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [hovered, setHovered] = useState<string | null>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const prefersReducedMotion = useReducedMotion();
 
@@ -52,14 +46,10 @@ const Navbar = () => {
     if (!user) return "/";
     const effectiveRole = profile?.active_role || user.account_type;
     switch (effectiveRole) {
-      case "admin":
-        return "/admin/dashboard";
       case "employer":
         return "/employer/dashboard";
       case "job_seeker":
         return "/jobseeker/dashboard";
-      case "freelancer":
-        return "/freelancer/dashboard";
       default:
         return "/";
     }
@@ -68,23 +58,17 @@ const Navbar = () => {
   const effectiveRole = profile?.active_role || user?.account_type;
   const isJobSeekerUser = effectiveRole === "job_seeker";
   const isEmployerUser = effectiveRole === "employer";
-  const isFreelancerUser = effectiveRole === "freelancer";
   const isActive = (path: string) => location.pathname === path;
 
-  const jobSeekerIcons = [
-    { name: "Home", icon: Home, path: "/" },
-    { name: "Dashboard", icon: LayoutDashboard, path: "/jobseeker/dashboard" },
-    { name: "Jobs", icon: Briefcase, path: "/jobs" },
-    { name: "Profile", icon: User, path: "/profile" },
+  const jobSeekerNavItems = [
+    { name: "Home", path: "/" },
+    { name: "Dashboard", path: "/jobseeker/dashboard" },
+    { name: "Jobs", path: "/jobs" },
+    { name: "Profile", path: "/profile" },
   ];
 
   const employerNavItems = [
-    { name: "Freelancers", href: "/freelancers" },
     { name: "Jobs", href: "/employer/jobs" },
-  ];
-
-  const freelancerNavItems = [
-    { name: "Jobs", href: "/jobs" },
   ];
 
   return (
@@ -141,19 +125,7 @@ const Navbar = () => {
                   </Link>
                 )}
 
-                {isFreelancerUser &&
-                  freelancerNavItems.map((item) => (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive(item.href)
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                        }`}
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
+
 
                 <Link
                   to={getDashboardUrl()}
@@ -248,20 +220,10 @@ const Navbar = () => {
                     </Link>
                   ))}
 
-                {isFreelancerUser &&
-                  freelancerNavItems.map((item) => (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      onClick={() => setIsMenuOpen(false)}
-                      className="block px-3 py-2 rounded-md text-sm font-medium hover:bg-accent"
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
+
 
                 {isJobSeekerUser &&
-                  jobSeekerIcons.map((item) => (
+                  jobSeekerNavItems.map((item) => (
                     <Link
                       key={item.name}
                       to={item.path}

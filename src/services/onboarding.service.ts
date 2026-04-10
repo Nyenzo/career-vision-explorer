@@ -6,37 +6,17 @@ import { apiClient } from "../lib/api-client";
 export async function submitOnboardingData(
   data: OnboardingData, 
   signupData?: any,
-  userRole: 'jobseeker' | 'employer' | 'freelancer' = 'jobseeker'
+  userRole?: string
 ) {
   try {
-    // Map the onboarding data to the profile update format
     const profileData: ProfileUpdate = {
-      // Parse skills from comma-separated string to array
       skills: data.skills ? data.skills.split(',').map(s => s.trim()).filter(Boolean) : [],
       location: data.location,
-      // Map salary expectations to actual range strings
       salary_expectation: mapSalaryRange(data.salaryExpectations),
-      // Map work preference to job type
       preferred_job_type: mapWorkPreference(data.workPreference) as ProfileUpdate['preferred_job_type'],
-      // Store career goals in bio
       bio: data.careerGoals,
-      // Set availability for job seekers
       availability: userRole === 'jobseeker' ? 'Available' : undefined,
     };
-
-    // Include role-specific fields from signup if available
-    if (signupData) {
-      // For freelancers
-      if (userRole === 'freelancer') {
-        if (signupData.professionalTitle) {
-          // Store professional title in bio or education field
-          profileData.bio = `${signupData.professionalTitle}. ${profileData.bio || ''}`;
-        }
-        if (signupData.portfolioUrl) {
-          profileData.portfolio_url = signupData.portfolioUrl;
-        }
-      }
-    }
 
     // If the user is an employer, add/update company details
     if (userRole === 'employer' && (signupData || data.companyName)) {

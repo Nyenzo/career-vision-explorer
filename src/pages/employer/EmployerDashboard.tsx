@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import DashboardLayout from "@/components/admin/DashboardLayout";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 import { StatisticsCards } from "@/components/employer/StatisticsCards";
 import { RecentApplicantsTable } from "@/components/employer/RecentApplicantsTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +19,7 @@ const EmployerDashboard = () => {
       toast.error("Authentication Required", {
         description: "Please log in to access the employer dashboard",
       });
-      navigate("/admin/login?returnUrl=/employer/dashboard");
+      navigate("/login?returnUrl=/employer/dashboard");
     }
 
     if (!isLoading && isAuthenticated && !hasRole("employer")) {
