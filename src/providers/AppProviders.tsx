@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { FeatureProvider } from "@/hooks/use-features";
 import AuthProvider from "@/hooks/use-auth";
 import { UserProfileProvider } from "@/hooks/use-user-profile";
+import { CareerPathsProvider } from "@/hooks/use-career-paths";
 import { ReactNode } from "react";
 
 // Optimize query client for faster loading
@@ -28,9 +29,11 @@ export const AppProviders = ({ children }: { children: ReactNode }) => {
           <ThemeProvider defaultTheme="light" storageKey="visiondrill-ui-theme">
             <TooltipProvider>
               <FeatureProvider>
+                <CareerPathsProvider>
                   {children}
                   <Toaster />
                   <Sonner />
+                </CareerPathsProvider>
               </FeatureProvider>
             </TooltipProvider>
           </ThemeProvider>

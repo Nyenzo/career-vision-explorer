@@ -51,7 +51,7 @@ const ApplicationStatsCard = ({ applicationStats }: ApplicationStatsCardProps) =
           </div>
         </div>
         <div className="pt-2">
-          <Link to="/profile">
+          <Link to="/admin/jobseeker">
             <Button 
               variant="outline" 
               className="w-full bg-white/80 hover:bg-white shadow-sm border-gray-200 hover:border-gray-300 transition-all duration-200 font-medium"

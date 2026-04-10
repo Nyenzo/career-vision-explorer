@@ -49,10 +49,10 @@ export const JobApplicationDialog = ({
   const [cvUploaded, setCvUploaded] = useState(false);
   const [resumeError, setResumeError] = useState(false);
 
-  const { isJobSeeker, isAuthenticated, user } = useAuth();
+  const { isJobSeeker, isFreelancer, isAuthenticated, user } = useAuth();
 
-  // Allow job seekers to view and apply for jobs
-  const canApplyForJobs = isJobSeeker();
+  // Allow both job seekers and freelancers to view and apply for jobs
+  const canApplyForJobs = isJobSeeker() || isFreelancer();
 
   // Always call hooks unconditionally (Rules of Hooks)
   const { refetch: refetchFn } = useJobApplications();
@@ -82,7 +82,7 @@ export const JobApplicationDialog = ({
     }
 
     if (!canApplyForJobs) {
-      toast.error("Only job seekers can apply for jobs");
+      toast.error("Only job seekers and freelancers can apply for jobs");
       return;
     }
 

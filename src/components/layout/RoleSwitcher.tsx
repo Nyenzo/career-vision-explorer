@@ -35,8 +35,10 @@ export function RoleSwitcher() {
 
   const getRoleDashboardPath = (role: string) => {
     const normalizedRole = normalizeRole(role);
+    if (normalizedRole === "freelancer") return "/freelancer/dashboard";
     if (normalizedRole === "job_seeker") return "/jobseeker/dashboard";
     if (normalizedRole === "employer") return "/employer/dashboard";
+    if (normalizedRole === "admin") return "/admin/dashboard";
     return "/";
   };
 
@@ -86,7 +88,29 @@ export function RoleSwitcher() {
     }
   };
 
+  const handleAddRole = async () => {
+    // Determine which role to add based on current role
+    const currentRole = normalizeRole(roles?.active_role || user?.account_type);
+    const newRole = currentRole === 'job_seeker' ? 'freelancer' : 'job_seeker';
 
+    try {
+      setSwitching(true);
+      const addResult = await roleService.addRole(newRole);
+      toast.success(addResult.message || `Added ${newRole} role successfully`);
+
+      // Switch immediately so routing and profile context align with selected role.
+      await roleService.switchRole(newRole);
+
+      await loadRoles();
+      await refreshProfile();
+      window.location.href = getRoleDashboardPath(newRole);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to add role');
+      console.error('Add role error:', error);
+    } finally {
+      setSwitching(false);
+    }
+  };
 
   if (!user || loading) {
     return null;
@@ -95,17 +119,19 @@ export function RoleSwitcher() {
   const currentRole = roles?.active_role || user.account_type;
   const normalizedCurrentRole = normalizeRole(currentRole);
   const hasMultipleRoles = roles && roles.roles.length > 1;
-  const canAddRole = false;
+  const canAddRole = (normalizedCurrentRole === 'job_seeker' || normalizedCurrentRole === 'freelancer') &&
+    (!roles || roles.roles.length === 1);
 
   const getRoleIcon = (role: string) => {
     const normalizedRole = normalizeRole(role);
-    return normalizedRole === 'employer' ? <Briefcase className="w-4 h-4" /> : <UserCircle className="w-4 h-4" />;
+    return normalizedRole === 'freelancer' ? <Briefcase className="w-4 h-4" /> : <UserCircle className="w-4 h-4" />;
   };
 
   const getRoleLabel = (role: string) => {
     const normalizedRole = normalizeRole(role);
-    return normalizedRole === 'job_seeker' ? 'Job Seeker' :
-        normalizedRole === 'employer' ? 'Employer' : 'Unknown';
+    return normalizedRole === 'freelancer' ? 'Freelancer' :
+      normalizedRole === 'job_seeker' ? 'Job Seeker' :
+        normalizedRole === 'employer' ? 'Employer' : 'Admin';
   };
 
   return (
@@ -137,7 +163,26 @@ export function RoleSwitcher() {
           </DropdownMenuItem>
         ))}
 
-
+        {canAddRole && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={handleAddRole}
+              disabled={switching}
+              data-testid="role-add-switch"
+              className="flex items-center gap-2"
+            >
+              {switching ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Plus className="w-4 h-4" />
+              )}
+              <span>
+                Add {normalizedCurrentRole === 'job_seeker' ? 'Freelancer' : 'Job Seeker'} Role
+              </span>
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

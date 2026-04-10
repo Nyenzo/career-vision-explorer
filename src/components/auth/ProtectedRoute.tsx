@@ -6,7 +6,7 @@ import { PageLoaderSkeleton } from "@/components/ui/skeleton-loaders";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: "job_seeker" | "employer";
+  requiredRole?: "admin" | "job_seeker" | "employer" | "freelancer";
 }
 
 export const ProtectedRoute = ({
@@ -23,9 +23,11 @@ export const ProtectedRoute = ({
   };
   const getDashboardPath = (role?: string) => {
     const normalizedRole = normalizeRole(role);
+    if (normalizedRole === "admin") return "/admin/dashboard";
     if (normalizedRole === "employer") return "/employer/dashboard";
+    if (normalizedRole === "freelancer") return "/freelancer/dashboard";
     if (normalizedRole === "job_seeker") return "/jobseeker/dashboard";
-    return "/";
+    return "/dashboard";
   };
   const effectiveRole = normalizeRole(profile?.active_role || user?.account_type);
 

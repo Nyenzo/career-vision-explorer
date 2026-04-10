@@ -50,13 +50,17 @@ const signupSchema = z.object({
   confirmPassword: z.string().min(8, {
     message: "Password must be at least 8 characters.",
   }),
-  role: z.enum(["jobseeker", "employer"], {
+  role: z.enum(["jobseeker", "employer", "freelancer"], {
     required_error: "Please select your role.",
   }),
   countryCode: z.string().optional(),
   phoneNumber: z.string().optional(),
   profileImage: z.string().optional(),
   videoUrl: z.string().optional(),
+  // Freelancer fields
+  professionalTitle: z.string().optional(),
+  hourlyRate: z.string().optional(),
+  portfolioUrl: z.string().url().optional().or(z.literal('')),
   // Employer fields
   companyName: z.string().optional(),
   companyWebsite: z.string().url().optional().or(z.literal('')),
@@ -116,6 +120,10 @@ const Signup = () => {
       countryCode: "+254",
       phoneNumber: "",
       profileImage: "",
+      // Freelancer fields
+      professionalTitle: "",
+      hourlyRate: "",
+      portfolioUrl: "",
       // Employer fields
       companyName: "",
       companyWebsite: "",
@@ -148,7 +156,7 @@ const Signup = () => {
       });
 
       // Map frontend role to backend role
-      const accountType = values.role === 'jobseeker' ? 'job_seeker' : 'employer';
+      const accountType = values.role === 'jobseeker' ? 'job_seeker' : values.role === 'employer' ? 'employer' : 'freelancer';
 
       // Prepare registration data based on user role
       const registrationData: any = {
@@ -166,7 +174,13 @@ const Signup = () => {
           companyWebsite: values.companyWebsite,
           industry: values.industry
         };
-
+      } else if (values.role === 'freelancer') {
+        // Add freelancer-specific fields
+        registrationData.bio = values.professionalTitle;
+        registrationData.preferences = {
+          hourlyRate: values.hourlyRate,
+          portfolioUrl: values.portfolioUrl
+        };
       } else if (values.role === 'jobseeker') {
         // Add job seeker phone number to preferences
         registrationData.preferences = {
@@ -241,7 +255,12 @@ const Signup = () => {
       setProfileImage(linkedInData.profileImage);
 
       // Pre-fill role-specific fields based on LinkedIn data
-      if (selectedRole === 'employer') {
+      if (selectedRole === 'freelancer') {
+        // Simulate extracting professional info from LinkedIn
+        form.setValue('professionalTitle', 'Senior Software Developer'); // Would be extracted from LinkedIn
+        form.setValue('hourlyRate', '$75'); // Could be suggested based on title
+        form.setValue('portfolioUrl', 'https://linkedin.com/in/johndoe'); // LinkedIn profile as portfolio
+      } else if (selectedRole === 'employer') {
         // Simulate extracting company info from LinkedIn
         form.setValue('companyName', 'Tech Solutions Inc'); // Would be extracted from LinkedIn
         form.setValue('companyWebsite', 'https://techsolutions.com');
@@ -255,6 +274,8 @@ const Signup = () => {
       let description = "LinkedIn data imported successfully!";
       if (selectedRole === "jobseeker") {
         description += " Please add your phone number to complete registration.";
+      } else if (selectedRole === "freelancer") {
+        description += " Review your professional details and complete registration.";
       } else if (selectedRole === "employer") {
         description += " Please verify your company information.";
       }
@@ -274,8 +295,11 @@ const Signup = () => {
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
 
+    // Redirect based on user role
     if (newUserData?.role === 'employer') {
       navigate('/employer/dashboard');
+    } else if (newUserData?.role === 'freelancer') {
+      navigate('/freelancer/dashboard');
     } else {
       navigate('/jobseeker/dashboard');
     }
@@ -361,6 +385,7 @@ const Signup = () => {
                         <SelectContent>
                           <SelectItem value="jobseeker">Job Seeker</SelectItem>
                           <SelectItem value="employer">Employer</SelectItem>
+                          <SelectItem value="freelancer">Freelancer</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -376,6 +401,63 @@ const Signup = () => {
                   />
                 )}
 
+                {selectedRole === "freelancer" && (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="professionalTitle"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Professional Title (Optional)</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g., Full Stack Developer"
+                              {...field}
+                              className="transition-all focus:ring-2 focus:ring-career-blue"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="hourlyRate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Hourly Rate (Optional)</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g., $50"
+                              {...field}
+                              className="transition-all focus:ring-2 focus:ring-career-blue"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="portfolioUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Portfolio URL (Optional)</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="https://yourportfolio.com"
+                              {...field}
+                              className="transition-all focus:ring-2 focus:ring-career-blue"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                )}
 
                 {selectedRole === "employer" && (
                   <>

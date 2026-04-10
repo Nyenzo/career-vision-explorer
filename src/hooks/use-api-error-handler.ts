@@ -29,7 +29,7 @@ export const useApiErrorHandler = () => {
         
         // Redirect to appropriate login page with return URL
         const currentPath = window.location.pathname;
-        const loginUrl = '/login';
+        const loginUrl = currentPath.startsWith('/employer') ? '/admin/login' : '/login';
         navigate(`${loginUrl}?returnUrl=${encodeURIComponent(currentPath)}`);
         return;
       }
@@ -43,11 +43,17 @@ export const useApiErrorHandler = () => {
         // Redirect to appropriate dashboard based on user role
         if (user) {
           switch (user.account_type) {
+            case 'admin':
+              navigate('/admin/dashboard');
+              break;
             case 'employer':
               navigate('/employer/dashboard');
               break;
             case 'job_seeker':
               navigate('/jobseeker/dashboard');
+              break;
+            case 'freelancer':
+              navigate('/freelancer/dashboard');
               break;
             default:
               navigate('/');

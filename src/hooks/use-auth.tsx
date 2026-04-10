@@ -24,10 +24,12 @@ interface AuthContextType {
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   hasRole: (
-    role: "job_seeker" | "employer"
+    role: "job_seeker" | "employer" | "admin" | "freelancer"
   ) => boolean;
+  isAdmin: () => boolean;
   isEmployer: () => boolean;
   isJobSeeker: () => boolean;
+  isFreelancer: () => boolean;
   setTokens: (accessToken: string, refreshToken: string) => void;
   signInWithLinkedIn: () => Promise<void>;
   handleOAuthCallback: () => Promise<void>;
@@ -50,6 +52,10 @@ const getDashboardPath = (accountType: string): string => {
       return "/jobseeker/dashboard";
     case "employer":
       return "/employer/dashboard";
+    case "freelancer":
+      return "/freelancer/dashboard";
+    case "admin":
+      return "/admin/dashboard";
     default:
       return "/";
   }
@@ -215,15 +221,34 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const hasRole = (role: "job_seeker" | "employer") => {
+  const hasRole = (role: "job_seeker" | "employer" | "admin" | "freelancer") => {
     const effectiveRole = (profile?.active_role as User["account_type"] | undefined) || user?.account_type;
     return effectiveRole === role;
   };
 
+  const isAdmin = () => hasRole("admin");
   const isEmployer = () => hasRole("employer");
   const isJobSeeker = () => hasRole("job_seeker");
+  const isFreelancer = () => hasRole("freelancer");
 
-
+  const impersonateUser = (targetUser: User) => {
+    if (!user || user.account_type !== "admin") {
+      toast.error("Only admins can impersonate users");
+      return;
+    }
+    const impersonationData = {
+      originalUser: user,
+      impersonatedUser: targetUser,
+    };
+    localStorage.setItem(
+      "visiondrillImpersonation",
+      JSON.stringify(impersonationData)
+    );
+    setOriginalUser(user);
+    setUser(targetUser);
+    setIsImpersonating(true);
+    toast.success(`Now viewing as ${targetUser.name}`);
+  };
 
   const stopImpersonation = () => {
     if (!isImpersonating || !originalUser) return;
@@ -296,7 +321,9 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         email: tokenResponse.email,
         account_type: tokenResponse.account_type as
           | "job_seeker"
-          | "employer",
+          | "employer"
+          | "admin"
+          | "freelancer",
       };
 
       authService.setStoredUser(user);
@@ -336,12 +363,14 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     logout,
     refreshProfile,
     hasRole,
+    isAdmin,
     isEmployer,
     isJobSeeker,
+    isFreelancer,
     setTokens,
     signInWithLinkedIn,
     handleOAuthCallback,
-    impersonateUser: () => {},
+    impersonateUser,
     stopImpersonation,
     isImpersonating,
     originalUser,

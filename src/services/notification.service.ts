@@ -12,6 +12,11 @@ export interface Notification {
   | 'job_match'
   | 'profile_viewed'
   | 'message_received'
+  | 'freelancer_review_received'
+  | 'cofounder_new_message'
+  | 'cofounder_mutual_interest'
+  | 'cofounder_connection'
+  | 'cofounder_match_suggestion'
   | 'system';
   title: string;
   message: string;

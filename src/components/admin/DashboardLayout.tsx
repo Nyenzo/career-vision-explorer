@@ -1,12 +1,14 @@
-import { useEffect } from "react";
+// DashboardLayout.tsx - Remove Navbar import and usage
+import { ReactNode, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+// Remove this import: import Navbar from "@/components/layout/Navbar";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
   title: string;
-  role: "employer" | "job_seeker";
+  role: "admin" | "employer" | "job_seeker" | "freelancer";
 }
 
 const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
@@ -52,6 +54,7 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* Remove Navbar component */}
       <main className="flex-1">{children}</main>
     </div>
   );

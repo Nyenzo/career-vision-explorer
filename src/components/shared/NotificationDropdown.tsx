@@ -28,10 +28,18 @@ const NotificationIcon = ({ type }: { type: Notification['type'] }) => {
       return <BriefcaseIcon {...iconProps} className="h-4 w-4 text-green-500" />;
     case 'job_match':
       return <BriefcaseIcon {...iconProps} className="h-4 w-4 text-purple-500" />;
+    case 'cofounder_mutual_interest':
+    case 'cofounder_connection':
+      return <User {...iconProps} className="h-4 w-4 text-pink-500" />;
+    case 'cofounder_match_suggestion':
+      return <User {...iconProps} className="h-4 w-4 text-blue-500" />;
     case 'profile_viewed':
       return <User {...iconProps} className="h-4 w-4 text-indigo-500" />;
     case 'message_received':
+    case 'cofounder_new_message':
       return <MessageSquare {...iconProps} className="h-4 w-4 text-cyan-500" />;
+    case 'freelancer_review_received':
+      return <Star {...iconProps} className="h-4 w-4 text-amber-500" />;
     case 'system':
       return <AlertCircle {...iconProps} className="h-4 w-4 text-gray-500" />;
     default:
