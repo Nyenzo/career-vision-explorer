@@ -12,7 +12,7 @@ const Signup = lazy(() => import("@/pages/Signup"));
 const ForgotPassword = lazy(() => import("@/pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
 const LinkedInCallback = lazy(() => import("@/pages/auth/LinkedInCallback"));
-const Notifications = lazy(() => import("@/pages/Notifications"));
+// const Notifications = lazy(() => import("@/pages/Notifications"));
 const Jobs = lazy(() => import("@/pages/Jobs"));
 const JobDetails = lazy(() => import("@/pages/JobDetails"));
 const PublicProfile = lazy(() => import("@/pages/PublicProfile"));
@@ -29,9 +29,7 @@ const EmployerDashboard = lazy(
 const EmployerJobs = lazy(() => import("@/pages/employer/EmployerJobs"));
 const JobApplicants = lazy(() => import("@/pages/employer/JobApplicants"));
 const AllApplicants = lazy(() => import("@/pages/employer/AllApplicants"));
-const EmployerInterviews = lazy(
-  () => import("@/pages/employer/EmployerInterviews")
-);
+// EmployerInterviews — page not yet created, route disabled
 
 // Jobseeker
 const JobSeekerDashboard = lazy(
@@ -189,18 +187,7 @@ export const AppRoutes = () => {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="interviews"
-            element={
-              <ProtectedRoute requiredRole="employer">
-                <DashboardLayout title="Interviews" role="employer">
-                  <Suspense fallback={<PageLoader />}>
-                    <EmployerInterviews />
-                  </Suspense>
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+          {/* interviews route disabled — EmployerInterviews page not yet created */}
         </Route>
 
         {/* Jobseeker Routes */}
@@ -228,16 +215,7 @@ export const AppRoutes = () => {
         </Route>
 
         {/* General Protected Routes */}
-        <Route
-          path="/notifications"
-          element={
-            <ProtectedRoute>
-              <Suspense fallback={<PageLoader />}>
-                <Notifications />
-              </Suspense>
-            </ProtectedRoute>
-          }
-        />
+        {/* /notifications route disabled — Notifications page not yet imported */}
         <Route
           path="/profile"
           element={

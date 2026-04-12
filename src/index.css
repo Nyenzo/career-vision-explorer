@@ -1,7 +1,23 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.gradient-btn {
+  background: linear-gradient(135deg, #004ac6 0%, #2563eb 100%);
+}
+
+.architectural-bg {
+  background-color: #f7f9fb;
+  background-image: radial-gradient(at 0% 0%, rgba(219, 225, 255, 0.4) 0, transparent 50%), 
+                    radial-gradient(at 100% 100%, rgba(172, 191, 255, 0.2) 0, transparent 50%);
+}
 @layer base {
   :root {
     --background: 0 0% 100%;

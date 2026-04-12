@@ -1,7 +1,4 @@
-
-import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { MapPin, Briefcase, Clock, BarChart3, Building } from "lucide-react";
+import React from "react";
 
 interface JobHeaderProps {
   job: {
@@ -12,6 +9,7 @@ interface JobHeaderProps {
     posted: string;
     matchScore: number;
     match_score?: number;
+    similarity_score?: number;
     companyInfo?: {
       logoUrl?: string;
     };
@@ -19,91 +17,59 @@ interface JobHeaderProps {
 }
 
 export const JobHeader = ({ job }: JobHeaderProps) => {
+  const score = Math.round((job.matchScore ?? job.similarity_score ?? 0) * ((job.matchScore <= 1 || job.similarity_score <= 1) ? 100 : 1));  
 
-const score = Math.round((job.matchScore ?? job.similarity_score ?? 0) * (job.matchScore <= 1 || job.similarity_score <= 1 ? 100 : 1));  return (
-    <Card className="career-card">
-      {/* Match Score Bar */}
-      <div className="h-2 bg-muted rounded-t-xl">
-        <div 
-          className={`h-full rounded-t-xl ${
-           score>= 90 ? 'bg-green-500' : 
-            score >= 80 ? 'bg-blue-500' : 
-            score >= 70 ? 'bg-yellow-500' : 
-            'bg-orange-500'
-          }`} 
-          style={{ width: `${score}%` }}
-        ></div>
-      </div>
-      
-      <CardHeader className="pb-4">
-        <div className="flex justify-between items-start">
-          <div className="flex items-start gap-4">
-            {/* Company Logo */}
-            <div className="flex-shrink-0">
-              {job.companyInfo?.logoUrl ? (
-                <img 
-                  src={job.companyInfo.logoUrl} 
-                  alt={`${job.company} logo`}
-                  className="w-16 h-16 rounded-lg object-contain border bg-white"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    if (e.currentTarget.nextElementSibling) {
-                      (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
-                    }
-                  }}
-                />
-              ) : null}
-              <div 
-                className={`w-16 h-16 rounded-lg border bg-gray-100 flex items-center justify-center ${
-                  job.companyInfo?.logoUrl ? 'hidden' : 'flex'
-                }`}
-              >
-                <Building className="h-8 w-8 text-gray-400" />
-              </div>
+  const getMatchColorClassname = (matchScore: number) => {
+    if (matchScore >= 90) return 'bg-tertiary-container text-on-tertiary-container ring-tertiary-container/30';
+    if (matchScore >= 70) return 'bg-surface-container-highest text-on-surface-variant ring-surface-variant/30';
+    return 'bg-surface-container-highest text-on-surface-variant ring-surface-variant/30';
+  };
+
+  return (
+    <section className="bg-surface-container-lowest p-10 rounded-lg shadow-sm relative overflow-hidden">
+        {/* Match Badge */}
+        <div className="absolute top-0 right-0 p-8">
+            <div className={`${getMatchColorClassname(score)} px-6 py-3 rounded-full flex items-center gap-2 shadow-sm ring-4`}>
+                <span className="font-headline font-bold text-xl">{score}%</span>
+                <span className="text-xs font-label font-semibold tracking-wider uppercase">Match</span>
             </div>
-            
-            <div className="space-y-4">
-              <div>
-                <CardTitle className="text-3xl mb-3">
-                  {job.title}
-                </CardTitle>
-                <CardDescription className="text-xl font-medium">
-                  {job.company}
-                </CardDescription>
-              </div>
-              
-              <div className="flex items-center gap-6 text-sm">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <MapPin className="h-4 w-4 text-primary" />
-                  {job.location}
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Briefcase className="h-4 w-4 text-primary" />
-                  {job.type}
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Clock className="h-4 w-4 text-primary" />
-                  {job.posted}
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <Badge className={`text-lg px-4 py-2 font-bold ${
-                score >= 90 ? 'bg-green-500 hover:bg-green-600' : 
-                score >= 80 ? 'bg-blue-500 hover:bg-blue-600' : 
-                score >= 70 ? 'bg-yellow-500 hover:bg-yellow-600' : 
-                'bg-orange-500 hover:bg-orange-600'
-              } text-white`}>
-                {score}% Match
-              </Badge>
-            </div>
-            <BarChart3 className="h-8 w-8 text-muted-foreground" />
-          </div>
         </div>
-      </CardHeader>
-    </Card>
+
+        <div className="flex flex-col md:flex-row gap-8 items-start md:items-center">
+            {/* Company Logo */}
+            <div className="w-24 h-24 rounded-lg bg-surface-container-low p-4 flex items-center justify-center flex-shrink-0">
+                {job.companyInfo?.logoUrl ? (
+                    <img 
+                        src={job.companyInfo.logoUrl} 
+                        alt={`${job.company} logo`}
+                        className="w-full h-full object-contain"
+                    />
+                ) : (
+                    <span className="material-symbols-outlined text-4xl text-outline">domain</span>
+                )}
+            </div>
+
+            {/* Job Title & Meta */}
+            <div>
+                <h1 className="text-4xl font-headline font-bold text-on-surface tracking-tight mb-4 pr-32">
+                    {job.title}
+                </h1>
+                <div className="flex flex-wrap items-center gap-4 text-on-surface-variant">
+                    <span className="flex items-center gap-1.5 font-medium">
+                        <span className="material-symbols-outlined text-primary text-xl">domain</span>
+                        {job.company}
+                    </span>
+                    <span className="flex items-center gap-1.5 font-medium">
+                        <span className="material-symbols-outlined text-primary text-xl">location_on</span>
+                        {job.location}
+                    </span>
+                    <span className="flex items-center gap-1.5 font-medium">
+                        <span className="material-symbols-outlined text-primary text-xl">schedule</span>
+                        Posted {job.posted || "recently"}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </section>
   );
 };

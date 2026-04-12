@@ -1,40 +1,12 @@
-
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Link, useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle
-} from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "@/components/ui/sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Linkedin, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import OnboardingWizard from "@/components/onboarding/OnboardingWizard";
-import ProfileImageUpload from "@/components/auth/ProfileImageUpload";
-import PhoneNumberInput from "@/components/auth/PhoneNumberInput";
 import LinkedInImportDialog from "@/components/auth/LinkedInImportDialog";
 
 const signupSchema = z.object({
@@ -47,30 +19,17 @@ const signupSchema = z.object({
   password: z.string().min(8, {
     message: "Password must be at least 8 characters.",
   }),
-  confirmPassword: z.string().min(8, {
-    message: "Password must be at least 8 characters.",
-  }),
   role: z.enum(["jobseeker", "employer"], {
     required_error: "Please select your role.",
   }),
-  countryCode: z.string().optional(),
   phoneNumber: z.string().optional(),
   profileImage: z.string().optional(),
-  videoUrl: z.string().optional(),
+  dateOfBirth: z.string().optional(),
   // Employer fields
   companyName: z.string().optional(),
   companyWebsite: z.string().url().optional().or(z.literal('')),
   industry: z.string().optional(),
 }).superRefine((data, ctx) => {
-  // Password confirmation validation
-  if (data.password !== data.confirmPassword) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Passwords do not match.',
-      path: ['confirmPassword'],
-    });
-  }
-  // Job seeker validation
   if (data.role === 'jobseeker') {
     if (!data.phoneNumber || data.phoneNumber.length === 0) {
       ctx.addIssue({
@@ -79,8 +38,26 @@ const signupSchema = z.object({
         path: ['phoneNumber'],
       });
     }
+    if (!data.dateOfBirth) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Date of birth is required for job seekers.',
+        path: ['dateOfBirth'],
+      });
+    } else {
+      const dob = new Date(data.dateOfBirth);
+      const today = new Date();
+      const age = today.getFullYear() - dob.getFullYear() -
+        (today < new Date(today.getFullYear(), dob.getMonth(), dob.getDate()) ? 1 : 0);
+      if (age < 18) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'You must be at least 18 years old to register.',
+          path: ['dateOfBirth'],
+        });
+      }
+    }
   }
-  // Employer validation
   if (data.role === 'employer') {
     if (!data.companyName || data.companyName.length === 0) {
       ctx.addIssue({
@@ -94,16 +71,13 @@ const signupSchema = z.object({
 
 const Signup = () => {
   const navigate = useNavigate();
-  const { register, login } = useAuth();
+  const { register } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [linkedInImportOpen, setLinkedInImportOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [profileImage, setProfileImage] = useState<string>("");
   const [linkedInDataImported, setLinkedInDataImported] = useState(false);
   const [newUserData, setNewUserData] = useState<any>(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const location = useLocation()
 
   const form = useForm<z.infer<typeof signupSchema>>({
     resolver: zodResolver(signupSchema),
@@ -111,12 +85,10 @@ const Signup = () => {
       name: "",
       email: "",
       password: "",
-      confirmPassword: "",
       role: "jobseeker",
-      countryCode: "+254",
       phoneNumber: "",
       profileImage: "",
-      // Employer fields
+      dateOfBirth: "",
       companyName: "",
       companyWebsite: "",
       industry: "",
@@ -124,95 +96,53 @@ const Signup = () => {
   });
 
   const selectedRole = form.watch("role");
-  const password = form.watch("password");
-  const confirmPassword = form.watch("confirmPassword");
-
-  const handleImageChange = (imageUrl: string) => {
-    setProfileImage(imageUrl);
-    form.setValue('profileImage', imageUrl);
-  };
 
   const onSubmit = async (values: z.infer<typeof signupSchema>) => {
-    console.log('🚀 Form submitted with values:', values);
     setIsLoading(true);
 
     try {
-      // Use default profile image if none provided
-      const finalProfileImage = values.profileImage || 'https://via.placeholder.com/150/4F46E5/FFFFFF?text=' + values.name.charAt(0);
+      const finalProfileImage = values.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(values.name)}&background=004ac6&color=fff`;
 
-      console.log('📝 Registering user with data:', {
-        name: values.name,
-        email: values.email,
-        role: values.role,
-        finalProfileImage
-      });
-
-      // Map frontend role to backend role
       const accountType = values.role === 'jobseeker' ? 'job_seeker' : 'employer';
 
-      // Prepare registration data based on user role
       const registrationData: any = {
-        name: values.name,
+        full_name: values.name,   // API expects full_name
         email: values.email,
         password: values.password,
         account_type: accountType
       };
 
-      // Add role-specific data
       if (values.role === 'employer') {
-        // Store employer-specific data in preferences
         registrationData.preferences = {
           companyName: values.companyName,
           companyWebsite: values.companyWebsite,
           industry: values.industry
         };
-
-      } else if (values.role === 'jobseeker') {
-        // Add job seeker phone number to preferences
+      } else {
+        // Job seeker — send date_of_birth at top level (API field)
+        if (values.dateOfBirth) {
+          registrationData.date_of_birth = values.dateOfBirth;
+        }
         registrationData.preferences = {
-          countryCode: values.countryCode,
           phoneNumber: values.phoneNumber
         };
       }
 
-      // Register the new user using the real backend
       await register(registrationData);
 
-      console.log('✅ User registered successfully');
-
-      // Store new user data for onboarding
       setNewUserData({ ...values, profileImage: finalProfileImage });
-
-      // Show success message
-      toast.success("Account Created Successfully!", {
-        description: "Welcome to Visiondrill! Let's set up your profile.",
-      });
-
-      console.log('✅ Registration includes auto-login');
+      
       toast.success("Welcome to Visiondrill!", {
         description: "Let's set up your profile to find the perfect opportunities.",
       });
       setShowOnboarding(true);
     } catch (error: any) {
-      console.error('💥 Signup error:', error);
       toast.error("Registration Failed", {
         description: error.message || "Failed to create account. Please try again.",
       });
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const onSubmitError = (errors: any) => {
-    // Show specific validation errors to user
-    Object.keys(errors).forEach(field => {
-      const error = errors[field];
-      if (error?.message) {
-        toast.error("Form Validation Error", {
-          description: `${field}: ${error.message}`,
-        });
-      }
-    });
   };
 
   const handleLinkedInSignup = () => {
@@ -223,27 +153,22 @@ const Signup = () => {
     setIsLoading(true);
 
     try {
-      // Generate unique email to avoid conflicts
       const timestamp = Date.now();
       const linkedInData = {
         name: 'John Doe',
         email: `john.doe${timestamp}@example.com`,
         password: 'linkedinpass123',
         profileImage: 'https://via.placeholder.com/150',
-        role: selectedRole
       };
 
-      // Pre-fill form with LinkedIn data
       form.setValue('name', linkedInData.name);
       form.setValue('email', linkedInData.email);
       form.setValue('password', linkedInData.password);
       form.setValue('profileImage', linkedInData.profileImage);
       setProfileImage(linkedInData.profileImage);
 
-      // Pre-fill role-specific fields based on LinkedIn data
       if (selectedRole === 'employer') {
-        // Simulate extracting company info from LinkedIn
-        form.setValue('companyName', 'Tech Solutions Inc'); // Would be extracted from LinkedIn
+        form.setValue('companyName', 'Tech Solutions Inc'); 
         form.setValue('companyWebsite', 'https://techsolutions.com');
         form.setValue('industry', 'Technology');
       }
@@ -251,18 +176,11 @@ const Signup = () => {
       setLinkedInImportOpen(false);
       setLinkedInDataImported(true);
 
-      // Show appropriate message based on role
-      let description = "LinkedIn data imported successfully!";
-      if (selectedRole === "jobseeker") {
-        description += " Please add your phone number to complete registration.";
-      } else if (selectedRole === "employer") {
-        description += " Please verify your company information.";
-      }
-
-      toast.success("LinkedIn Data Imported", { description });
+      toast.success("LinkedIn Data Imported", { 
+        description: "Review and complete any missing fields to register."
+      });
 
     } catch (error) {
-      console.error('LinkedIn signup error:', error);
       toast.error("LinkedIn Import Failed", {
         description: "Failed to import LinkedIn data. Please try again.",
       });
@@ -273,272 +191,199 @@ const Signup = () => {
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
-
     if (newUserData?.role === 'employer') {
       navigate('/employer/dashboard');
     } else {
       navigate('/jobseeker/dashboard');
     }
-
-    toast.success("Welcome to Visiondrill!", {
-      description: "Your profile has been set up successfully.",
-    });
   };
 
   return (
     <Layout>
-      <div className="max-w-md mx-auto px-4 py-12">
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center">Create Account</CardTitle>
-            <CardDescription className="text-center">
-              {linkedInDataImported
-                ? selectedRole === "jobseeker"
-                  ? "Add your phone number to complete registration"
-                  : "Complete your profile to finish registration"
-                : "Join Visiondrill to explore career opportunities tailored to your skills and goals."
-              }
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="space-y-4">
-                <ProfileImageUpload
-                  profileImage={profileImage}
-                  onImageChange={handleImageChange}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Full Name</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="John Doe"
-                          {...field}
-                          className="transition-all focus:ring-2 focus:ring-career-blue"
-                          disabled={linkedInDataImported}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="john@example.com"
-                          {...field}
-                          className="transition-all focus:ring-2 focus:ring-career-blue"
-                          disabled={linkedInDataImported}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>I am a</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={linkedInDataImported}>
-                        <FormControl>
-                          <SelectTrigger className="transition-all focus:ring-2 focus:ring-career-blue">
-                            <SelectValue placeholder="Select your role" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="jobseeker">Job Seeker</SelectItem>
-                          <SelectItem value="employer">Employer</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {selectedRole === "jobseeker" && (
-                  <PhoneNumberInput
-                    control={form.control}
-                    countryCodeName="countryCode"
-                    phoneNumberName="phoneNumber"
-                  />
-                )}
-
-
-                {selectedRole === "employer" && (
-                  <>
-                    <FormField
-                      control={form.control}
-                      name="companyName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Company Name <span className="text-red-500">*</span></FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Your Company Name"
-                              {...field}
-                              className="transition-all focus:ring-2 focus:ring-career-blue"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+      <div className="min-h-[calc(100vh-80px)] bg-surface text-on-surface antialiased flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+          {/* Left Side: Visionary Content */}
+          <div className="lg:col-span-5 space-y-8 lg:sticky lg:top-32">
+            <div className="space-y-4">
+              <h1 className="text-5xl lg:text-6xl font-headline font-bold text-on-surface leading-[1.1] tracking-tight">
+                  Build your <span className="text-primary">future</span> foundation.
+              </h1>
+              <p className="text-lg text-on-surface-variant leading-relaxed">
+                  Join an elite network of visionary architects, founders, and seekers. Your next great partnership begins with a single step.
+              </p>
+            </div>
+            {/* Featured Card (Architectural Element) */}
+            <div className="bg-surface-container-low p-8 rounded-lg space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-tertiary-container flex items-center justify-center text-on-tertiary">
+                  <span className="material-symbols-outlined">auto_awesome</span>
+                </div>
+                <div>
+                  <p className="font-headline font-bold text-on-surface">Curated Matchmaking</p>
+                  <p className="text-sm text-on-surface-variant">AI-driven architectural pairing</p>
+                </div>
+              </div>
+              <div className="h-48 w-full rounded-md overflow-hidden relative group">
+                <img alt="modern minimalist glass office interior" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9NO69Kp9Av06R2ZZH6RohuBReWl2B5YmA5vZT7Ws2F6vl571CaHoKPA6nQC57HqiCFfgCQXDGSh4XFhcBRFLcKutEJevTgwJdiqE_ji_W2ryVa9rAgauv7-bekh2mj_0IyqQgp8qlLsauTQ8Rradg3jus9O5MEPC9iEweCX6zypwMHkUgK03L8Ou34KMAZqzrgoohTttwrj7dHZ7l3kQBV4zdHH4olfws811dsanfIfQ7S7MJNNi_tgq8TMjc0-772uqsbpoT9e0"/>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Right Side: Multi-field Form Card */}
+          <div className="lg:col-span-7 bg-surface-container-lowest p-8 md:p-12 rounded-lg shadow-[0_20px_40px_rgba(25,28,30,0.06)]">
+            <form className="space-y-8" onSubmit={form.handleSubmit(onSubmit)}>
+              {/* Role Selection (The Switcher) */}
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Primary Role</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <label className={`role-option relative flex items-center p-4 rounded-md cursor-pointer transition-all group border ${selectedRole === 'jobseeker' ? 'bg-secondary-fixed border-primary shadow-[0_0_0_1px_#004ac6]' : 'bg-surface-container-low hover:bg-surface-container-high border-transparent'}`}>
+                    <input 
+                      {...form.register("role")} 
+                      className="w-4 h-4 text-primary focus:ring-primary/20 border-outline-variant bg-transparent" 
+                      type="radio" 
+                      value="jobseeker" 
+                      disabled={linkedInDataImported || isLoading}
                     />
-
-                    <FormField
-                      control={form.control}
-                      name="companyWebsite"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Company Website (Optional)</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="https://yourcompany.com"
-                              {...field}
-                              className="transition-all focus:ring-2 focus:ring-career-blue"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                    <span className="ml-4 font-medium text-on-surface">I am Looking for a Job</span>
+                    <span className="ml-auto material-symbols-outlined text-outline-variant group-hover:text-primary">person_search</span>
+                  </label>
+                  <label className={`role-option relative flex items-center p-4 rounded-md cursor-pointer transition-all group border ${selectedRole === 'employer' ? 'bg-secondary-fixed border-primary shadow-[0_0_0_1px_#004ac6]' : 'bg-surface-container-low hover:bg-surface-container-high border-transparent'}`}>
+                    <input 
+                      {...form.register("role")} 
+                      className="w-4 h-4 text-primary focus:ring-primary/20 border-outline-variant bg-transparent" 
+                      type="radio" 
+                      value="employer" 
+                      disabled={linkedInDataImported || isLoading}
                     />
-
-                    <FormField
-                      control={form.control}
-                      name="industry"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Industry (Optional)</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="e.g., Technology, Healthcare"
-                              {...field}
-                              className="transition-all focus:ring-2 focus:ring-career-blue"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </>
-                )}
-
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input
-                            type={showPassword ? "text" : "password"}
-                            placeholder="••••••••"
-                            {...field}
-                            className="transition-all focus:ring-2 focus:ring-career-blue pr-10"
-                            disabled={linkedInDataImported}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            aria-label={showPassword ? "Hide password" : "Show password"}
-                            aria-pressed={showPassword}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                            disabled={linkedInDataImported}
-                          >
-                            {showPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
-                          </button>
+                    <span className="ml-4 font-medium text-on-surface">I am Hiring</span>
+                    <span className="ml-auto material-symbols-outlined text-outline-variant group-hover:text-primary">person_add</span>
+                  </label>
+                </div>
+              </div>
+              
+              {/* Dynamic Fields Container */}
+              <div>
+                {/* State 1: Job Seeker Fields */}
+                {selectedRole === 'jobseeker' && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Full Name</label>
+                        <input {...form.register('name')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="Alex Sterling" type="text" disabled={linkedInDataImported || isLoading}/>
+                        {form.formState.errors.name && <p className="text-sm text-error ml-1">{form.formState.errors.name.message as string}</p>}
+                      </div>
+                      <div className="space-y-2">
+                        <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Email Address</label>
+                        <input {...form.register('email')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="alex@visiondrill.com" type="email" disabled={linkedInDataImported || isLoading}/>
+                        {form.formState.errors.email && <p className="text-sm text-error ml-1">{form.formState.errors.email.message as string}</p>}
+                      </div>
+                      <div className="space-y-2 col-span-2 grid grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Phone Number</label>
+                          <input {...form.register('phoneNumber')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="+1 (555) 000-0000" type="tel" disabled={isLoading}/>
+                          {form.formState.errors.phoneNumber && <p className="text-sm text-error ml-1">{form.formState.errors.phoneNumber.message as string}</p>}
                         </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Confirm Password</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input
-                            type={showConfirmPassword ? "text" : "password"}
-                            placeholder="••••••••"
-                            {...field}
-                            className="transition-all focus:ring-2 focus:ring-career-blue pr-10"
-                            disabled={linkedInDataImported}
+                        <div className="space-y-2">
+                          <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Date of Birth</label>
+                          <input
+                            {...form.register('dateOfBirth')}
+                            type="date"
+                            max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
+                            className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all text-on-surface"
+                            disabled={isLoading}
                           />
-                          <button
-                            type="button"
-                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
-                            aria-pressed={showConfirmPassword}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                            disabled={linkedInDataImported}
-                          >
-                            {showConfirmPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
-                          </button>
+                          {form.formState.errors.dateOfBirth && <p className="text-sm text-error ml-1">{form.formState.errors.dateOfBirth.message as string}</p>}
                         </div>
-                      </FormControl>
-                      {confirmPassword && password !== confirmPassword && (
-                        <p className="text-sm text-red-500 mt-1">Passwords do not match</p>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <Button
-                  type="submit"
-                  className="w-full bg-career-blue hover:bg-career-blue/90 transition-colors"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Creating Account..." : "Create Account"}
-                </Button>
-
-                {!linkedInDataImported && (
-                  <div className="text-center">
-                    <p className="text-sm text-gray-500">Or sign up with</p>
-                    <div className="mt-2">
-                      <Button
-                        variant="outline"
-                        onClick={handleLinkedInSignup}
-                        className="w-full flex items-center justify-center gap-2 transition-colors hover:bg-gray-50"
-                        disabled={isLoading}
-                      >
-                        <Linkedin className="h-4 w-4" />
-                        LinkedIn
-                      </Button>
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Password</label>
+                        <input {...form.register('password')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="••••••••" type="password" disabled={linkedInDataImported || isLoading}/>
+                        {form.formState.errors.password && <p className="text-sm text-error ml-1">{form.formState.errors.password.message as string}</p>}
+                      </div>
                     </div>
                   </div>
                 )}
-
-                <div className="text-center mt-4">
-                  <p className="text-sm text-gray-500">
-                    Already have an account?{" "}
-                    <Link to="/login" className="text-career-blue hover:underline transition-colors">
-                      Log in
-                    </Link>
-                  </p>
-                </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+                
+                {/* State 2: Employer Fields */}
+                {selectedRole === 'employer' && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Full Name</label>
+                        <input {...form.register('name')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="Alex Sterling" type="text" disabled={linkedInDataImported || isLoading}/>
+                        {form.formState.errors.name && <p className="text-sm text-error ml-1">{form.formState.errors.name.message as string}</p>}
+                      </div>
+                      <div className="space-y-2">
+                        <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Email Address</label>
+                        <input {...form.register('email')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="admin@sterling.com" type="email" disabled={linkedInDataImported || isLoading}/>
+                        {form.formState.errors.email && <p className="text-sm text-error ml-1">{form.formState.errors.email.message as string}</p>}
+                      </div>
+                      <div className="space-y-2">
+                        <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Company Name</label>
+                        <input {...form.register('companyName')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="Sterling Architecture" type="text" disabled={isLoading}/>
+                        {form.formState.errors.companyName && <p className="text-sm text-error ml-1">{form.formState.errors.companyName.message as string}</p>}
+                      </div>
+                      <div className="space-y-2">
+                        <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Company Website</label>
+                        <input {...form.register('companyWebsite')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="https://sterling.com" type="url" disabled={isLoading}/>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Industry</label>
+                        <select {...form.register('industry')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all text-on-surface appearance-none" disabled={isLoading}>
+                          <option value="">Select Industry</option>
+                          <option value="architecture">Architecture</option>
+                          <option value="design">Design</option>
+                          <option value="tech">Technology</option>
+                          <option value="construction">Construction</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Password</label>
+                        <input {...form.register('password')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="••••••••" type="password" disabled={linkedInDataImported || isLoading}/>
+                        {form.formState.errors.password && <p className="text-sm text-error ml-1">{form.formState.errors.password.message as string}</p>}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Terms checkbox */}
+              <div className="flex items-start gap-3 px-1">
+                <input required className="mt-1 rounded text-primary focus:ring-primary/20 border-outline-variant" type="checkbox" disabled={isLoading}/>
+                <span className="text-sm text-on-surface-variant leading-relaxed">
+                    I agree to the <a className="text-primary hover:underline" href="#">Terms of Service</a> and <a className="text-primary hover:underline" href="#">Privacy Policy</a>.
+                </span>
+              </div>
+              
+              {/* Action Button */}
+              <button disabled={isLoading} className="w-full gradient-btn text-on-primary py-5 rounded-full font-headline font-bold text-lg hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 disabled:opacity-50" type="submit">
+                  {isLoading ? 'Creating Account...' : 'Create Account'}
+                  <span className="material-symbols-outlined">arrow_forward</span>
+              </button>
+              
+              {/* Divider */}
+              <div className="flex items-center gap-4 py-2">
+                <div className="flex-1 h-px bg-outline-variant opacity-20"></div>
+                <span className="text-xs font-bold text-outline-variant tracking-widest uppercase">Or join with</span>
+                <div className="flex-1 h-px bg-outline-variant opacity-20"></div>
+              </div>
+              
+              {/* Social Login */}
+              <div className="grid grid-cols-2 gap-4">
+                <button type="button" disabled={isLoading} className="flex items-center justify-center gap-2 py-4 px-6 rounded-full bg-surface-container-low hover:bg-surface-container-high transition-colors font-semibold text-sm disabled:opacity-50">
+                  <img alt="Google" className="w-4 h-4" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXr4-l74QJrrgTt0OMU9h1zivmxO93UFZZ-x1k2259hAvOVJWIDrCCaWsZa_QI1v2v_-jlnTz4GFp11DpC5D-rWztJSPOraoNS8SmazRl741sTVCGrrzegyYX3pynXoqN-9vJ5tH4MdGdW8qq02zJM97D0XvC0XBGuQy2mg3wzKo9ujrYbILt3IQgrWptninqxmuCxECU4UGLJw0dDaDPlgxAO1r3us0n576W6BMhbJtGUG608le4dquRmPs1lN5meYfJG6qcXD3M"/>
+                  Sign up with Google
+                </button>
+                <button type="button" onClick={handleLinkedInSignup} disabled={isLoading} className="flex items-center justify-center gap-2 py-4 px-6 rounded-full bg-surface-container-low hover:bg-surface-container-high transition-colors font-semibold text-sm disabled:opacity-50">
+                  <svg className="w-4 h-4 text-[#0077B5]" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"></path></svg>
+                  LinkedIn
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+        
 
         {showOnboarding && newUserData && (
           <OnboardingWizard

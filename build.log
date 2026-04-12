@@ -1,0 +1,57 @@
+vite v5.4.19 building for production...
+transforming...
+Browserslist: browsers data (caniuse-lite) is 11 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+✓ 59 modules transformed.
+x Build failed in 1.65s
+error during build:
+[vite:esbuild] Transform failed with 4 errors:
+/home/gich/Work/AI Project/Visiondrill/career-frontend/src/pages/Profile.tsx:2166:12: ERROR: Unexpected closing "div" tag does not match opening "main" tag
+/home/gich/Work/AI Project/Visiondrill/career-frontend/src/pages/Profile.tsx:2167:10: ERROR: Unexpected closing "div" tag does not match opening "Layout" tag
+/home/gich/Work/AI Project/Visiondrill/career-frontend/src/pages/Profile.tsx:2168:8: ERROR: Unexpected closing "main" tag does not match opening "div" tag
+/home/gich/Work/AI Project/Visiondrill/career-frontend/src/pages/Profile.tsx:2171:12: ERROR: Unterminated regular expression
+file: /home/gich/Work/AI Project/Visiondrill/career-frontend/src/pages/Profile.tsx:2166:12
+
+Unexpected closing "div" tag does not match opening "main" tag
+2164|              </section>
+2165|  
+2166|            </div>
+   |              ^
+2167|          </div>
+2168|        </main>
+
+Unexpected closing "div" tag does not match opening "Layout" tag
+2165|  
+2166|            </div>
+2167|          </div>
+   |            ^
+2168|        </main>
+2169|      </Layout>
+
+Unexpected closing "main" tag does not match opening "div" tag
+2166|            </div>
+2167|          </div>
+2168|        </main>
+   |          ^
+2169|      </Layout>
+2170|  
+
+Unterminated regular expression
+2169|      </Layout>
+2170|  
+2171|        </div>
+   |              ^
+2172|  
+2173|        <Dialog open={isPhotoEditorOpen} onOpenChange={(open) => {
+
+    at failureErrorWithLog (/home/gich/Work/AI Project/Visiondrill/career-frontend/node_modules/vite/node_modules/esbuild/lib/main.js:1472:15)
+    at /home/gich/Work/AI Project/Visiondrill/career-frontend/node_modules/vite/node_modules/esbuild/lib/main.js:755:50
+    at responseCallbacks.<computed> (/home/gich/Work/AI Project/Visiondrill/career-frontend/node_modules/vite/node_modules/esbuild/lib/main.js:622:9)
+    at handleIncomingPacket (/home/gich/Work/AI Project/Visiondrill/career-frontend/node_modules/vite/node_modules/esbuild/lib/main.js:677:12)
+    at Socket.readFromStdout (/home/gich/Work/AI Project/Visiondrill/career-frontend/node_modules/vite/node_modules/esbuild/lib/main.js:600:7)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:563:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:514:3)
+    at Readable.push (node:internal/streams/readable:394:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)

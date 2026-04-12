@@ -28,10 +28,11 @@ export interface UserLogin {
 }
 
 export interface UserRegister {
-  name: string;
+  full_name: string;        // API expects full_name (maps to users.full_name)
   email: string;
   password: string;
   account_type: "job_seeker" | "employer";
+  date_of_birth?: string;   // ISO date string, job seekers only
 }
 
 export interface RefreshTokenRequest {

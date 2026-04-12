@@ -87,11 +87,13 @@ class AuthService {
       user_id: string;
       email: string;
       account_type: string;
+      name?: string;
+      full_name?: string;
     }>("/auth/me");
 
     return {
       user_id: response.user_id,
-      name: "",
+      name: response.name || response.full_name || "",
       email: response.email,
       account_type: response.account_type as User["account_type"],
     };

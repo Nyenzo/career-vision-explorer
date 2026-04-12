@@ -168,13 +168,13 @@ export const JobApplicationDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="space-y-4">
-          <DialogTitle className="text-2xl font-bold">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-surface sm:rounded-2xl border-outline-variant/30">
+        <DialogHeader className="space-y-4 pt-4">
+          <DialogTitle className="text-3xl font-bold font-headline text-on-surface">
             Apply for Position
           </DialogTitle>
-          <DialogDescription className="text-base">
-            Submit your application for this exciting opportunity
+          <DialogDescription className="text-base text-on-surface-variant max-w-[90%]">
+            Transform your career architecture. Submit your application and take the next step.
           </DialogDescription>
         </DialogHeader>
 

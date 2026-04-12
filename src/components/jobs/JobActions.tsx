@@ -1,93 +1,77 @@
-
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Heart, Share2, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
- 
- interface JobActionsProps {
-   job: {
-     id?: string;
-     salary?: string;
-     job_id?: string;
-     salary_range: string | null;
-   };
-   isApplied: boolean;
-   isSaved: boolean;
-   onApply: () => void;
-   onSave: () => void;
- }
- 
- export const JobActions = ({ job, isApplied, isSaved, onApply, onSave }: JobActionsProps) => {
-   const handleShare = () => {
+import { Copy, Bookmark, BookmarkCheck } from "lucide-react";
+
+interface JobActionsProps {
+  job: {
+    id?: string;
+    salary?: string;
+    job_id?: string;
+    salary_range: string | null;
+  };
+  isApplied: boolean;
+  isSaved: boolean;
+  onApply: () => void;
+  onSave: () => void;
+}
+
+export const JobActions = ({ job, isApplied, isSaved, onApply, onSave }: JobActionsProps) => {
+  const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
     toast.success("Job link copied to clipboard");
   };
 
-  const displaySalary =  job.salary ?? job.salary_range ?? 'Not specified';
+  const displaySalary = job.salary ?? job.salary_range ?? 'Not specified';
+
   return (
-    <Card className="career-card">
-      <CardHeader>
-        <CardTitle className="text-xl">Apply for this job</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border border-blue-100">
-          <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-            {displaySalary}
-          </div>
-          <div className="text-sm text-muted-foreground">Salary Range</div>
-        </div>
-        
-        <div className="flex gap-3">
-          <Button 
-            className={`flex-1 ${
-              isApplied 
-                ? "bg-green-600 hover:bg-green-700" 
-                : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-            }`}
-            onClick={onApply}
-            disabled={isApplied}
-          >
-            {isApplied ? (
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4" />
-                Applied ✓
-              </div>
-            ) : (
-              "Apply Now"
-            )}
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={onSave}
-            className={`transition-all ${
-              isSaved ? "text-red-500 border-red-300 bg-red-50 hover:bg-red-100" : "hover:text-red-500"
-            }`}
-          >
-            <Heart className={`h-5 w-5 ${isSaved ? "fill-current" : ""}`} />
-          </Button>
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={handleShare}
-            className="hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300"
-          >
-            <Share2 className="h-5 w-5" />
-          </Button>
-        </div>
-        
-        {isApplied && (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
-            <div className="flex items-center justify-center gap-2 text-green-700 font-medium">
-              <CheckCircle className="h-5 w-5" />
-              Application submitted successfully
+    <div className="bg-surface-container-lowest p-8 rounded-lg shadow-sm sticky top-28 border border-surface-container">
+        <div className="flex justify-between items-start mb-8">
+            <div>
+                <p className="text-sm font-label text-on-surface-variant uppercase tracking-widest mb-1">Estimated Salary</p>
+                <h3 className="text-3xl font-headline font-bold text-on-surface">{displaySalary}</h3>
+                {displaySalary !== 'Not specified' && (
+                    <p className="text-xs text-on-surface-variant mt-1">+ Benefits (if applicable)</p>
+                )}
             </div>
-            <p className="text-sm text-green-600 mt-1">
-              We'll notify you about the next steps
-            </p>
-          </div>
+            <button 
+                onClick={handleShare}
+                className="p-2 text-outline hover:text-primary transition-colors tooltip tooltip-left"
+                data-tip="Copy link"
+            >
+                <Copy className="h-5 w-5" />
+            </button>
+        </div>
+
+        <div className="space-y-4">
+            <button 
+                onClick={onApply}
+                disabled={isApplied}
+                className={`w-full py-4 font-headline font-bold rounded-full shadow-sm transition-all duration-200 ${
+                    isApplied 
+                    ? 'bg-secondary-fixed text-on-secondary-fixed cursor-default shadow-none'
+                    : 'gradient-btn text-on-primary hover:scale-[1.02] active:scale-95 shadow-primary/20'
+                }`}
+            >
+                {isApplied ? 'Applied ✓' : 'Apply Now'}
+            </button>
+            <button 
+                onClick={onSave}
+                className={`w-full py-4 text-on-surface font-headline font-bold rounded-full transition-colors flex items-center justify-center gap-2 border ${
+                    isSaved ? 'bg-primary/10 border-primary text-primary' : 'bg-surface border-outline hover:bg-surface-container-low text-outline'
+                }`}
+            >
+                {isSaved ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
+                {isSaved ? 'Saved' : 'Save for later'}
+            </button>
+        </div>
+
+        {isApplied && (
+            <div className="mt-6 bg-tertiary-container/30 border border-tertiary-container rounded-lg p-4 text-center">
+                <div className="flex items-center justify-center gap-2 text-on-tertiary-container font-medium text-sm">
+                    <span className="material-symbols-outlined text-[20px]" style={{fontVariationSettings: "'FILL' 1"}}>check_circle</span>
+                    Application submitted successfully
+                </div>
+            </div>
         )}
-      </CardContent>
-    </Card>
+    </div>
   );
 };

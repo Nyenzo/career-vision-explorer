@@ -7,25 +7,25 @@ interface JobSummaryCardProps {
 
 export const JobSummaryCard = ({ job }: JobSummaryCardProps) => {
   return (
-    <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-xl border border-blue-100 space-y-4">
-      <h3 className="text-xl font-bold text-gray-900">{job.title}</h3>
+    <div className="bg-surface-container-low p-6 rounded-xl border border-outline-variant/30 space-y-4">
+      <h3 className="text-xl font-bold font-headline text-on-surface">{job.title}</h3>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="flex items-center gap-3 text-gray-700">
-          <Building className="h-5 w-5 text-blue-600" />
+        <div className="flex items-center gap-3 text-on-surface-variant">
+          <Building className="h-5 w-5 text-primary" />
           <span className="font-medium">{job.company}</span>
         </div>
-        <div className="flex items-center gap-3 text-gray-700">
-          <MapPin className="h-5 w-5 text-blue-600" />
+        <div className="flex items-center gap-3 text-on-surface-variant">
+          <MapPin className="h-5 w-5 text-primary" />
           <span>{job.location}</span>
         </div>
-        <div className="flex items-center gap-3 text-gray-700">
-          <Briefcase className="h-5 w-5 text-blue-600" />
+        <div className="flex items-center gap-3 text-on-surface-variant">
+          <Briefcase className="h-5 w-5 text-primary" />
           <span>{job.type}</span>
         </div>
-        <div className="flex items-center gap-3 text-gray-700">
-          <DollarSign className="h-5 w-5 text-blue-600" />
-          <span className="font-semibold text-green-600">{job.salary}</span>
+        <div className="flex items-center gap-3 text-on-surface-variant">
+          <DollarSign className="h-5 w-5 text-tertiary" />
+          <span className="font-semibold text-tertiary">{job.salary}</span>
         </div>
       </div>
       

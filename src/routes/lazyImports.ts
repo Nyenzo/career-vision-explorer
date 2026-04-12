@@ -27,4 +27,3 @@ export const EmployerDashboard = lazy(() => import("@/pages/employer/EmployerDas
 export const EmployerJobs = lazy(() => import("@/pages/employer/EmployerJobs"));
 export const JobApplicants = lazy(() => import("@/pages/employer/JobApplicants"));
 export const AllApplicants = lazy(() => import("@/pages/employer/AllApplicants"));
-export const EmployerInterviews = lazy(() => import("@/pages/employer/EmployerInterviews"));

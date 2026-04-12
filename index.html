@@ -20,11 +20,11 @@
   <!-- Production CSP hardening: no third-party scripts, no unsafe script execution. -->
   <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
-      script-src 'self';
+      script-src 'self' 'unsafe-eval';
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
       font-src 'self' https://fonts.gstatic.com;
-      img-src 'self' data: https:;
-      connect-src 'self' https://api.supabase.co https://*.supabase.co https://launchpad.visiondrill.com;
+      img-src 'self' data: https: http://localhost:* http://127.0.0.1:*;
+      connect-src 'self' https://api.supabase.co https://*.supabase.co https://launchpad.visiondrill.com http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:*;
       frame-src 'none';
       object-src 'none';
       base-uri 'self';

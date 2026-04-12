@@ -36,7 +36,7 @@ export const ProfileCompletionCard = () => {
       linkedin_url: 5,
       github_url: 5,
       portfolio_url: 5,
-      profile_image_url: 5,
+      avatar_url: 5,
     };
 
     let score = 0;
@@ -65,7 +65,7 @@ export const ProfileCompletionCard = () => {
     if (profile.portfolio_url) socialProfiles++;
     score += (socialProfiles / 3) * 15;
 
-    if (profile.profile_image_url) score += sectionWeights.profile_image_url;
+    if (profile.avatar_url) score += sectionWeights.avatar_url;
 
     if (profile.certifications && profile.certifications.length > 0) {
       score += Math.min(5, profile.certifications.length);
@@ -124,9 +124,9 @@ export const ProfileCompletionCard = () => {
         action: "/profile",
       },
       {
-        key: "profile_image",
-        label: "Add Profile Photo",
-        completed: !!profile.profile_image_url,
+        key: "avatar_url",
+        label: "Profile Picture",
+        completed: !!profile.avatar_url,
         action: "/profile",
       },
       {

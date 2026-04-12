@@ -1,10 +1,9 @@
-
 import { JobCard } from "./JobCard";
-import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Clock, Star } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 
 interface Job {
   job_id: string;
+  id?: string;
   title: string;
   company: string;
   location: string;
@@ -28,43 +27,43 @@ interface JobsListProps {
 export const JobsList = ({ jobs, isJobApplied, isJobSaved, onApply, onSave }: JobsListProps) => {
   if (jobs.length === 0) {
     return (
-      <div className="text-center py-20">
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-12 max-w-md mx-auto">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <TrendingUp className="h-8 w-8 text-gray-400" />
+      <section className="max-w-7xl mx-auto px-6 pb-24 space-y-6">
+        <div className="text-center py-20 bg-surface-container-lowest rounded-lg shadow-sm border border-surface-container">
+          <div className="w-16 h-16 bg-surface-container-low rounded-full flex items-center justify-center mx-auto mb-6">
+            <TrendingUp className="h-8 w-8 text-outline" />
           </div>
-          <h3 className="text-2xl font-bold mb-4 text-gray-900">No jobs found</h3>
-          <p className="text-gray-500 text-lg leading-relaxed">
+          <h3 className="font-headline text-2xl font-bold mb-4 text-on-surface">No jobs found</h3>
+          <p className="text-on-surface-variant font-body text-lg leading-relaxed">
             Try adjusting your filters or search term to discover more opportunities
           </p>
         </div>
-      </div>
+      </section>
     );
   }
 
   const highMatchJobs = jobs.filter(job => job.matchScore >= 90);
-  const recentJobs = jobs.filter(job => job.posted.includes('day') || job.posted.includes('Just now'));
+  const recentJobs = jobs.filter(job => job.posted.includes('day') || job.posted.includes('Just now') || job.posted.includes('hours'));
 
   return (
-    <div className="space-y-8">
+    <section className="max-w-7xl mx-auto px-6 pb-24 space-y-6 z-10 relative">
       {/* Results Summary */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-6 bg-white rounded-xl shadow-md border border-gray-100">
+      <div className="flex flex-wrap items-center justify-between gap-4 p-6 bg-surface-container-lowest rounded-lg shadow-sm border border-surface-container">
         <div className="flex items-center gap-4">
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="font-headline text-2xl font-bold text-on-surface">
             {jobs.length} Job{jobs.length !== 1 ? 's' : ''} Found
           </h2>
           <div className="flex gap-2">
             {highMatchJobs.length > 0 && (
-              <Badge className="bg-green-100 text-green-800 border-green-200 px-3 py-1">
-                <Star className="h-3 w-3 mr-1" />
+              <span className="bg-tertiary-container text-on-tertiary-container border border-tertiary/20 px-3 py-1 rounded-full text-xs font-bold font-label tracking-wide flex items-center">
+                <span className="material-symbols-outlined text-[14px] mr-1" style={{fontVariationSettings: "'FILL' 1"}}>bolt</span>
                 {highMatchJobs.length} High Match
-              </Badge>
+              </span>
             )}
             {recentJobs.length > 0 && (
-              <Badge className="bg-blue-100 text-blue-800 border-blue-200 px-3 py-1">
-                <Clock className="h-3 w-3 mr-1" />
+              <span className="bg-secondary-fixed text-on-secondary-fixed border border-secondary/20 px-3 py-1 rounded-full text-xs font-bold font-label tracking-wide flex items-center">
+                <span className="material-symbols-outlined text-[14px] mr-1">schedule</span>
                 {recentJobs.length} Recent
-              </Badge>
+              </span>
             )}
           </div>
         </div>
@@ -83,6 +82,6 @@ export const JobsList = ({ jobs, isJobApplied, isJobSaved, onApply, onSave }: Jo
           />
         ))}
       </div>
-    </div>
+    </section>
   );
 };

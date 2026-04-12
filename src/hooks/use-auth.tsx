@@ -2,6 +2,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   useCallback,
   ReactNode,
@@ -70,31 +71,68 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   const [error, setError] = useState<string | null>(null);
   const [originalUser, setOriginalUser] = useState<User | null>(null);
   const [isImpersonating, setIsImpersonating] = useState(false);
+  // AbortController for in-flight profile requests
+  const profileAbortRef = useRef<AbortController | null>(null);
 
-  const loadUserProfile = useCallback(async () => {
+  const loadUserProfile = useCallback(async (): Promise<void> => {
+    // Cancel any prior in-flight request
+    if (profileAbortRef.current) {
+      profileAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    profileAbortRef.current = controller;
+
+    // 8-second timeout — profile load must not block the UI
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
     try {
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Profile load timeout")), 30000)
-      );
-      const profilePromise = profileService.getProfile();
-      const userProfile = (await Promise.race([
-        profilePromise,
-        timeoutPromise,
-      ])) as Profile;
-      setProfile(userProfile);
+      const rawProfile = await profileService.getProfile();
+      // Normalize: DB column is full_name — ensure profile.name is always set
+      const userProfile = {
+        ...rawProfile,
+        name: rawProfile.name || (rawProfile as any).full_name || "",
+      };
+      clearTimeout(timeoutId);
+      if (!controller.signal.aborted) {
+        setProfile(userProfile);
+        // Sync name into user if user.name is empty
+        if (userProfile.name) {
+          setUser(prev => {
+            if (!prev) return prev;
+            if (prev.name) return prev; // already has a name
+            const updated = { ...prev, name: userProfile.name };
+            authService.setStoredUser(updated);
+            return updated;
+          });
+        }
+      }
     } catch (err: unknown) {
+      clearTimeout(timeoutId);
+      if (controller.signal.aborted) {
+        console.warn("Profile load timed out or was cancelled — continuing without profile");
+        return;
+      }
       console.error("Error loading profile:", err);
-      setProfile(null);
       const message = getErrorMessage(err, "");
       if (message.includes("401") || message.includes("403")) {
         try {
           await authService.refreshToken();
           const userProfile = await profileService.getProfile();
           setProfile(userProfile);
+          if (userProfile.name) {
+            setUser(prev => {
+              if (!prev || prev.name) return prev;
+              const updated = { ...prev, name: userProfile.name };
+              authService.setStoredUser(updated);
+              return updated;
+            });
+          }
         } catch {
           setError("Session expired. Please log in again.");
         }
       }
+      // For all other errors (network, timeout, 5xx) we silently continue —
+      // the user is still authenticated, profile is just unavailable.
     }
   }, []);
 
@@ -115,11 +153,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
           console.warn("Failed to fetch fresh user, using stored one");
         }
 
-        await loadUserProfile();
-
-        const impersonationData = localStorage.getItem(
-          "visiondrillImpersonation"
-        );
+        const impersonationData = localStorage.getItem("visiondrillImpersonation");
         if (impersonationData) {
           try {
             const { originalUser: storedOriginalUser, impersonatedUser } =
@@ -137,9 +171,22 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
       setError(getErrorMessage(err, "Failed to initialize authentication"));
       await authService.logout();
     } finally {
+      // ✅ Auth is done — stop blocking the UI regardless of profile state
       setIsLoading(false);
     }
+
+    // Load profile in the background (non-blocking)
+    if (authService.isAuthenticated()) {
+      loadUserProfile();
+    }
   }, [loadUserProfile]);
+
+  // Cancel any pending profile request on unmount
+  useEffect(() => {
+    return () => {
+      profileAbortRef.current?.abort();
+    };
+  }, []);
 
   useEffect(() => {
     initializeAuth();
@@ -151,16 +198,15 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
       const tokenResponse = await authService.login(credentials);
       const user: User = {
         user_id: tokenResponse.user_id,
-        name: "",
+        name: tokenResponse.user?.name || "",
         email: tokenResponse.email,
         account_type: tokenResponse.account_type as User["account_type"],
       };
       authService.setStoredUser(user);
       setUser(user);
+      // loadUserProfile will automatically sync name into user if profile has it
       await loadUserProfile();
       toast.success("Login successful!");
-
-      // Redirect to appropriate dashboard
       const redirectPath = getDashboardPath(user.account_type);
       navigate(redirectPath, { replace: true });
     } catch (err: unknown) {

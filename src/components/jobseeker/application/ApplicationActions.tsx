@@ -21,7 +21,7 @@ export const ApplicationActions = ({ isSubmitting, onCancel }: ApplicationAction
       <Button 
         type="submit" 
         disabled={isSubmitting} 
-        className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+        className="flex-1 bg-gradient-to-r from-primary to-primary-container hover:scale-[1.02] text-white transition-all shadow-md"
       >
         {isSubmitting ? (
           <div className="flex items-center gap-2">
