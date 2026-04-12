@@ -4,9 +4,8 @@ import { DashboardBackground } from "@/components/jobseeker/dashboard/DashboardB
 import { ProfileCompletionCard } from "@/components/jobseeker/dashboard/ProfileCompletionCard";
 import { RecentActivityCard } from "@/components/jobseeker/dashboard/RecentActivityCard";
 import { QuickStatsCards } from "@/components/jobseeker/dashboard/QuickStatsCards";
-import { InterviewScheduleDialog } from "@/components/jobseeker/InterviewScheduleDialog";
+
 import EditProfileDialog from "@/components/profile/EditProfileDialog";
-import NotificationDropdown from "@/components/shared/NotificationDropdown";
 import { useAuth } from "@/hooks/use-auth";
 import {
   Bell,
@@ -35,17 +34,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
-import { useInterviewSchedule } from "@/hooks/use-interview-schedule";
+
 
 const JobSeekerDashboard = () => {
   const { user, profile } = useAuth();
-  const { interviews, getUpcomingInterviews } = useInterviewSchedule();
   const [editProfileOpen, setEditProfileOpen] = useState(false);
-  const [interviewDialogOpen, setInterviewDialogOpen] = useState(false);
   const navigate = useNavigate();
 
-  const upcomingInterviews = getUpcomingInterviews();
-  const nextInterview = upcomingInterviews[0];
 
 
   const handleSaveProfile = async (data: any) => {
@@ -63,193 +58,72 @@ const JobSeekerDashboard = () => {
     });
   };
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "Video":
-        return <Video className="h-3 w-3" />;
-      case "Phone":
-        return <Phone className="h-3 w-3" />;
-      case "In-person":
-        return <MapPin className="h-3 w-3" />;
-      default:
-        return <Calendar className="h-3 w-3" />;
-    }
-  };
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "Video":
-        return "bg-blue-100 text-blue-700";
-      case "Phone":
-        return "bg-green-100 text-green-700";
-      case "In-person":
-        return "bg-purple-100 text-purple-700";
-      default:
-        return "bg-gray-100 text-gray-700";
-    }
-  };
 
   return (
     <Layout>
-      <div className="min-h-screen relative overflow-hidden">
-        <DashboardBackground />
+      <div className="min-h-screen bg-[#f1f5f9]">
+        <main className="pt-12 pb-20 px-4 sm:px-8 max-w-7xl mx-auto">
+          {/* Hero Section / Editorial Header */}
+          <header className="mb-12">
+            <h1 className="font-headline text-5xl font-bold tracking-tight text-on-surface mb-4">
+              Welcome back, {profile?.name?.split(" ")[0] || user?.name?.split(" ")[0] || (profile?.email ? profile.email.split('@')[0] : 'there')}.
+            </h1>
+            <p className="text-on-surface-variant text-lg max-w-2xl">
+              Your career architecture is evolving. Here is your current standing and recent activity within the Visiondrill ecosystem.
+            </p>
+          </header>
 
-        <div className="relative container py-8">
-          {/* Header Section - Each side takes half the page */}
-          <div className="flex items-start justify-between mb-8">
-            {/* Left Side: Profile Info - Takes full 50% width */}
-            <div className="flex-1 flex items-start justify-between pr-8">
-              {/* Profile Photo and Name Section - Uses full width */}
-              <div className="flex items-start gap-6 w-full">
-                <Avatar className="h-20 w-20 flex-shrink-0">
-                  <AvatarImage src={profile?.profile_image_url} />
-                  <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold text-lg">
-                    {profile?.name
-                      ?.split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .toUpperCase() || user?.name
-                        ?.split(" ")
-                        .map((n) => n[0])
-                        .join("")
-                        .toUpperCase() || "PN"}
-                  </AvatarFallback>
-                </Avatar>
-
-                {/* Name and Actions - Takes remaining space */}
-                <div className="flex flex-col gap-4 flex-1">
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    {profile?.name || user?.name || "Profile Name"}
-                  </h1>
-
-                  {/* Edit Profile Button and Notification Icons - Now in same row */}
-                  <div className="flex items-center gap-4">
-                    <RoleSwitcher />
-                    <Button
-                      onClick={handleEditProfile}
-                      className="flex items-center gap-2"
-                    >
-                      <Edit3 className="h-4 w-4" />
+          {/* Bento Grid Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Left Column: Profile & Sidebar Actions */}
+            <div className="lg:col-span-4 flex flex-col gap-8">
+              {/* Profile Card */}
+              <section className="bg-surface-container-lowest p-8 rounded-lg shadow-sm border border-outline-variant/15">
+                <div className="flex flex-col items-center text-center">
+                  <div className="relative mb-6">
+                    <Avatar className="w-32 h-32 ring-4 ring-surface-container flex-shrink-0">
+                      <AvatarImage src={profile?.avatar_url} />
+                      <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold text-3xl">
+                        {profile?.name?.split(" ").map((n) => n[0]).join("").toUpperCase() || 
+                         user?.name?.split(" ").map((n) => n[0]).join("").toUpperCase() || "PN"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="absolute bottom-1 right-1 bg-tertiary w-6 h-6 rounded-full border-4 border-surface-container-lowest flex items-center justify-center">
+                      <span className="material-symbols-outlined text-[12px] text-white">check</span>
+                    </div>
+                  </div>
+                  <h2 className="text-2xl font-bold font-headline mb-1">
+                    {profile?.name || user?.name || (profile?.email ? profile.email.split('@')[0] : 'Profile Name')}
+                  </h2>
+                  <p className="text-on-surface-variant font-medium mb-6">
+                    {profile?.active_role === 'job_seeker' ? 'Job Seeker' : 'Professional'}
+                  </p>
+                  <div className="flex flex-col w-full gap-3">
+                    <button onClick={handleEditProfile} className="w-full py-3 px-6 bg-primary-container text-on-primary rounded-full font-semibold text-sm hover:scale-[1.02] transition-transform flex items-center justify-center gap-2">
+                      <Edit3 className="w-4 h-4" />
                       Edit Profile
-                    </Button>
-
-                    {/* Notification Icons - Enlarged and next to button */}
-                    <NotificationDropdown />
-                    <button
-                      onClick={handleMessagesClick}
-                      className="p-3 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
-                      title="Messages"
-                    >
-                      <MessageSquare className="h-6 w-6" />
                     </button>
+                    <button className="w-full py-3 px-6 bg-surface-container-low text-primary font-semibold text-sm rounded-full hover:bg-surface-container transition-colors flex items-center justify-center gap-2">
+                       {/* This could link to saved jobs later */}
+                       <Target className="w-4 h-4" />
+                       View Saved Jobs
+                    </button>
+                    <RoleSwitcher />
                   </div>
                 </div>
-              </div>
+              </section>
+              
+              {/* Recent Activity */}
+               <RecentActivityCard />
             </div>
 
-            {/* Right Side: Quick Stats - Takes 50% */}
-            <div className="flex-1 flex items-center justify-end pl-8">
+            {/* Right Column: Profile Completion (Bento Main) & Quick Stats */}
+            <div className="lg:col-span-8 flex flex-col gap-8">
+              <ProfileCompletionCard />
               <QuickStatsCards />
             </div>
           </div>
-
-          {/* Main Content Grid - Each takes half the page */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left Column */}
-            <div className="space-y-6">
-              <ProfileCompletionCard />
-            </div>
-
-            {/* Right Column */}
-            <div className="space-y-6">
-              <RecentActivityCard />
-
-              {/* Upcoming Interviews Card */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Calendar className="h-5 w-5 text-blue-600" />
-                    Upcoming Interviews
-                    {upcomingInterviews.length > 0 && (
-                      <Badge variant="secondary" className="ml-auto">
-                        {upcomingInterviews.length}
-                      </Badge>
-                    )}
-                  </CardTitle>
-                  <CardDescription>
-                    Your scheduled interviews and meetings
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {nextInterview ? (
-                    <>
-                      {/* Next Interview */}
-                      <div className="p-3 border rounded-lg space-y-2 bg-gradient-to-r from-blue-50 to-white">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <h4 className="font-medium text-sm">
-                              {nextInterview.jobTitle}
-                            </h4>
-                            <p className="text-xs text-muted-foreground">
-                              {nextInterview.company}
-                            </p>
-                          </div>
-                          <Badge
-                            className={`text-xs ${getTypeColor(
-                              nextInterview.type
-                            )}`}
-                          >
-                            {getTypeIcon(nextInterview.type)}
-                            <span className="ml-1">{nextInterview.type}</span>
-                          </Badge>
-                        </div>
-
-                        <div className="flex items-center gap-3 text-xs">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {new Date(nextInterview.date).toLocaleDateString()}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {nextInterview.time}
-                          </div>
-                        </div>
-
-                        <p className="text-xs">
-                          <span className="font-medium">Interviewer:</span>{" "}
-                          {nextInterview.interviewerName}
-                        </p>
-                      </div>
-
-                      {/* View All Button - Now with blue background */}
-                      <Button
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                        onClick={() => setInterviewDialogOpen(true)}
-                      >
-                        View All Interviews
-                      </Button>
-                    </>
-                  ) : (
-                    <div className="text-center py-4 space-y-3">
-                      <Calendar className="h-8 w-8 mx-auto text-muted-foreground" />
-                      <p className="text-muted-foreground text-sm">
-                        No upcoming interviews
-                      </p>
-                      {/* View Schedule Button - Now with blue background */}
-                      <Button
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                        size="sm"
-                        onClick={() => setInterviewDialogOpen(true)}
-                      >
-                        View Schedule
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
+        </main>
 
         {/* Edit Profile Dialog */}
         <EditProfileDialog
@@ -268,16 +142,12 @@ const JobSeekerDashboard = () => {
             location: profile?.location || "",
             phone: profile?.phone || "",
             bio: profile?.bio || "",
-            profileImage: profile?.profile_image_url || "",
+            profileImage: profile?.avatar_url || "",
           }}
           onSave={handleSaveProfile}
         />
 
-        {/* Interview Schedule Dialog */}
-        <InterviewScheduleDialog
-          open={interviewDialogOpen}
-          onOpenChange={setInterviewDialogOpen}
-        />
+
       </div>
     </Layout>
   );

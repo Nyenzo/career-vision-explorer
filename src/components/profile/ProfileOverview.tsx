@@ -1,7 +1,7 @@
 
 import SkillsOverviewCard from "@/components/profile/SkillsOverviewCard";
 import RecentAssessmentsCard from "@/components/profile/RecentAssessmentsCard";
-import UpcomingInterviewsCard from "@/components/profile/UpcomingInterviewsCard";
+
 import CareerProgressCard from "@/components/profile/CareerProgressCard";
 
 interface Skill {
@@ -19,29 +19,18 @@ interface Assessment {
   badgeEarned: boolean;
 }
 
-interface Interview {
-  id: string;
-  jobTitle: string;
-  company: string;
-  date: string;
-  time: string;
-  type: string;
-}
+
 
 interface ProfileOverviewProps {
   skills: Skill[];
   recentAssessments: Assessment[];
-  upcomingInterviews: Interview[];
   onShowSkillsDialog: () => void;
-  onShowInterviewDialog: () => void;
 }
 
 const ProfileOverview = ({
   skills,
   recentAssessments,
-  upcomingInterviews,
   onShowSkillsDialog,
-  onShowInterviewDialog,
 }: ProfileOverviewProps) => {
   return (
     <div className="space-y-8">
@@ -57,11 +46,7 @@ const ProfileOverview = ({
         />
       </div>
 
-      <UpcomingInterviewsCard
-        interviews={upcomingInterviews}
-        onShowInterviewDialog={onShowInterviewDialog}
-      />
-      
+
       <CareerProgressCard />
     </div>
   );

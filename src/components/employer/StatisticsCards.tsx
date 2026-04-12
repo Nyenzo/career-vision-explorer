@@ -113,7 +113,7 @@ export const StatisticsCards = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
       <StatCard
         title="Total Jobs Posted"
         value={stats.totalJobs}
@@ -144,16 +144,7 @@ export const StatisticsCards = () => {
         trend={percentageChanges.applicationsChange > 0 ? `+${percentageChanges.applicationsChange}% this month` : undefined}
         onClick={() => navigate("/employer/applicants")}
       />
-      <StatCard
-        title="Interview Scheduled"
-        value="0"
-        subtitle="Coming soon"
-        icon={<Calendar className="h-6 w-6" />}
-        iconColor="text-amber-600"
-        bgColor="bg-amber-50"
-        trend={undefined}
-        onClick={() => navigate("/employer/interviews")}
-      />
+
     </div>
   );
 };

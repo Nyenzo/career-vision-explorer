@@ -7,8 +7,7 @@ import {
   EmployerDashboard,
   EmployerJobs,
   JobApplicants,
-  AllApplicants,
-  EmployerInterviews
+  AllApplicants
 } from "./lazyImports";
 
 export const employerRoutes = [
@@ -40,11 +39,4 @@ export const employerRoutes = [
       </Suspense>
     </ProtectedRoute>
   } />,
-  <Route key="employer-interviews" path="/employer/interviews" element={
-    <ProtectedRoute requiredRole="employer">
-      <Suspense fallback={<PageLoader />}>
-        <EmployerInterviews />
-      </Suspense>
-    </ProtectedRoute>
-  } />
 ];

@@ -12,7 +12,7 @@ export const CoverLetterSection = ({ coverLetter, setCoverLetter }: CoverLetterS
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <FileText className="h-5 w-5 text-blue-600" />
+        <FileText className="h-5 w-5 text-primary" />
         <Label htmlFor="coverLetter" className="text-lg font-semibold">Cover Letter</Label>
       </div>
       <Textarea
@@ -24,7 +24,7 @@ export const CoverLetterSection = ({ coverLetter, setCoverLetter }: CoverLetterS
         className="resize-none"
         required
       />
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-on-surface-variant">
         {coverLetter.length}/500 characters recommended
       </p>
     </div>

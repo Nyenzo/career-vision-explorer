@@ -96,9 +96,10 @@ export interface ApplicationUpdate {
 }
 
 export interface Profile {
-  id?: string; // ✅ ADD THIS - can be optional since user_id is primary
+  id?: string;
   user_id: string;
-  name: string;
+  name: string;        // normalized from full_name at fetch time
+  full_name?: string;  // raw field from users table
   email: string;
   skills: string[];
   resume_link?: string;
@@ -109,7 +110,7 @@ export interface Profile {
   bio?: string;
   location?: string;
   experience_years?: number;
-  education?: Education[]; // ✅ FIXED: Should be array of objects
+  education?: Education[]; 
   phone?: string;
   linkedin_url?: string;
   github_url?: string;
@@ -118,7 +119,7 @@ export interface Profile {
   whatsapp_dm?: string;
   stackoverflow_url?: string;
   portfolio_url?: string;
-  profile_image_url?: string;
+  avatar_url?: string;
   video_intro_url?: string;
   date_of_birth?: string;
   salary_expectation?: string;
@@ -228,7 +229,8 @@ export interface Office {
 }
 
 export interface ProfileUpdate {
-  name?: string;
+  name?: string;       // kept for internal use; mapped to full_name before API call
+  full_name?: string;  // actual API field name
   skills?: string[];
   resume_link?: string;
   bio?: string;
@@ -243,7 +245,7 @@ export interface ProfileUpdate {
   instagram_url?: string;
   whatsapp_dm?: string;
   portfolio_url?: string;
-  profile_image_url?: string;
+  avatar_url?: string;
   video_intro_url?: string;
   date_of_birth?: string;
   salary_expectation?: string;

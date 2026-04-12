@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import NotificationDropdown from "@/components/shared/NotificationDropdown";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -111,7 +111,7 @@ const Navbar = () => {
           <div className="hidden md:flex items-center space-x-4">
             {isAuthenticated && (
               <>
-                <NotificationDropdown />
+
 
                 {isJobSeekerUser && (
                   <Link
@@ -178,7 +178,7 @@ const Navbar = () => {
 
           {/* Mobile Actions */}
           <div className="flex md:hidden items-center gap-1">
-            {isAuthenticated && <NotificationDropdown />}
+            {isAuthenticated && <div className="w-1" />}
             <button
               ref={menuButtonRef}
               onClick={toggleMenu}

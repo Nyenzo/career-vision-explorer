@@ -22,10 +22,10 @@ const JobDetails = () => {
   const [applicationDialogOpen, setApplicationDialogOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const location = useLocation();
-  const { isAdmin, isEmployer, isJobSeeker, isFreelancer } = useAuth();
+  const { isEmployer, isJobSeeker } = useAuth();
 
-  // Allow both job seekers and freelancers to view and apply for jobs
-  const canApplyForJobs = isJobSeeker() || isFreelancer();
+  // Allow job seekers to view and apply for jobs
+  const canApplyForJobs = isJobSeeker();
 
   const { getApplicationForJob, isLoading: applicationsLoading } = canApplyForJobs
     ? useJobApplications()
@@ -107,25 +107,25 @@ const JobDetails = () => {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-background">
-        <div className="container py-8">
+      <div className="min-h-screen bg-surface">
+        <main className="pt-12 pb-20 px-6 max-w-7xl mx-auto">
           {/* Back Button */}
-          <div className="mb-8">
+          <div className="mb-6">
             <Button
               variant="ghost"
               onClick={() => navigate('/jobs')}
-              className="mb-4"
+              className="text-on-surface-variant hover:text-primary hover:bg-surface-container-low"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Jobs
             </Button>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Main Content */}
-            <div className="lg:col-span-2 space-y-8">
+            <div className="lg:col-span-8 space-y-8">
               <JobHeader job={job} />
-              {(isAdmin() || isEmployer()) ? (
+              {isEmployer() ? (
                 <JobDetailsContent job={job} onUpdate={handleJobUpdate} />
               ) : (
                 <JobDetailsView job={job} />
@@ -133,7 +133,7 @@ const JobDetails = () => {
             </div>
 
             {/* Sidebar */}
-            <div className="space-y-8">
+            <aside className="lg:col-span-4 space-y-6">
               <JobActions
                 job={job}
                 isApplied={isApplied}
@@ -143,16 +143,17 @@ const JobDetails = () => {
               />
               <CompanyInfoCard
                 company={{
-                  name: job.company,
+                  name: job.companyInfo?.name || job.company,
                   size: job.company_size || "N/A",
                   industry: job.company_industry || "N/A",
                   founded: job.company_founded || "N/A",
-                  website: job.company_website || "#"
+                  website: job.company_website || "#",
+                  logoUrl: job.companyInfo?.logoUrl
                 }}
               />
-            </div>
+            </aside>
           </div>
-        </div>
+        </main>
 
         <JobApplicationDialog
           job={job}

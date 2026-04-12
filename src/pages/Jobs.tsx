@@ -2,13 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Layout from "@/components/layout/Layout";
 import { JobsContainer } from "@/components/jobs/JobsContainer";
 import { jobsService } from "../services/jobs.service";
-import { Job as ApiJob } from "../types/api";
 import { toast } from "sonner";
-import { AIJobMatchRequest } from "@/services/ai-job-matching.service";
-import { apiClient } from "@/lib/api-client";
-import { SalaryExpectationsStep } from "@/components/onboarding/steps/SalaryExpectationsStep";
-import { JobMatchService } from "@/api/job-matching-api";
-import { getCurrentUser } from "@/lib/auth";
 import { useAuth } from "@/hooks/use-auth";
 import { DashboardStatsGridSkeleton, JobCardSkeleton, PageHeaderSkeleton } from "@/components/ui/skeleton-loaders";
 
@@ -151,82 +145,11 @@ const Jobs = () => {
     const nextPage = currentPage + 1;
 
     try {
-      console.log(
-        `Loading more jobs - page ${nextPage}, current jobs count: ${jobs.length}`,
-      );
+      console.log(`Loading more jobs — page ${nextPage}`);
 
-      if (isAuthenticated && user) {
-        // Try unified recommendations for authenticated users
-        try {
-          const response = await JobMatchService.getVectorJobRecommendations(
-            nextPage,
-            6,
-            user.user_id,
-          );
-          console.log(
-            `Unified recommendations response for page ${nextPage}:`,
-            response,
-          );
-
-          if (response.jobs && response.jobs.length > 0) {
-            // Transform directly from unified response - no need for additional API calls
-            const transformedJobs = response.jobs.map((job: any) => {
-              return {
-                id: job.job_id,
-                job_id: job.job_id,
-                title: job.title,
-                company: job.company,
-                location: job.location,
-                type: job.job_type || "Full-time",
-                salary: job.salary_range || "Competitive",
-                posted: job.created_at
-                  ? new Date(job.created_at).toLocaleDateString()
-                  : "Recently",
-                // Use the match_score directly from unified service
-                matchScore: job.match_score || 0,
-                skills: job.skills_required || job.matched_skills || [],
-                description: job.description || "No description available",
-                experienceLevel: job.experience_level || "Mid Level",
-                companyInfo: {
-                  logoUrl: undefined,
-                },
-              } as Job;
-            });
-
-            if (mountedRef.current) {
-              setJobs((prevJobs) => {
-                const mergedJobs = [...prevJobs, ...transformedJobs];
-                const dedupedJobs = dedupeJobs(mergedJobs);
-                const newJobsCount = dedupedJobs.length - prevJobs.length;
-                console.log(
-                  `Adding ${newJobsCount} new jobs (${mergedJobs.length - dedupedJobs.length} duplicates filtered)`,
-                );
-                return dedupedJobs;
-              });
-              setCurrentPage(nextPage);
-              setHasMore(response.jobs.length === 6);
-              console.log(
-                `Page ${nextPage} loaded. HasMore: ${response.jobs.length === 6}, Jobs returned: ${response.jobs.length}`,
-              );
-              toast.success(`Loaded ${transformedJobs.length} more jobs`);
-            }
-            return;
-          } else {
-            setHasMore(false);
-            return;
-          }
-        } catch (vectorError) {
-          console.warn(
-            "Vector recommendations failed, falling back to regular jobs:",
-            vectorError,
-          );
-        }
-      }
-
-      // Fallback to regular jobs for unauthenticated users or when vector fails
       const jobsResponse = await jobsService.getJobs({
         is_active: true,
-        page: nextPage + 1, // +1 because backend is 1-indexed
+        page: nextPage + 1, // backend is 1-indexed
         limit: 6,
         sort_by: "created_at",
         sort_order: "desc",
@@ -247,31 +170,23 @@ const Jobs = () => {
               posted: apiJob.created_at
                 ? new Date(apiJob.created_at).toLocaleDateString()
                 : "Recently",
-              matchScore:
-                isAuthenticated && user
-                  ? Math.floor(Math.random() * 30) + 70
-                  : 0, // Random score for auth users, 0 for unauthenticated
+              matchScore: 0,
               skills: apiJob.skills_required || apiJob.skills || [],
               description:
                 apiJob.description ||
                 apiJob.requirements ||
                 "No description available",
               experienceLevel: apiJob.experience_level || "Mid Level",
-              companyInfo: {
-                logoUrl: undefined,
-              },
+              companyInfo: { logoUrl: undefined },
             }) as Job,
         );
 
         if (mountedRef.current) {
           setJobs((prevJobs) => {
-            const mergedJobs = [...prevJobs, ...transformedJobs];
-            const dedupedJobs = dedupeJobs(mergedJobs);
-            const newJobsCount = dedupedJobs.length - prevJobs.length;
-            console.log(
-              `Adding ${newJobsCount} new jobs (${mergedJobs.length - dedupedJobs.length} duplicates filtered)`,
-            );
-            return dedupedJobs;
+            const merged = [...prevJobs, ...transformedJobs];
+            const deduped = dedupeJobs(merged);
+            console.log(`Added ${deduped.length - prevJobs.length} new jobs`);
+            return deduped;
           });
           setCurrentPage(nextPage);
           setHasMore(apiJobs.length === 6);
@@ -287,7 +202,7 @@ const Jobs = () => {
     } finally {
       setLoadingMore(false);
     }
-  }, [currentPage, hasMore, loadingMore, isAuthenticated, user]);
+  }, [currentPage, hasMore, loadingMore]);
 
   const clearCache = async () => {
     setClearingCache(true);
@@ -313,7 +228,6 @@ const Jobs = () => {
   };
 
   const loadJobs = async () => {
-    // Prevent multiple simultaneous loads
     if (loadingRef.current) {
       console.log("Jobs already loading, skipping...");
       return;
@@ -326,199 +240,83 @@ const Jobs = () => {
     setHasMore(true);
 
     try {
-      console.log("Loading AI job recommendations with pagination...");
+      console.log("Loading active jobs from GET /api/v1/jobs/?is_active=true");
 
-      // Check authentication status
-      console.log("Current user:", user);
-      console.log("Is authenticated:", isAuthenticated);
-      console.log("Access token:", localStorage.getItem("access_token"));
+      const jobsResponse = await jobsService.getJobs({
+        is_active: true,
+        page: 1,
+        limit: 6,
+        sort_by: "created_at",
+        sort_order: "desc",
+      });
 
-      // Try unified recommendations if user is authenticated, otherwise use regular jobs with pagination
-      if (isAuthenticated && user) {
-        try {
-          // Use the unified match service for recommendations
-          const response = await JobMatchService.getVectorJobRecommendations(
-            0,
-            6,
-            user.user_id,
-          );
+      console.log("Jobs response:", jobsResponse);
 
-          console.log("Unified jobs recommendations response:", response);
+      if (!mountedRef.current) return;
 
-          if (!mountedRef.current) {
-            console.log("Component unmounted, skipping state update");
-            return;
+      const apiJobs = jobsResponse.jobs || [];
+      if (apiJobs.length > 0) {
+        const transformedJobs = apiJobs.map((apiJob: any) => {
+          let skills: string[] = [];
+          if (Array.isArray(apiJob.skills_required) && apiJob.skills_required.length > 0) {
+            skills = apiJob.skills_required;
+          } else if (apiJob.skills_required && !Array.isArray(apiJob.skills_required)) {
+            skills = [apiJob.skills_required];
+          } else if (apiJob.requirements) {
+            skills = apiJob.requirements
+              .toString()
+              .split(/[,\n\r]+/)
+              .map((s: string) => s.trim())
+              .filter((s: string) => s.length > 0 && s.length < 50)
+              .slice(0, 10);
           }
 
-          if (response.jobs && response.jobs.length > 0) {
-            // NO NEED to fetch individual job details - the optimized endpoint returns everything!
-            // Skip the extra API calls and use the data directly from recommendations
-            console.log("Using optimized data - no extra API calls needed!");
-
-            // Transform directly from response.jobs which already has all the data
-            const transformedJobs = response.jobs.map((job: any) => {
-              return {
-                id: job.job_id,
-                job_id: job.job_id,
-                title: job.title,
-                company: job.company,
-                location: job.location,
-                type: job.job_type || "Full-time",
-                salary: job.salary_range || "Competitive",
-                posted: job.created_at
-                  ? new Date(job.created_at).toLocaleDateString()
-                  : "Recently",
-                // Use match_score directly from unified service
-                matchScore: job.match_score || 0,
-                skills: job.skills_required || job.matched_skills || [],
-                description: job.description || "No description available",
-                experienceLevel: job.experience_level || "Mid Level",
-                companyInfo: {
-                  logoUrl: undefined,
-                },
-                // Include additional fields
-                benefits: job.benefits,
-                remoteFriendly: job.remote_friendly,
-                requirements: job.requirements,
-              } as Job;
-            });
-
-            console.log(
-              "Transformed Vector-recommended jobs:",
-              transformedJobs,
-            );
-            transformedJobs.forEach((job) =>
-              console.log(
-                `Job: ${job.title} - Match Score: ${job.matchScore}%`,
-              ),
-            );
-
-            if (mountedRef.current) {
-              setJobs(dedupeJobs(transformedJobs)); // Initial load - replace existing jobs
-              setHasMore(response.jobs.length === 6);
-              console.log(
-                `Initial load. HasMore: ${response.jobs.length === 6}, Jobs returned: ${response.jobs.length}`,
-              );
-              toast.success(
-                `Loaded ${transformedJobs.length} unified-recommended jobs`,
-              );
-            }
-            return;
-          }
-        } catch (aiError: any) {
-          console.error("Unified jobs recommendations error:", aiError);
-          console.error("Error details:", {
-            message: aiError.message,
-            status: aiError.status,
-            response: aiError.response,
-          });
-          console.warn(
-            "Falling back to jobs list due to unified recommendations error",
-          );
-        }
-      }
-
-      // Fallback for unauthenticated users or when vector recommendations fail
-      console.log("Loading regular jobs with pagination...");
-
-      try {
-        // Load regular jobs with pagination (6 jobs per page)
-        const jobsResponse = await jobsService.getJobs({
-          is_active: true,
-          page: currentPage + 1, // Start from page 1
-          limit: 6, // Load 6 jobs per page
-          sort_by: "created_at",
-          sort_order: "desc",
+          return {
+            id: apiJob.job_id || apiJob.id,
+            job_id: apiJob.job_id || apiJob.id,
+            title: apiJob.title,
+            company: apiJob.company,
+            location: apiJob.location,
+            type: apiJob.job_type || "Full-time",
+            salary: apiJob.salary_range || "Competitive",
+            posted: apiJob.created_at
+              ? new Date(apiJob.created_at).toLocaleDateString()
+              : "Recently",
+            matchScore: 0,
+            skills,
+            description: apiJob.description || apiJob.requirements || "No description available",
+            experienceLevel: apiJob.experience_level || "Mid Level",
+            companyInfo: { logoUrl: undefined },
+            benefits: Array.isArray(apiJob.benefits)
+              ? apiJob.benefits
+              : apiJob.benefits
+                ? [apiJob.benefits]
+                : [],
+            remoteFriendly: apiJob.remote_friendly || false,
+            applicationDeadline: apiJob.application_deadline,
+            requirements: apiJob.requirements || "",
+            postedBy: apiJob.posted_by_name || apiJob.posted_by,
+            isActive: apiJob.is_active !== undefined ? apiJob.is_active : true,
+          } as Job;
         });
 
-        console.log("Jobs response from API:", jobsResponse);
-        if (!mountedRef.current) {
-          console.log("Component unmounted, skipping state update");
-          return;
+        if (mountedRef.current) {
+          setJobs(dedupeJobs(transformedJobs));
+          setHasMore(apiJobs.length === 6);
+          toast.success(`Loaded ${transformedJobs.length} jobs`);
         }
-
-        const apiJobs = jobsResponse.jobs || [];
-        if (apiJobs.length > 0) {
-          const transformedJobs = apiJobs.map((apiJob: any) => {
-            // Parse skills from requirements if skills_required is null or empty
-            let skills = [];
-            if (
-              Array.isArray(apiJob.skills_required) &&
-              apiJob.skills_required.length > 0
-            ) {
-              skills = apiJob.skills_required;
-            } else if (
-              apiJob.skills_required &&
-              !Array.isArray(apiJob.skills_required)
-            ) {
-              skills = [apiJob.skills_required];
-            } else if (apiJob.requirements) {
-              // Parse skills from requirements field (comma-separated or space-separated)
-              const requirementsText = apiJob.requirements.toString();
-              skills = requirementsText
-                .split(/[,\n\r]+/)
-                .map((skill) => skill.trim())
-                .filter((skill) => skill.length > 0 && skill.length < 50) // Filter out very long strings
-                .slice(0, 10); // Limit to 10 skills max
-            }
-
-            return {
-              id: apiJob.job_id || apiJob.id,
-              job_id: apiJob.job_id || apiJob.id,
-              title: apiJob.title,
-              company: apiJob.company,
-              location: apiJob.location,
-              type: apiJob.job_type || "Full-time",
-              salary: apiJob.salary_range || "Competitive",
-              posted: apiJob.created_at
-                ? new Date(apiJob.created_at).toLocaleDateString()
-                : "Recently",
-              matchScore: 0, // Set match score to 0 for unauthenticated users
-              skills: skills,
-              description:
-                apiJob.description ||
-                apiJob.requirements ||
-                "No description available",
-              experienceLevel: apiJob.experience_level || "Mid Level",
-              companyInfo: {
-                logoUrl: undefined,
-              },
-              // Add additional fields that might be missing
-              benefits: Array.isArray(apiJob.benefits)
-                ? apiJob.benefits
-                : apiJob.benefits
-                  ? [apiJob.benefits]
-                  : [],
-              remoteFriendly: apiJob.remote_friendly || false,
-              applicationDeadline: apiJob.application_deadline,
-              requirements: apiJob.requirements || "",
-              postedBy: apiJob.posted_by_name || apiJob.posted_by,
-              isActive:
-                apiJob.is_active !== undefined ? apiJob.is_active : true,
-            } as Job;
-          });
-
-          transformedJobs.forEach((job) =>
-            console.log(`Job: ${job.title} - Match Score: ${job.matchScore}%`),
-          );
-
-          if (mountedRef.current) {
-            setJobs(dedupeJobs(transformedJobs));
-            // Set hasMore based on whether we got a full page of results
-            setHasMore(apiJobs.length === 6);
-            toast.success(`Loaded ${transformedJobs.length} jobs`);
-          }
-          return;
-        }
-      } catch (jobsError: any) {
-        console.log(
-          "Regular jobs endpoint also failed, falling back to mock data",
-        );
+        return;
       }
 
+      // No jobs returned
       if (mountedRef.current) {
-        setError("Failed to load jobs from database. Please try again later.");
-        toast.error("Failed to load jobs from database. Please try again later.");
+        setError("No jobs found. Please try again later.");
+      }
+    } catch (err: any) {
+      console.error("Error loading jobs:", err);
+      if (mountedRef.current) {
+        setError("Failed to load jobs. Please try again later.");
+        toast.error("Failed to load jobs.");
       }
     } finally {
       if (mountedRef.current) {
@@ -531,11 +329,11 @@ const Jobs = () => {
   if (loading || authLoading) {
     return (
       <Layout>
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20">
-          <div className="relative container py-6 sm:py-12 px-3 sm:px-4 space-y-8">
+        <div className="min-h-screen bg-surface">
+          <div className="relative max-w-7xl mx-auto py-12 px-6">
             <PageHeaderSkeleton />
             {authLoading && <DashboardStatsGridSkeleton />}
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid gap-6 lg:grid-cols-2 mt-8">
               <JobCardSkeleton />
               <JobCardSkeleton />
             </div>
@@ -547,11 +345,11 @@ const Jobs = () => {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none"></div>
+      <div className="min-h-screen bg-surface pt-4">
+        {/* Background Pattern (Optional Architectural touch) */}
+        <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] pointer-events-none"></div>
 
-        <div className="relative container py-6 sm:py-12 px-3 sm:px-4">
+        <div className="relative pb-12 w-full">
           {/* Debug Panel and Cache Clear Button */}
           {/* <div className="flex justify-between items-center mb-4"> */}
           {/* Debug Info */}

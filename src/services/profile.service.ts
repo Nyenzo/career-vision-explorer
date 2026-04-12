@@ -5,18 +5,8 @@ import { trackDbOperation } from "../utils/performance";
 class ProfileService {
   async getProfile(userId?: string): Promise<Profile> {
     return trackDbOperation("Load Profile", async () => {
-      try {
-        const endpoint = userId ? `/profile/${userId}` : "/profile/";
-        return await apiClient.getFast<Profile>(endpoint);
-      } catch (error: any) {
-        if (error.message?.includes("timed out")) {
-          const fallbackEndpoint = userId ? `/profile/${userId}` : "/profile/";
-          return await apiClient.get<Profile>(fallbackEndpoint, {
-            timeout: 45000,
-          });
-        }
-        throw error;
-      }
+      const endpoint = userId ? `/profile/${userId}` : "/profile/";
+      return await apiClient.get<Profile>(endpoint);
     });
   }
 

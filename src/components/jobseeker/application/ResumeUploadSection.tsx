@@ -39,7 +39,7 @@ export const ResumeUploadSection = ({ resumeFile, setResumeFile, cvAlreadyUpload
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <Upload className="h-5 w-5 text-blue-600" />
+        <Upload className="h-5 w-5 text-primary" />
         <Label htmlFor="resume" className="text-lg font-semibold">Resume/CV</Label>
         {cvAlreadyUploaded && (
           <span className="text-sm text-green-600 font-medium">(Already in profile)</span>
@@ -48,7 +48,7 @@ export const ResumeUploadSection = ({ resumeFile, setResumeFile, cvAlreadyUpload
       <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
         showError && !resumeFile && !cvAlreadyUploaded
           ? 'border-red-400 bg-red-50'
-          : 'border-gray-300 hover:border-blue-400'
+          : 'border-outline hover:border-primary'
       }`}>
         <Input
           id="resume"
@@ -59,14 +59,14 @@ export const ResumeUploadSection = ({ resumeFile, setResumeFile, cvAlreadyUpload
         />
         <label htmlFor="resume" className="cursor-pointer">
           <div className="space-y-2">
-            <Upload className="h-8 w-8 text-gray-400 mx-auto" />
+            <Upload className="h-8 w-8 text-on-surface-variant/50 mx-auto" />
             <div className="text-sm">
-              <span className="font-medium text-blue-600 hover:text-blue-500">
+              <span className="font-medium text-primary hover:text-primary-container">
                 Click to upload
               </span>
-              <span className="text-gray-500"> or drag and drop</span>
+              <span className="text-on-surface-variant"> or drag and drop</span>
             </div>
-            <p className="text-xs text-gray-500">PDF, DOC, DOCX up to 5MB</p>
+            <p className="text-xs text-on-surface-variant">PDF, DOC, DOCX up to 5MB</p>
           </div>
         </label>
       </div>

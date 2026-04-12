@@ -17,23 +17,14 @@ interface Assessment {
   badgeEarned: boolean;
 }
 
-interface Interview {
-  id: string;
-  jobTitle: string;
-  company: string;
-  date: string;
-  time: string;
-  type: string;
-}
+
 
 interface ProfileTabsProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   skills: Skill[];
   recentAssessments: Assessment[];
-  upcomingInterviews: Interview[];
   onShowSkillsDialog: () => void;
-  onShowInterviewDialog: () => void;
   onUpdateSkill: (skillId: string, level: number) => void;
   onVerifySkill: (skillId: string) => void;
 }
@@ -43,9 +34,7 @@ const ProfileTabs = ({
   setActiveTab,
   skills,
   recentAssessments,
-  upcomingInterviews,
   onShowSkillsDialog,
-  onShowInterviewDialog,
   onUpdateSkill,
   onVerifySkill,
 }: ProfileTabsProps) => {
@@ -85,9 +74,7 @@ const ProfileTabs = ({
           <ProfileTabsContent
             skills={skills}
             recentAssessments={recentAssessments}
-            upcomingInterviews={upcomingInterviews}
             onShowSkillsDialog={onShowSkillsDialog}
-            onShowInterviewDialog={onShowInterviewDialog}
             onUpdateSkill={onUpdateSkill}
             onVerifySkill={onVerifySkill}
           />
