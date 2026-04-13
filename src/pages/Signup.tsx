@@ -134,7 +134,7 @@ const Signup = () => {
       await register(registrationData);
 
       setNewUserData({ ...values, profileImage: finalProfileImage });
-      
+
       toast.success("Welcome to Visiondrill!", {
         description: "Let's set up your profile to find the perfect opportunities.",
       });
@@ -204,10 +204,10 @@ const Signup = () => {
           <div className="lg:col-span-5 space-y-8 lg:sticky lg:top-32">
             <div className="space-y-4">
               <h1 className="text-5xl lg:text-6xl font-headline font-bold text-on-surface leading-[1.1] tracking-tight">
-                  Build your <span className="text-primary">future</span> foundation.
+                Build your <span className="text-primary">future</span> foundation.
               </h1>
               <p className="text-lg text-on-surface-variant leading-relaxed">
-                  Join an elite network of visionary architects, founders, and seekers. Your next great partnership begins with a single step.
+                Join an elite network of visionary architects, founders, and seekers. Your next great partnership begins with a single step.
               </p>
             </div>
             {/* Featured Card (Architectural Element) */}
@@ -222,12 +222,12 @@ const Signup = () => {
                 </div>
               </div>
               <div className="h-48 w-full rounded-md overflow-hidden relative group">
-                <img alt="modern minimalist glass office interior" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9NO69Kp9Av06R2ZZH6RohuBReWl2B5YmA5vZT7Ws2F6vl571CaHoKPA6nQC57HqiCFfgCQXDGSh4XFhcBRFLcKutEJevTgwJdiqE_ji_W2ryVa9rAgauv7-bekh2mj_0IyqQgp8qlLsauTQ8Rradg3jus9O5MEPC9iEweCX6zypwMHkUgK03L8Ou34KMAZqzrgoohTttwrj7dHZ7l3kQBV4zdHH4olfws811dsanfIfQ7S7MJNNi_tgq8TMjc0-772uqsbpoT9e0"/>
+                <img alt="modern minimalist glass office interior" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9NO69Kp9Av06R2ZZH6RohuBReWl2B5YmA5vZT7Ws2F6vl571CaHoKPA6nQC57HqiCFfgCQXDGSh4XFhcBRFLcKutEJevTgwJdiqE_ji_W2ryVa9rAgauv7-bekh2mj_0IyqQgp8qlLsauTQ8Rradg3jus9O5MEPC9iEweCX6zypwMHkUgK03L8Ou34KMAZqzrgoohTttwrj7dHZ7l3kQBV4zdHH4olfws811dsanfIfQ7S7MJNNi_tgq8TMjc0-772uqsbpoT9e0" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
               </div>
             </div>
           </div>
-          
+
           {/* Right Side: Multi-field Form Card */}
           <div className="lg:col-span-7 bg-surface-container-lowest p-8 md:p-12 rounded-lg shadow-[0_20px_40px_rgba(25,28,30,0.06)]">
             <form className="space-y-8" onSubmit={form.handleSubmit(onSubmit)}>
@@ -236,22 +236,22 @@ const Signup = () => {
                 <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Primary Role</label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <label className={`role-option relative flex items-center p-4 rounded-md cursor-pointer transition-all group border ${selectedRole === 'jobseeker' ? 'bg-secondary-fixed border-primary shadow-[0_0_0_1px_#004ac6]' : 'bg-surface-container-low hover:bg-surface-container-high border-transparent'}`}>
-                    <input 
-                      {...form.register("role")} 
-                      className="w-4 h-4 text-primary focus:ring-primary/20 border-outline-variant bg-transparent" 
-                      type="radio" 
-                      value="jobseeker" 
+                    <input
+                      {...form.register("role")}
+                      className="w-4 h-4 text-primary focus:ring-primary/20 border-outline-variant bg-transparent"
+                      type="radio"
+                      value="jobseeker"
                       disabled={isLoading}
                     />
                     <span className="ml-4 font-medium text-on-surface">I am Looking for a Job</span>
                     <span className="ml-auto material-symbols-outlined text-outline-variant group-hover:text-primary">person_search</span>
                   </label>
                   <label className={`role-option relative flex items-center p-4 rounded-md cursor-pointer transition-all group border ${selectedRole === 'employer' ? 'bg-secondary-fixed border-primary shadow-[0_0_0_1px_#004ac6]' : 'bg-surface-container-low hover:bg-surface-container-high border-transparent'}`}>
-                    <input 
-                      {...form.register("role")} 
-                      className="w-4 h-4 text-primary focus:ring-primary/20 border-outline-variant bg-transparent" 
-                      type="radio" 
-                      value="employer" 
+                    <input
+                      {...form.register("role")}
+                      className="w-4 h-4 text-primary focus:ring-primary/20 border-outline-variant bg-transparent"
+                      type="radio"
+                      value="employer"
                       disabled={isLoading}
                     />
                     <span className="ml-4 font-medium text-on-surface">I am Hiring</span>
@@ -259,7 +259,7 @@ const Signup = () => {
                   </label>
                 </div>
               </div>
-              
+
               {/* Dynamic Fields Container */}
               <div>
                 {/* State 1: Job Seeker Fields */}
@@ -268,18 +268,18 @@ const Signup = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Full Name</label>
-                        <input {...form.register('name')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="Alex Sterling" type="text" disabled={isLoading}/>
+                        <input {...form.register('name')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="Alex Sterling" type="text" disabled={isLoading} />
                         {form.formState.errors.name && <p className="text-sm text-error ml-1">{form.formState.errors.name.message as string}</p>}
                       </div>
                       <div className="space-y-2">
                         <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Email Address</label>
-                        <input {...form.register('email')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="alex@visiondrill.com" type="email" disabled={isLoading}/>
+                        <input {...form.register('email')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="alex@visiondrill.com" type="email" disabled={isLoading} />
                         {form.formState.errors.email && <p className="text-sm text-error ml-1">{form.formState.errors.email.message as string}</p>}
                       </div>
                       <div className="space-y-2 col-span-2 grid grid-cols-2 gap-6">
                         <div className="space-y-2">
                           <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Phone Number</label>
-                          <input {...form.register('phoneNumber')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="+1 (555) 000-0000" type="tel" disabled={isLoading}/>
+                          <input {...form.register('phoneNumber')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="+1 (555) 000-0000" type="tel" disabled={isLoading} />
                           {form.formState.errors.phoneNumber && <p className="text-sm text-error ml-1">{form.formState.errors.phoneNumber.message as string}</p>}
                         </div>
                         <div className="space-y-2">
@@ -296,40 +296,40 @@ const Signup = () => {
                       </div>
                       <div className="space-y-2 md:col-span-2">
                         <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Password</label>
-                        <input {...form.register('password')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="••••••••" type="password" disabled={isLoading}/>
+                        <input {...form.register('password')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="••••••••" type="password" disabled={isLoading} />
                         {form.formState.errors.password && <p className="text-sm text-error ml-1">{form.formState.errors.password.message as string}</p>}
                       </div>
                       <div className="space-y-2 md:col-span-2">
                         <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Confirm Password</label>
-                        <input {...form.register('confirmPassword')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="••••••••" type="password" disabled={isLoading}/>
+                        <input {...form.register('confirmPassword')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="••••••••" type="password" disabled={isLoading} />
                         {form.formState.errors.confirmPassword && <p className="text-sm text-error ml-1">{form.formState.errors.confirmPassword.message as string}</p>}
                       </div>
                     </div>
                   </div>
                 )}
-                
+
                 {/* State 2: Employer Fields */}
                 {selectedRole === 'employer' && (
                   <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Full Name</label>
-                        <input {...form.register('name')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="Alex Sterling" type="text" disabled={isLoading}/>
+                        <input {...form.register('name')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="Alex Sterling" type="text" disabled={isLoading} />
                         {form.formState.errors.name && <p className="text-sm text-error ml-1">{form.formState.errors.name.message as string}</p>}
                       </div>
                       <div className="space-y-2">
                         <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Email Address</label>
-                        <input {...form.register('email')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="admin@sterling.com" type="email" disabled={isLoading}/>
+                        <input {...form.register('email')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="admin@sterling.com" type="email" disabled={isLoading} />
                         {form.formState.errors.email && <p className="text-sm text-error ml-1">{form.formState.errors.email.message as string}</p>}
                       </div>
                       <div className="space-y-2">
                         <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Company Name</label>
-                        <input {...form.register('companyName')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="Sterling Architecture" type="text" disabled={isLoading}/>
+                        <input {...form.register('companyName')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="Sterling Architecture" type="text" disabled={isLoading} />
                         {form.formState.errors.companyName && <p className="text-sm text-error ml-1">{form.formState.errors.companyName.message as string}</p>}
                       </div>
                       <div className="space-y-2">
                         <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Company Website</label>
-                        <input {...form.register('companyWebsite')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="https://sterling.com" type="url" disabled={isLoading}/>
+                        <input {...form.register('companyWebsite')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="https://sterling.com" type="url" disabled={isLoading} />
                       </div>
                       <div className="space-y-2">
                         <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Industry</label>
@@ -354,48 +354,48 @@ const Signup = () => {
                       </div>
                       <div className="space-y-2 md:col-span-2">
                         <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Password</label>
-                        <input {...form.register('password')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="••••••••" type="password" disabled={isLoading}/>
+                        <input {...form.register('password')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="••••••••" type="password" disabled={isLoading} />
                         {form.formState.errors.password && <p className="text-sm text-error ml-1">{form.formState.errors.password.message as string}</p>}
                       </div>
                       <div className="space-y-2 md:col-span-2">
                         <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Confirm Password</label>
-                        <input {...form.register('confirmPassword')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="••••••••" type="password" disabled={isLoading}/>
+                        <input {...form.register('confirmPassword')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="••••••••" type="password" disabled={isLoading} />
                         {form.formState.errors.confirmPassword && <p className="text-sm text-error ml-1">{form.formState.errors.confirmPassword.message as string}</p>}
                       </div>
                     </div>
                   </div>
                 )}
               </div>
-              
+
               {/* Terms checkbox */}
               <div className="flex items-start gap-3 px-1">
-                <input required className="mt-1 rounded text-primary focus:ring-primary/20 border-outline-variant" type="checkbox" disabled={isLoading}/>
+                <input required className="mt-1 rounded text-primary focus:ring-primary/20 border-outline-variant" type="checkbox" disabled={isLoading} />
                 <span className="text-sm text-on-surface-variant leading-relaxed">
-                    I agree to the <a className="text-primary hover:underline" href="#">Terms of Service</a> and <a className="text-primary hover:underline" href="#">Privacy Policy</a>.
+                  I agree to the <a className="text-primary hover:underline" href="#">Terms of Service</a> and <a className="text-primary hover:underline" href="#">Privacy Policy</a>.
                 </span>
               </div>
-              
+
               {/* Action Button */}
               <button disabled={isLoading} className="w-full gradient-btn text-on-primary py-5 rounded-full font-headline font-bold text-lg hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 disabled:opacity-50" type="submit">
-                  {isLoading ? 'Creating Account...' : 'Create Account'}
-                  <span className="material-symbols-outlined">arrow_forward</span>
+                {isLoading ? 'Creating Account...' : 'Create Account'}
+                <span className="material-symbols-outlined">arrow_forward</span>
               </button>
-              
+
               {/* Divider */}
               <div className="flex items-center gap-4 py-2">
                 <div className="flex-1 h-px bg-outline-variant opacity-20"></div>
                 <span className="text-xs font-bold text-outline-variant tracking-widest uppercase">Or join with</span>
                 <div className="flex-1 h-px bg-outline-variant opacity-20"></div>
               </div>
-              
+
               {/* Social Login */}
               <div className="grid grid-cols-2 gap-4">
                 <button type="button" onClick={handleGoogleSignup} disabled={isLoading} className="flex items-center justify-center gap-2 py-4 px-6 rounded-full bg-surface-container-low hover:bg-surface-container-high transition-colors font-semibold text-sm disabled:opacity-50">
                   <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
-                    <path fill="#EA4335" d="M12 10.2v3.9h5.4c-.2 1.2-1.4 3.6-5.4 3.6-3.2 0-5.9-2.7-5.9-6s2.7-6 5.9-6c1.8 0 3 .8 3.7 1.5l2.5-2.4C16.6 3.3 14.5 2.4 12 2.4 6.8 2.4 2.7 6.6 2.7 12s4.1 9.6 9.3 9.6c5.4 0 8.9-3.8 8.9-9.1 0-.6-.1-1-.1-1.4H12z"/>
-                    <path fill="#34A853" d="M3.9 7.5l3.2 2.4c.9-1.8 2.7-3.1 4.9-3.1 1.8 0 3 .8 3.7 1.5l2.5-2.4C16.6 3.3 14.5 2.4 12 2.4c-3.6 0-6.8 2.1-8.1 5.1z"/>
-                    <path fill="#4A90E2" d="M12 21.6c2.4 0 4.5-.8 6-2.3l-2.8-2.3c-.8.6-1.8 1-3.2 1-2.9 0-5.3-1.9-6.2-4.6l-3.2 2.5c1.4 3.1 4.6 5.7 9.4 5.7z"/>
-                    <path fill="#FBBC05" d="M5.8 13.4c-.2-.6-.3-1.1-.3-1.7s.1-1.2.3-1.7L2.6 7.5C2 8.9 1.7 10.4 1.7 12s.3 3.1.9 4.5l3.2-2.5z"/>
+                    <path fill="#EA4335" d="M12 10.2v3.9h5.4c-.2 1.2-1.4 3.6-5.4 3.6-3.2 0-5.9-2.7-5.9-6s2.7-6 5.9-6c1.8 0 3 .8 3.7 1.5l2.5-2.4C16.6 3.3 14.5 2.4 12 2.4 6.8 2.4 2.7 6.6 2.7 12s4.1 9.6 9.3 9.6c5.4 0 8.9-3.8 8.9-9.1 0-.6-.1-1-.1-1.4H12z" />
+                    <path fill="#34A853" d="M3.9 7.5l3.2 2.4c.9-1.8 2.7-3.1 4.9-3.1 1.8 0 3 .8 3.7 1.5l2.5-2.4C16.6 3.3 14.5 2.4 12 2.4c-3.6 0-6.8 2.1-8.1 5.1z" />
+                    <path fill="#4A90E2" d="M12 21.6c2.4 0 4.5-.8 6-2.3l-2.8-2.3c-.8.6-1.8 1-3.2 1-2.9 0-5.3-1.9-6.2-4.6l-3.2 2.5c1.4 3.1 4.6 5.7 9.4 5.7z" />
+                    <path fill="#FBBC05" d="M5.8 13.4c-.2-.6-.3-1.1-.3-1.7s.1-1.2.3-1.7L2.6 7.5C2 8.9 1.7 10.4 1.7 12s.3 3.1.9 4.5l3.2-2.5z" />
                   </svg>
                   Sign up with Google
                 </button>
@@ -407,7 +407,7 @@ const Signup = () => {
             </form>
           </div>
         </div>
-        
+
 
         {showOnboarding && newUserData && (
           <OnboardingWizard

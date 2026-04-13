@@ -19,7 +19,7 @@ export const JobNotFound = () => {
               Job Not Found
             </h1>
             <p className="text-muted-foreground mb-8">The job you're looking for doesn't exist or has been removed.</p>
-            <Button 
+            <Button
               onClick={() => navigate(fallbackPath)}
               className="modern-btn-primary"
             >

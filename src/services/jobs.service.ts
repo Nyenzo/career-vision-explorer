@@ -116,20 +116,20 @@ function transformUpdatePayload(jobData: any) {
       : {}),
     ...(jobData.required_skills !== undefined
       ? {
-          required_skills: Array.isArray(jobData.required_skills)
-            ? jobData.required_skills
-            : normalizeRequirements(jobData.required_skills),
-        }
+        required_skills: Array.isArray(jobData.required_skills)
+          ? jobData.required_skills
+          : normalizeRequirements(jobData.required_skills),
+      }
       : {}),
     ...(jobData.job_type !== undefined || jobData.type !== undefined
       ? { job_type: normalizeJobType(jobData.job_type ?? jobData.type) }
       : {}),
     ...(jobData.experience_level !== undefined || jobData.experience !== undefined
       ? {
-          experience_level: normalizeExperienceLevel(
-            jobData.experience_level ?? jobData.experience
-          ),
-        }
+        experience_level: normalizeExperienceLevel(
+          jobData.experience_level ?? jobData.experience
+        ),
+      }
       : {}),
     ...(jobData.status !== undefined ? { status: jobData.status } : {}),
     ...(jobData.application_deadline !== undefined

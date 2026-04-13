@@ -25,15 +25,15 @@ const Index = () => {
               <div className="bg-surface-container-lowest p-2 rounded-full shadow-lg flex items-center gap-4 max-w-xl group focus-within:ring-2 ring-primary/20 transition-all">
                 <div className="flex-1 flex items-center px-6 gap-3">
                   <span className="material-symbols-outlined text-outline">search</span>
-                  <input 
-                    className="w-full bg-transparent border-none focus:ring-0 outline-none text-on-surface placeholder:text-outline/60 py-3" 
-                    placeholder="Search by role or company..." 
-                    type="text" 
+                  <input
+                    className="w-full bg-transparent border-none focus:ring-0 outline-none text-on-surface placeholder:text-outline/60 py-3"
+                    placeholder="Search by role or company..."
+                    type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <button 
+                <button
                   className="bg-gradient-to-r from-primary to-primary-container text-white px-10 py-4 rounded-full font-semibold hover:scale-[1.02] transition-all flex items-center gap-2"
                   onClick={() => navigate(`/jobseeker/jobs?q=${encodeURIComponent(searchQuery)}`)}
                 >
@@ -96,7 +96,7 @@ const Index = () => {
                   Apply Now
                 </button>
               </div>
-              
+
               {/* Job Card 2 */}
               <div className="bg-surface-container-lowest p-8 rounded-lg shadow-sm hover:shadow-md transition-all group">
                 <div className="flex justify-between items-start mb-6">
@@ -199,7 +199,7 @@ const Index = () => {
                 </div>
                 <button className="w-full py-4 bg-primary text-white rounded-full font-bold hover:shadow-xl transition-all">Request Collaboration</button>
               </div>
-              
+
               {/* Co-founder Card 2 (Business) */}
               <div className="bg-surface-container-lowest rounded-2xl p-10 shadow-lg relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-tertiary-container/5 rounded-bl-full transform group-hover:scale-110 transition-transform"></div>

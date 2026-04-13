@@ -415,7 +415,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     signInWithLinkedIn,
     signInWithGoogle,
     handleOAuthCallback,
-    impersonateUser: () => {},
+    impersonateUser: () => { },
     stopImpersonation,
     isImpersonating,
     originalUser,

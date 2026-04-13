@@ -51,9 +51,9 @@ export const WishlistDialog = ({ children }: WishlistDialogProps) => {
               <Heart className="h-5 w-5 text-red-500 fill-current" />
               My Wishlist ({wishlistJobs.length})
             </DialogTitle>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={clearWishlist}
               className="text-red-600 hover:text-red-700"
             >
@@ -62,12 +62,12 @@ export const WishlistDialog = ({ children }: WishlistDialogProps) => {
             </Button>
           </div>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           {wishlistJobs.map((job) => (
-            <WishlistJobCard 
-key={job.job_id} 
-              job={job} 
+            <WishlistJobCard
+              key={job.job_id}
+              job={job}
               onRemove={() => removeFromWishlist(job.job_id)}
             />
           ))}
@@ -90,27 +90,26 @@ const WishlistJobCard = ({ job, onRemove }: WishlistJobCardProps) => {
           <div>
             <CardTitle className="text-lg flex items-center gap-2">
               {job.title}
-              <Badge className={`text-xs ${
-                job.matchScore >= 90 ? 'bg-green-500' : 
-                job.matchScore >= 80 ? 'bg-blue-500' : 
-                job.matchScore >= 70 ? 'bg-yellow-500' : 
-                'bg-orange-500'
-              } text-white`}>
+              <Badge className={`text-xs ${job.matchScore >= 90 ? 'bg-green-500' :
+                  job.matchScore >= 80 ? 'bg-blue-500' :
+                    job.matchScore >= 70 ? 'bg-yellow-500' :
+                      'bg-orange-500'
+                } text-white`}>
                 {job.matchScore}% Match
               </Badge>
             </CardTitle>
             <p className="text-sm text-gray-600">{job.company}</p>
           </div>
           <div className="flex gap-2">
-<Link to={`/jobseeker/jobs/${job.job_id}`}>
+            <Link to={`/jobseeker/jobs/${job.job_id}`}>
               <Button variant="outline" size="sm">
                 <ExternalLink className="h-4 w-4 mr-1" />
                 View
               </Button>
             </Link>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={onRemove}
               className="text-red-600 hover:text-red-700"
             >
@@ -119,7 +118,7 @@ const WishlistJobCard = ({ job, onRemove }: WishlistJobCardProps) => {
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="pt-0">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
           <div className="flex items-center gap-1 text-sm text-gray-600">
@@ -139,9 +138,9 @@ const WishlistJobCard = ({ job, onRemove }: WishlistJobCardProps) => {
             {job.posted}
           </div>
         </div>
-        
+
         <p className="text-sm text-gray-700 mb-3 line-clamp-2">{job.description}</p>
-        
+
         <div className="flex flex-wrap gap-1 mb-2">
           {job.skills.slice(0, 4).map(skill => (
             <Badge key={skill} variant="secondary" className="text-xs">
@@ -154,7 +153,7 @@ const WishlistJobCard = ({ job, onRemove }: WishlistJobCardProps) => {
             </Badge>
           )}
         </div>
-        
+
         <div className="text-xs text-gray-500">
           Saved on {new Date(job.dateSaved).toLocaleDateString()}
         </div>

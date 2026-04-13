@@ -11,25 +11,25 @@ export interface Job {
   required_skills?: string[];
   location?: string;
   job_type?:
-    | "full_time"
-    | "part_time"
-    | "remote"
-    | "internship"
-    | "Full-time"
-    | "Part-time"
-    | "Contract"
-    | "Internship"
-    | "Remote";
+  | "full_time"
+  | "part_time"
+  | "remote"
+  | "internship"
+  | "Full-time"
+  | "Part-time"
+  | "Contract"
+  | "Internship"
+  | "Remote";
   salary_range?: string;
   experience_level?:
-    | "entry_level"
-    | "mid_level"
-    | "senior_level"
-    | "executive_level"
-    | "Entry Level"
-    | "Mid Level"
-    | "Senior Level"
-    | "Executive";
+  | "entry_level"
+  | "mid_level"
+  | "senior_level"
+  | "executive_level"
+  | "Entry Level"
+  | "Mid Level"
+  | "Senior Level"
+  | "Executive";
   status?: "draft" | "open" | "closed";
   application_deadline?: string;
   company_name?: string;
@@ -64,25 +64,25 @@ export interface JobCreate {
   required_skills?: string[];
   location?: string;
   job_type?:
-    | "full_time"
-    | "part_time"
-    | "remote"
-    | "internship"
-    | "Full-time"
-    | "Part-time"
-    | "Contract"
-    | "Internship"
-    | "Remote";
+  | "full_time"
+  | "part_time"
+  | "remote"
+  | "internship"
+  | "Full-time"
+  | "Part-time"
+  | "Contract"
+  | "Internship"
+  | "Remote";
   salary_range?: string;
   experience_level?:
-    | "entry_level"
-    | "mid_level"
-    | "senior_level"
-    | "executive_level"
-    | "Entry Level"
-    | "Mid Level"
-    | "Senior Level"
-    | "Executive";
+  | "entry_level"
+  | "mid_level"
+  | "senior_level"
+  | "executive_level"
+  | "Entry Level"
+  | "Mid Level"
+  | "Senior Level"
+  | "Executive";
   status?: "draft" | "open" | "closed";
   application_deadline?: string;
 
@@ -103,24 +103,24 @@ export interface JobUpdate {
   benefits?: string[];
   required_skills?: string[];
   job_type?:
-    | "full_time"
-    | "part_time"
-    | "remote"
-    | "internship"
-    | "Full-time"
-    | "Part-time"
-    | "Contract"
-    | "Internship"
-    | "Remote";
+  | "full_time"
+  | "part_time"
+  | "remote"
+  | "internship"
+  | "Full-time"
+  | "Part-time"
+  | "Contract"
+  | "Internship"
+  | "Remote";
   experience_level?:
-    | "entry_level"
-    | "mid_level"
-    | "senior_level"
-    | "executive_level"
-    | "Entry Level"
-    | "Mid Level"
-    | "Senior Level"
-    | "Executive";
+  | "entry_level"
+  | "mid_level"
+  | "senior_level"
+  | "executive_level"
+  | "Entry Level"
+  | "Mid Level"
+  | "Senior Level"
+  | "Executive";
   status?: "draft" | "open" | "closed";
   application_deadline?: string;
 
@@ -187,7 +187,7 @@ export interface Profile {
   bio?: string;
   location?: string;
   experience_years?: number;
-  education?: Education[]; 
+  education?: Education[];
   phone?: string;
   linkedin_url?: string;
   github_url?: string;

@@ -65,8 +65,8 @@ export const JobCard = ({ job, isApplied, isSaved, onApply, onSave }: JobCardPro
                 <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
                 <span className="font-label text-xs font-bold tracking-wider">{job.matchScore || 0}% MATCH</span>
               </div>
-              <button 
-                onClick={(e) => { e.preventDefault(); onSave(job.job_id); }} 
+              <button
+                onClick={(e) => { e.preventDefault(); onSave(job.job_id); }}
                 className={`p-2 transition-colors ${isSaved ? 'text-primary' : 'text-outline hover:text-primary'}`}
               >
                 <span className="material-symbols-outlined" style={{ fontVariationSettings: isSaved ? "'FILL' 1" : "'FILL' 0" }}>favorite</span>
@@ -98,22 +98,21 @@ export const JobCard = ({ job, isApplied, isSaved, onApply, onSave }: JobCardPro
 
           {/* Action Row */}
           <div className="pt-6 flex justify-between items-center border-t border-surface-container">
-            <Link 
-              className="text-primary font-bold hover:underline underline-offset-4 flex items-center gap-2 transition-all" 
+            <Link
+              className="text-primary font-bold hover:underline underline-offset-4 flex items-center gap-2 transition-all"
               to={`/jobseeker/jobs/${job.job_id}`}
               state={{ matchScore: job.matchScore, jobData: job }}
             >
               View Details
               <span className="material-symbols-outlined text-sm">arrow_forward</span>
             </Link>
-            <button 
+            <button
               onClick={(e) => { e.preventDefault(); onApply(job); }}
               disabled={isApplied}
-              className={`px-10 py-3 font-bold rounded-full transition-transform active:scale-95 ${
-                isApplied 
-                ? 'bg-secondary-fixed text-on-secondary-fixed shadow-none cursor-default'
-                : 'gradient-btn text-on-primary hover:scale-[1.02] shadow-md shadow-primary/20'
-              }`}
+              className={`px-10 py-3 font-bold rounded-full transition-transform active:scale-95 ${isApplied
+                  ? 'bg-secondary-fixed text-on-secondary-fixed shadow-none cursor-default'
+                  : 'gradient-btn text-on-primary hover:scale-[1.02] shadow-md shadow-primary/20'
+                }`}
             >
               {isApplied ? 'Applied ✓' : 'Apply Now'}
             </button>

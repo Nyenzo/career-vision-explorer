@@ -260,9 +260,9 @@ export const useEmployerJobs = () => {
         requirements: Array.isArray(job.requirements)
           ? job.requirements
           : String(job.requirements || "")
-              .split("\n")
-              .map((item) => item.trim())
-              .filter(Boolean),
+            .split("\n")
+            .map((item) => item.trim())
+            .filter(Boolean),
         responsibilities: job.responsibilities || [],
         benefits: job.benefits || [],
         required_skills: job.required_skills || [],

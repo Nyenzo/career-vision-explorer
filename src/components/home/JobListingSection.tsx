@@ -36,7 +36,7 @@ const JobListingSection = ({ featuredJobs }: JobListingProps) => {
             >
               {/* Gradient accent */}
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-primary/60"></div>
-              
+
               {/* Card content */}
               <div className="p-8">
                 <div className="flex items-start justify-between mb-6">
@@ -63,7 +63,7 @@ const JobListingSection = ({ featuredJobs }: JobListingProps) => {
                     </div>
                     <span className="text-sm font-medium">{job.location}</span>
                   </div>
-                  
+
                   <div className="flex items-center gap-3 text-muted-foreground">
                     <div className="flex items-center justify-center w-8 h-8 bg-green-50 rounded-lg">
                       <DollarSign className="h-4 w-4 text-green-600" />
@@ -78,12 +78,12 @@ const JobListingSection = ({ featuredJobs }: JobListingProps) => {
                     <span className="text-sm font-medium">Posted 2 days ago</span>
                   </div>
                 </div>
-                
+
                 <div className="flex flex-wrap gap-2 mb-8">
                   {job.tags.map((tag, idx) => (
-                    <Badge 
-                      key={idx} 
-                      variant="secondary" 
+                    <Badge
+                      key={idx}
+                      variant="secondary"
                       className="bg-muted/50 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors px-3 py-1 font-medium"
                     >
                       {tag}
@@ -92,7 +92,7 @@ const JobListingSection = ({ featuredJobs }: JobListingProps) => {
                 </div>
 
                 <Link to={`/jobseeker/jobs/${job.id}`} className="block">
-                  <Button 
+                  <Button
                     className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 shadow-md hover:shadow-lg transition-all duration-300 group"
                   >
                     View Details
@@ -110,8 +110,8 @@ const JobListingSection = ({ featuredJobs }: JobListingProps) => {
 
         <div className="text-center">
           <Link to="/jobseeker/jobs">
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 py-6 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 group"
             >
               View All Jobs

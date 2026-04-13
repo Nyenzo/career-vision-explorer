@@ -17,7 +17,7 @@ export interface LinkedInAuthorizationResponse {
 class LinkedInOAuthService {
   private POPUP_WIDTH = 600;
   private POPUP_HEIGHT = 700;
-  
+
   /**
    * Initiate LinkedIn OAuth flow using Supabase
    * @param accountType - Type of account to create if user doesn't exist
@@ -44,27 +44,27 @@ class LinkedInOAuthService {
       throw error;
     }
   }
-  
+
   /**
    * Open LinkedIn auth in popup window
    */
   private openAuthPopup(authUrl: string): void {
     const left = (window.screen.width - this.POPUP_WIDTH) / 2;
     const top = (window.screen.height - this.POPUP_HEIGHT) / 2;
-    
+
     const popup = window.open(
       authUrl,
       'linkedin-auth',
       `width=${this.POPUP_WIDTH},height=${this.POPUP_HEIGHT},left=${left},top=${top},status=yes,scrollbars=yes,resizable=yes`
     );
-    
+
     if (!popup) {
       toast.error('Popup blocked', {
         description: 'Please allow popups for LinkedIn authentication.'
       });
       return;
     }
-    
+
     // Check popup status
     const checkInterval = setInterval(() => {
       try {
@@ -73,12 +73,12 @@ class LinkedInOAuthService {
           // Check if we got tokens in localStorage (set by callback page)
           const accessToken = localStorage.getItem('linkedin_access_token');
           const refreshToken = localStorage.getItem('linkedin_refresh_token');
-          
+
           if (accessToken && refreshToken) {
             // Clean up temporary storage
             localStorage.removeItem('linkedin_access_token');
             localStorage.removeItem('linkedin_refresh_token');
-            
+
             // Emit success event
             window.dispatchEvent(new CustomEvent('linkedin-auth-success', {
               detail: { access_token: accessToken, refresh_token: refreshToken }
@@ -93,7 +93,7 @@ class LinkedInOAuthService {
       }
     }, 1000);
   }
-  
+
   /**
    * Handle OAuth callback
    * This should be called from the callback page
@@ -116,7 +116,7 @@ class LinkedInOAuthService {
       throw error;
     }
   }
-  
+
   /**
    * Listen for LinkedIn authentication events
    */
@@ -125,18 +125,18 @@ class LinkedInOAuthService {
       const customEvent = event as CustomEvent;
       callback(customEvent.detail);
     };
-    
+
     window.addEventListener('linkedin-auth-success', handler);
-    
+
     // Return cleanup function
     return () => {
       window.removeEventListener('linkedin-auth-success', handler);
     };
   }
-  
+
   onAuthCancelled(callback: () => void): () => void {
     window.addEventListener('linkedin-auth-cancelled', callback);
-    
+
     // Return cleanup function
     return () => {
       window.removeEventListener('linkedin-auth-cancelled', callback);

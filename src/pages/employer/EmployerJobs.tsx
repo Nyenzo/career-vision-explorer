@@ -192,19 +192,17 @@ const EmployerJobs = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`relative px-5 py-3 rounded-xl font-medium transition-all duration-200 whitespace-nowrap ${
-                      activeTab === tab.id
+                    className={`relative px-5 py-3 rounded-xl font-medium transition-all duration-200 whitespace-nowrap ${activeTab === tab.id
                         ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transform scale-105"
                         : "text-slate-600 hover:text-slate-900 hover:bg-white/80 hover:shadow-md"
-                    }`}
+                      }`}
                   >
                     <span className="relative z-10">{tab.label}</span>
                     <Badge
-                      className={`ml-2 ${
-                        activeTab === tab.id
+                      className={`ml-2 ${activeTab === tab.id
                           ? "bg-white/20 text-white border-white/30"
                           : "bg-slate-100 text-slate-600 border-slate-200"
-                      }`}
+                        }`}
                     >
                       {tab.count}
                     </Badge>

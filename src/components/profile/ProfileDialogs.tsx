@@ -32,7 +32,7 @@ const ProfileDialogs = ({
         open={showApplicationDialog}
         onOpenChange={setShowApplicationDialog}
       />
-      
+
       <SkillAssessmentDialog
         open={showSkillsDialog}
         onOpenChange={setShowSkillsDialog}

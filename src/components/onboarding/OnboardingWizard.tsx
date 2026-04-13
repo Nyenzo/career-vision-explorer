@@ -1,12 +1,12 @@
 import { useState, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { VideoRecordingModal } from "./VideoRecordingModal";
@@ -39,7 +39,7 @@ const OnboardingWizard = ({ onComplete, userRole = 'jobseeker', signupData }: On
   const [videoRecordingOpen, setVideoRecordingOpen] = useState(false);
   const [videoAnalyzing, setVideoAnalyzing] = useState(false);
   const [videoAnalysisResult, setVideoAnalysisResult] = useState<string | null>(null);
-const [aiResponses, setAiResponses] = useState<string[]>([
+  const [aiResponses, setAiResponses] = useState<string[]>([
     userRole === 'employer'
       ? "Welcome to Visiondrill! I'm here to help you set up your company profile and find the best talent for your team. Let's start by gathering information about your company."
       : "Hello Welcome to Visiondrill! I'm here to help you set up your profile and find the perfect career opportunities. "
@@ -47,54 +47,54 @@ const [aiResponses, setAiResponses] = useState<string[]>([
 
   const totalSteps = userRole === 'employer' ? 6 : 5;
   const progress = ((currentStep + 1) / (totalSteps + 1)) * 100;
-  
+
   const updateField = <K extends keyof OnboardingData>(field: K, value: OnboardingData[K]) => {
     setData(prev => ({ ...prev, [field]: value }));
   };
-    
+
   const simulateAiResponse = () => {
-  const freelancerResponses = [
-   // "Tell me about your services and expertise. This will help potential clients understand what you offer.",
-    "Great! Your experience and skills are valuable. Let's make sure clients can find you based on your expertise.",
-    "Next up—how do you usually charge for your work? Setting your rates helps us connect you with clients who value your skills.",
-    "Got it. Do you prefer short-term gigs, long-term projects, or both? This will guide the kind of projects we match you with.",
-    "Great 👍. Do you have a portfolio or past work you’d like to showcase? It’s one of the best ways to stand out to clients.",
-    "Almost there! Where are you based, and do you speak other languages? This can help you attract both local and international clients.",
-    "Fantastic 🎉. Your freelancer profile is now complete and ready to attract projects that match your expertise."
-  ];
+    const freelancerResponses = [
+      // "Tell me about your services and expertise. This will help potential clients understand what you offer.",
+      "Great! Your experience and skills are valuable. Let's make sure clients can find you based on your expertise.",
+      "Next up—how do you usually charge for your work? Setting your rates helps us connect you with clients who value your skills.",
+      "Got it. Do you prefer short-term gigs, long-term projects, or both? This will guide the kind of projects we match you with.",
+      "Great 👍. Do you have a portfolio or past work you’d like to showcase? It’s one of the best ways to stand out to clients.",
+      "Almost there! Where are you based, and do you speak other languages? This can help you attract both local and international clients.",
+      "Fantastic 🎉. Your freelancer profile is now complete and ready to attract projects that match your expertise."
+    ];
 
     const jobSeekerResponses = [
-    // "Hello 👋. To make things easier, would you like to import your LinkedIn profile? This helps us quickly match you with roles that fit your experience. Or, you can start fresh and build your profile from scratch—it’s totally up to you.",
+      // "Hello 👋. To make things easier, would you like to import your LinkedIn profile? This helps us quickly match you with roles that fit your experience. Or, you can start fresh and build your profile from scratch—it’s totally up to you.",
       "Great! What are your career goals? Knowing this helps us understand what you’re aiming for and connect you with the right jobs and employers.",
       "Nice. What’s your preferred work style—remote, hybrid, or on-site? This way, we’ll filter and show you opportunities that fit your workstyle.",
       "Got it 👍. What’s your expected salary range? We’ll use this to make sure you see roles that align with your expectations.",
       "Perfect. Where are you located cities, regions, or are you open to relocation? This helps us focus on the right locations.",
-    //  "Almost done 🙌. What skills would you like to highlight? Employers love knowing what you’re strongest at from the start.",
+      //  "Almost done 🙌. What skills would you like to highlight? Employers love knowing what you’re strongest at from the start.",
       "All set 🎉! Your profile is ready, and from what you’ve shared, we can already start matching you with career opportunities that fit your goals."
     ];
 
-  const employerResponses = [
-   // "Welcome! First, what’s the name of your company? We’ll use this to set up your company profile.",
-    "Great. What roles are you currently hiring for? This helps us connect you with the most relevant candidates.",
-    "Good to know. Can you describe your company culture or values? This helps us recommend candidates who align with your ethos.",
-    "Now, what type of work arrangement are you offering—remote, hybrid, or on-site? Candidates want to know how they’ll work with you.",
-    "Perfect. What benefits or perks does your company provide? Highlighting these makes your job posts stand out.",
-    "Last step 🎉—can you upload your company logo? It gives your postings a professional, branded look."
-  ];
+    const employerResponses = [
+      // "Welcome! First, what’s the name of your company? We’ll use this to set up your company profile.",
+      "Great. What roles are you currently hiring for? This helps us connect you with the most relevant candidates.",
+      "Good to know. Can you describe your company culture or values? This helps us recommend candidates who align with your ethos.",
+      "Now, what type of work arrangement are you offering—remote, hybrid, or on-site? Candidates want to know how they’ll work with you.",
+      "Perfect. What benefits or perks does your company provide? Highlighting these makes your job posts stand out.",
+      "Last step 🎉—can you upload your company logo? It gives your postings a professional, branded look."
+    ];
 
-  const responses =
-    userRole === "employer"
-      ? employerResponses
-      : jobSeekerResponses;
+    const responses =
+      userRole === "employer"
+        ? employerResponses
+        : jobSeekerResponses;
 
-  if (currentStep < responses.length) {
-    // optional: add typing delay for realism
-    setTimeout(() => {
-      setAiResponses((prev) => [...prev, responses[currentStep]]);
-    }, 400); // 0.8s delay feels natural
-  }
-};
-  
+    if (currentStep < responses.length) {
+      // optional: add typing delay for realism
+      setTimeout(() => {
+        setAiResponses((prev) => [...prev, responses[currentStep]]);
+      }, 400); // 0.8s delay feels natural
+    }
+  };
+
   const handleNext = () => {
     simulateAiResponse();
     if (currentStep < totalSteps) {
@@ -103,13 +103,13 @@ const [aiResponses, setAiResponses] = useState<string[]>([
       handleComplete();
     }
   };
-  
+
   const handleBack = () => {
     if (currentStep > 0) {
       setCurrentStep(prev => prev - 1);
     }
   };
-  
+
   const handleComplete = () => {
     const completionMessages = {
       employer: {
@@ -123,9 +123,9 @@ const [aiResponses, setAiResponses] = useState<string[]>([
         redirect: "/jobseeker/jobs"
       }
     };
-    
+
     const message = completionMessages[userRole] || completionMessages.jobseeker;
-    
+
     // Add API call here to submit onboarding data
     submitOnboardingData(data, signupData, userRole).then(() => {
       toast({
@@ -136,10 +136,10 @@ const [aiResponses, setAiResponses] = useState<string[]>([
       navigate(message.redirect);
     }).catch(error => {
       console.error('Onboarding error:', error);
-      
+
       // Provide more specific error messages based on the error type
       let errorMessage = "Could not complete onboarding, please try again.";
-      
+
       if (error.response?.status === 401) {
         errorMessage = "Your session has expired. Please log in again.";
       } else if (error.response?.status === 400) {
@@ -149,7 +149,7 @@ const [aiResponses, setAiResponses] = useState<string[]>([
       } else if (error.message?.includes('network')) {
         errorMessage = "Network error. Please check your internet connection.";
       }
-      
+
       toast({
         title: "Error",
         description: errorMessage,
@@ -157,22 +157,22 @@ const [aiResponses, setAiResponses] = useState<string[]>([
       });
     });
   };
-  
+
   const handleVideoUpload = (file: File) => {
     updateField("videoIntroduction", file);
     analyzeVideo(file);
   };
-  
+
   const saveRecording = () => {
     // In a real app, this would save the recorded video blob
     const mockFile = new File([""], "video-intro.mp4", { type: "video/mp4" });
     updateField("videoIntroduction", mockFile);
     analyzeVideo(mockFile);
   };
-  
+
   const analyzeVideo = (videoFile: File) => {
     setVideoAnalyzing(true);
-    
+
     // This simulates AI analysis of the video
     setTimeout(() => {
       setVideoAnalyzing(false);
@@ -181,7 +181,7 @@ const [aiResponses, setAiResponses] = useState<string[]>([
       );
     }, 2000);
   };
-  
+
   const handleLinkedInImport = (data: any) => {
     toast({
       title: "LinkedIn Profile Imported",
@@ -190,7 +190,7 @@ const [aiResponses, setAiResponses] = useState<string[]>([
     // In a real app, this would populate the form with LinkedIn data
     setCurrentStep(1); // Move to career goals after import
   };
-  
+
   return (
     <>
       <Dialog open={true}>
@@ -198,21 +198,21 @@ const [aiResponses, setAiResponses] = useState<string[]>([
           <DialogHeader className="space-y-2">
             <DialogTitle>Complete Your Profile</DialogTitle>
             <DialogDescription>
-              {userRole === 'employer' 
+              {userRole === 'employer'
                 ? "Let's set up your company profile to attract the best talent."
                 : "Let's set up your profile so we can find the perfect opportunities for you."}
             </DialogDescription>
           </DialogHeader>
-          
+
           <ProgressIndicator progress={progress} />
-          
-          
+
+
           <AIAssistant message={aiResponses[aiResponses.length - 1]} />
 
- 
-          
+
+
           <div className="mb-6 space-y-4">
-           {userRole === 'employer' ? (
+            {userRole === 'employer' ? (
               <EmployerStepRenderer
                 currentStep={currentStep}
                 data={data}
@@ -234,7 +234,7 @@ const [aiResponses, setAiResponses] = useState<string[]>([
               />
             )}
           </div>
-          
+
           <DialogFooter>
             <StepNavigation
               currentStep={currentStep}
@@ -245,8 +245,8 @@ const [aiResponses, setAiResponses] = useState<string[]>([
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
-      <VideoRecordingModal 
+
+      <VideoRecordingModal
         isOpen={videoRecordingOpen}
         onClose={() => setVideoRecordingOpen(false)}
         onSave={saveRecording}
