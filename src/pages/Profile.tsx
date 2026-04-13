@@ -219,12 +219,27 @@ const Profile: React.FC = () => {
   const loadProfile = async () => {
     try {
       setLoading(true);
-      const profileData = await profileService.getProfile();
+      let profileData: any = {};
+      
+      if (user?.account_type === "employer") {
+        try {
+          const companyData = await profileService.getCompanyProfile();
+          profileData = { company_data: companyData, name: user.full_name || user.email || "" };
+        } catch (e: any) {
+          if (e?.response?.status === 404) {
+             profileData = { company_data: {}, name: user.full_name || user.email || "" };
+          } else {
+             throw e;
+          }
+        }
+      } else {
+        profileData = await profileService.getProfile();
+      }
 
       const sanitizedProfileData = {
         ...profileData,
         // Normalize: DB column is full_name, ensure profile.name is always set
-        name: profileData.name || (profileData as any).full_name || "",
+        name: profileData.name || profileData.full_name || "",
         preferences: normalizeJobPreferences(profileData.preferences),
       };
 
@@ -280,30 +295,37 @@ const Profile: React.FC = () => {
       let updatedProfile;
 
       if (user?.account_type === "employer") {
-        // For employers, update profile with top-level company fields
-        const employerProfileData = {
-          company_name:
-            cleanPayload.company_name ||
-            cleanPayload.company_data?.company_name,
-          industry:
-            cleanPayload.industry || cleanPayload.company_data?.industry,
-          company_website:
-            cleanPayload.company_website ||
-            cleanPayload.company_data?.company_website,
-          company_size:
-            cleanPayload.company_size ||
-            cleanPayload.company_data?.company_size,
-          full_name: cleanPayload.name, // API expects full_name
-          bio: cleanPayload.bio,
-          phone: cleanPayload.phone,
+
+        const companyUpdateData = {
+          company_name: cleanPayload.company_name || cleanPayload.company_data?.company_name,
+          industry: cleanPayload.industry || cleanPayload.company_data?.industry,
+          company_website: cleanPayload.company_website || cleanPayload.company_data?.company_website,
+          company_size: cleanPayload.company_size || cleanPayload.company_data?.company_size,
+          company_description: cleanPayload.company_data?.company_description || cleanPayload.bio,
           location: cleanPayload.location,
+          benefits: cleanPayload.company_data?.benefits,
         };
 
-        console.log("🏢 Sending employer profile data:", employerProfileData);
-
-        updatedProfile = await profileService.updateProfile(
-          employerProfileData
+        // Clean company update data
+        const cleanCompanyData = Object.fromEntries(
+          Object.entries(companyUpdateData).filter(([_, v]) => v !== undefined && v !== null && v !== "")
         );
+
+        console.log("🏢 Sending employer profile data:", cleanCompanyData);
+        
+        if (Object.keys(cleanCompanyData).length > 0) {
+           await profileService.updateCompanyProfile(cleanCompanyData);
+        }
+        
+        // Fetch fresh profile state to get latest combined data
+        try {
+          const companyData = await profileService.getCompanyProfile();
+          updatedProfile = { company_data: companyData, name: user?.full_name || user?.email || "" };
+        } catch (e: any) {
+          if (e?.response?.status === 404) {
+             updatedProfile = { company_data: {}, name: user?.full_name || user?.email || "" };
+          } else throw e;
+        }
       } else {
         // For regular users, remove company data and remap name → full_name
         const {
@@ -1088,99 +1110,42 @@ const Profile: React.FC = () => {
                 <Textarea
                   value={
                     editForm.company_data?.benefits
-                      ? JSON.stringify(editForm.company_data.benefits, null, 2)
-                      : "[]"
+                      ? editForm.company_data.benefits.map((b: any) => b.name).join(", ")
+                      : ""
                   }
                   onChange={(e) => {
-                    try {
-                      const benefits = JSON.parse(e.target.value);
-                      setEditForm({
-                        ...editForm,
-                        company_data: {
-                          ...editForm.company_data,
-                          benefits,
-                        },
-                      });
-                    } catch { }
+                    const val = e.target.value;
+                    const parsedBenefits = val
+                      .split(",")
+                      .map(s => s.trim())
+                      .filter(Boolean)
+                      .map(name => ({ name }));
+                    setEditForm({
+                      ...editForm,
+                      company_data: {
+                        ...editForm.company_data,
+                        benefits: parsedBenefits,
+                      },
+                    });
                   }}
-                  placeholder={`[
-  {
-    "name": "Health Insurance",
-    "description": "Comprehensive health coverage"
-  },
-  {
-    "name": "Remote Work",
-    "description": "Work from anywhere"
-  }
-]`}
-                  rows={6}
+                  placeholder="Health Insurance, Remote Work, Flexible Hours..."
+                  rows={4}
                 />
                 <p className="text-sm text-muted-foreground">
-                  Enter benefits as JSON array with name and description fields
+                  Enter benefits as a comma-separated list
                 </p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="flex flex-wrap gap-2">
                 {companyData.benefits?.length ? (
                   companyData.benefits.map((benefit, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-3 p-3 border rounded-lg"
-                    >
-                      <Award className="h-5 w-5 text-blue-500" />
-                      <div>
-                        <h4 className="font-medium">{benefit.name}</h4>
-                        {benefit.description && (
-                          <p className="text-sm text-muted-foreground">
-                            {benefit.description}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-muted-foreground">No benefits added yet</p>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Tech Stack */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Tech Stack</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {editing ? (
-              <Textarea
-                value={editForm.company_data?.tech_stack?.join(", ") || ""}
-                onChange={(e) =>
-                  setEditForm({
-                    ...editForm,
-                    company_data: {
-                      ...editForm.company_data,
-                      tech_stack: e.target.value
-                        .split(",")
-                        .map((item) => item.trim())
-                        .filter(Boolean),
-                    },
-                  })
-                }
-                placeholder="React, Node.js, Python, AWS, ..."
-              />
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {companyData.tech_stack?.length ? (
-                  companyData.tech_stack.map((tech, index) => (
-                    <Badge key={index} variant="secondary">
-                      {tech}
+                    <Badge key={index} variant="secondary" className="px-3 py-1">
+                      <Award className="h-4 w-4 mr-2" />
+                      {benefit.name}
                     </Badge>
                   ))
                 ) : (
-                  <p className="text-muted-foreground">
-                    No tech stack specified
-                  </p>
+                  <p className="text-muted-foreground">No benefits added yet</p>
                 )}
               </div>
             )}

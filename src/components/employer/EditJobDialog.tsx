@@ -21,26 +21,68 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useEmployerJobs } from "@/hooks/use-employer-jobs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useEmployerJobs, EmployerJob } from "@/hooks/use-employer-jobs";
+import { JobUpdate } from "@/types/api";
 import { toast } from "sonner";
 
 // Updated schema to match backend JobUpdate structure
 const formSchema = z.object({
   title: z.string().min(5, "Job title must be at least 5 characters"),
   description: z.string().min(20, "Description must be at least 20 characters"),
-  location: z.string().min(2, "Location is required"),
-  job_type: z.string().min(2, "Job type is required"),
+  location: z.string().optional(),
+  job_type: z.enum(["full_time", "part_time", "internship", "remote"]),
   salary_range: z.string().optional(),
-  experience_level: z.string().optional(),
-  requirements: z
-    .string()
-    .min(10, "Requirements must be at least 10 characters"),
+  experience_level: z.enum([
+    "entry_level",
+    "mid_level",
+    "senior_level",
+    "executive_level",
+  ]),
+  requirements: z.string().optional(),
+  responsibilities: z.string().optional(),
+  benefits: z.string().optional(),
+  required_skills: z.string().optional(),
+  status: z.enum(["draft", "open", "closed"]),
+  application_deadline: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
+type JobType = FormValues["job_type"];
+type ExperienceLevel = FormValues["experience_level"];
+type JobStatus = FormValues["status"];
+
+const toJobType = (value?: string): JobType => {
+  const normalized = (value || "").toLowerCase().replace(/[-\s]/g, "_");
+  if (normalized === "part_time") return "part_time";
+  if (normalized === "internship") return "internship";
+  if (normalized === "remote") return "remote";
+  return "full_time";
+};
+
+const toExperienceLevel = (value?: string): ExperienceLevel => {
+  const normalized = (value || "").toLowerCase().replace(/[-\s]/g, "_");
+  if (normalized === "entry_level" || normalized === "entry") return "entry_level";
+  if (normalized === "senior_level" || normalized === "senior") return "senior_level";
+  if (normalized === "executive_level" || normalized === "executive" || normalized === "lead") {
+    return "executive_level";
+  }
+  return "mid_level";
+};
+
+const toStatus = (status?: string, isActive?: boolean): JobStatus => {
+  if (status === "draft" || status === "open" || status === "closed") return status;
+  return isActive ? "open" : "closed";
+};
 
 interface EditJobDialogProps {
-  job: any;
+  job: EmployerJob;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onJobUpdated: () => void;
@@ -60,12 +102,21 @@ export function EditJobDialog({
       title: job.title || "",
       description: job.description || "",
       location: job.location || "",
-      job_type: job.job_type || job.type || "",
+      job_type: toJobType(job.job_type || job.type),
       salary_range: job.salary_range || "",
-      experience_level: job.experience_level || job.experience || "",
+      experience_level: toExperienceLevel(job.experience_level || job.experience),
       requirements: Array.isArray(job.requirements)
         ? job.requirements.join("\n")
         : job.requirements || "",
+      responsibilities: Array.isArray(job.responsibilities)
+        ? job.responsibilities.join("\n")
+        : "",
+      benefits: Array.isArray(job.benefits) ? job.benefits.join("\n") : "",
+      required_skills: Array.isArray(job.required_skills)
+        ? job.required_skills.join("\n")
+        : "",
+      status: toStatus(job.status, job.is_active),
+      application_deadline: job.application_deadline || "",
     },
   });
 
@@ -76,12 +127,21 @@ export function EditJobDialog({
         title: job.title || "",
         description: job.description || "",
         location: job.location || "",
-        job_type: job.job_type || job.type || "",
+        job_type: toJobType(job.job_type || job.type),
         salary_range: job.salary_range || "",
-        experience_level: job.experience_level || job.experience || "",
+        experience_level: toExperienceLevel(job.experience_level || job.experience),
         requirements: Array.isArray(job.requirements)
           ? job.requirements.join("\n")
           : job.requirements || "",
+        responsibilities: Array.isArray(job.responsibilities)
+          ? job.responsibilities.join("\n")
+          : "",
+        benefits: Array.isArray(job.benefits) ? job.benefits.join("\n") : "",
+        required_skills: Array.isArray(job.required_skills)
+          ? job.required_skills.join("\n")
+          : "",
+        status: toStatus(job.status, job.is_active),
+        application_deadline: job.application_deadline || "",
       });
     }
   }, [open, job, form]);
@@ -93,15 +153,30 @@ export function EditJobDialog({
 
       // Map the form values to the correct API field names
       const updateData: JobUpdate = {
-        title: values.title,
-        description: values.description,
+        job_title: values.title,
+        job_description: values.description,
         location: values.location,
         job_type: values.job_type,
         salary_range: values.salary_range,
         experience_level: values.experience_level,
-        requirements: values.requirements,
-        // Note: We're NOT sending 'company' for updates since it shouldn't change
-        // Note: We're NOT sending 'type' and 'salary' - using 'job_type' and 'salary_range' instead
+        requirements: (values.requirements || "")
+          .split("\n")
+          .map((item) => item.trim())
+          .filter(Boolean),
+        responsibilities: (values.responsibilities || "")
+          .split("\n")
+          .map((item) => item.trim())
+          .filter(Boolean),
+        benefits: (values.benefits || "")
+          .split("\n")
+          .map((item) => item.trim())
+          .filter(Boolean),
+        required_skills: (values.required_skills || "")
+          .split("\n")
+          .map((item) => item.trim())
+          .filter(Boolean),
+        status: values.status,
+        application_deadline: values.application_deadline || undefined,
       };
 
       console.log("🚀 Sending update to API:", updateData);
@@ -111,9 +186,9 @@ export function EditJobDialog({
       console.log("Job update successful, calling onJobUpdated");
       toast.success("Job updated successfully!");
       onJobUpdated();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to update job:", error);
-      toast.error(error.message || "Failed to update job");
+      toast.error(error instanceof Error ? error.message : "Failed to update job");
     }
   }
 
@@ -213,12 +288,22 @@ export function EditJobDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Job Type</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Full-time, Part-time, Contract"
-                        {...field}
-                      />
-                    </FormControl>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select job type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="full_time">Full-time</SelectItem>
+                        <SelectItem value="part_time">Part-time</SelectItem>
+                        <SelectItem value="internship">Internship</SelectItem>
+                        <SelectItem value="remote">Remote</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -249,8 +334,119 @@ export function EditJobDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Experience Level</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select experience level" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="entry_level">Entry Level</SelectItem>
+                        <SelectItem value="mid_level">Mid Level</SelectItem>
+                        <SelectItem value="senior_level">Senior Level</SelectItem>
+                        <SelectItem value="executive_level">Executive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="open">Open</SelectItem>
+                        <SelectItem value="closed">Closed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="application_deadline"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Application Deadline</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Mid Level, Senior" {...field} />
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="required_skills"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Required Skills</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="One skill per line"
+                      {...field}
+                      rows={3}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="responsibilities"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Responsibilities</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="One responsibility per line"
+                        {...field}
+                        rows={3}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="benefits"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Benefits</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="One benefit per line"
+                        {...field}
+                        rows={3}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -27,8 +27,8 @@ export const usePerformanceOptimizations = () => {
       const currentPath = window.location.pathname;
       let nextPath = '';
 
-      if (currentPath === '/') nextPath = '/jobs';
-      else if (currentPath === '/jobs') nextPath = '/profile';
+      if (currentPath === '/') nextPath = '/jobseeker/jobs';
+      else if (currentPath === '/jobseeker/jobs') nextPath = '/profile';
       else if (currentPath === '/career-paths') nextPath = '/skills';
 
       if (nextPath) {

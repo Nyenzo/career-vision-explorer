@@ -34,9 +34,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EditJobDialog } from "./EditJobDialog";
-import { BoostJobDialog } from "./BoostJobDialog";
 import { deleteJobDialog } from "@/lib/utils";
-import { Eye, Edit, Trash, List, Search, Filter, MapPin, Briefcase, Plus, TrendingUp } from "lucide-react";
+import { Eye, Edit, Trash, List, Search, Filter, MapPin, Briefcase, Plus } from "lucide-react";
 import { useEmployerJobs } from "@/hooks/use-employer-jobs";
 import { formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -47,7 +46,6 @@ export function JobListingsTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
     jobType: undefined as string | undefined,
-    boostedOnly: false,
     dateRange: undefined as number | undefined,
   });
   
@@ -76,20 +74,8 @@ export function JobListingsTable() {
     setFilters(prev => ({ ...prev, dateRange: days === "all" ? undefined : parseInt(days) }));
   };
 
-  const handleBoostedFilter = (boostedOnly: boolean) => {
-    setFilters(prev => ({ ...prev, boostedOnly }));
-  };
-
-  // Sort jobs to show boosted ones first
-  const sortedJobs = [...filteredJobs].sort((a, b) => {
-    if (a.isBoosted && !b.isBoosted) return -1;
-    if (!a.isBoosted && b.isBoosted) return 1;
-    return 0;
-  });
-
   const stats = {
     total: filteredJobs.length,
-    boosted: filteredJobs.filter(job => job.isBoosted).length,
     active: filteredJobs.length, // Assuming all are active for employer view
     totalApplicants: filteredJobs.reduce((sum, job) => sum + job.applications, 0),
     totalViews: filteredJobs.reduce((sum, job) => sum + job.views, 0)
@@ -98,14 +84,10 @@ export function JobListingsTable() {
   return (
     <div className="space-y-6">
       {/* Enhanced Header with Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white p-6 rounded-lg border shadow-sm">
           <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
           <div className="text-sm text-gray-600">Total Jobs</div>
-        </div>
-        <div className="bg-white p-6 rounded-lg border shadow-sm">
-          <div className="text-2xl font-bold text-green-600">{stats.boosted}</div>
-          <div className="text-sm text-gray-600">Boosted Jobs</div>
         </div>
         <div className="bg-white p-6 rounded-lg border shadow-sm">
           <div className="text-2xl font-bold text-purple-600">{stats.totalApplicants}</div>
@@ -171,14 +153,6 @@ export function JobListingsTable() {
                 </SelectContent>
               </Select>
 
-              <Button 
-                variant={filters.boostedOnly ? "default" : "outline"}
-                onClick={() => handleBoostedFilter(!filters.boostedOnly)}
-                className="flex items-center gap-2"
-              >
-                <TrendingUp className="h-4 w-4" />
-                Boosted Only
-              </Button>
             </div>
           </div>
         </CardContent>
@@ -209,12 +183,12 @@ export function JobListingsTable() {
               </div>
               <h3 className="text-lg font-medium mb-2">No jobs found</h3>
               <p className="text-gray-500 mb-6">
-                {searchTerm || filters.jobType || filters.boostedOnly 
+                {searchTerm || filters.jobType 
                   ? "Try adjusting your filters to see more results"
                   : "Get started by posting your first job"
                 }
               </p>
-              {(!searchTerm && !filters.jobType && !filters.boostedOnly) && (
+              {(!searchTerm && !filters.jobType) && (
                 <Button className="flex items-center gap-2">
                   <Plus className="h-4 w-4" />
                   Post New Job
@@ -234,7 +208,7 @@ export function JobListingsTable() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedJobs.map((job) => (
+                {filteredJobs.map((job) => (
                   <TableRow key={job.id}>
                     <TableCell>
                       <div className="space-y-1">
@@ -276,16 +250,8 @@ export function JobListingsTable() {
                         <div className="text-sm text-muted-foreground">{job.views} views</div>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      {job.isBoosted ? (
-                        <Badge className="bg-green-100 text-green-800">Boosted</Badge>
-                      ) : (
-                        <Badge variant="outline">Standard</Badge>
-                      )}
-                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <BoostJobDialog job={job} />
                         <EditJobDialog job={job} />
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

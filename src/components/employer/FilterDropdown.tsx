@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Filter } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -24,7 +23,6 @@ interface FilterProps {
 export interface FilterSettings {
   jobType: string;
   dateRange: number; // Days
-  boostedOnly: boolean;
 }
 
 export const FilterDropdown = ({ onFilterChange }: FilterProps) => {
@@ -32,14 +30,12 @@ export const FilterDropdown = ({ onFilterChange }: FilterProps) => {
   const [filters, setFilters] = useState<FilterSettings>({
     jobType: "all",
     dateRange: 30,
-    boostedOnly: false,
   });
   
   // Count of active filters
   const activeFilterCount = [
     filters.jobType !== "all",
     filters.dateRange !== 30,
-    filters.boostedOnly,
   ].filter(Boolean).length;
   
   const handleFilterChange = (key: keyof FilterSettings, value: any) => {
@@ -52,7 +48,6 @@ export const FilterDropdown = ({ onFilterChange }: FilterProps) => {
     const defaultFilters = {
       jobType: "all",
       dateRange: 30,
-      boostedOnly: false,
     };
     setFilters(defaultFilters);
     onFilterChange(defaultFilters);
@@ -124,15 +119,6 @@ export const FilterDropdown = ({ onFilterChange }: FilterProps) => {
                 <SelectItem value="180">Last 6 months</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <Label htmlFor="boostedOnly" className="cursor-pointer">Boosted Listings Only</Label>
-            <Switch 
-              id="boostedOnly" 
-              checked={filters.boostedOnly}
-              onCheckedChange={(checked) => handleFilterChange("boostedOnly", checked)}
-            />
           </div>
           
           <div className="border-t pt-2">
