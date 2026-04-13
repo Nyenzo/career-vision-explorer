@@ -15,9 +15,13 @@ const ROUTE_METADATA: Record<string, RouteMeta> = {
     title: `${SITE_NAME} | Career Exploration and Job Matching`,
     description: DEFAULT_DESCRIPTION,
   },
-  "/jobs": {
+  "/jobseeker/jobs": {
     title: `Jobs | ${SITE_NAME}`,
     description: "Browse job opportunities, filter by role, and discover the best matches for your profile.",
+  },
+  "/employer/jobs": {
+    title: `Employer Jobs | ${SITE_NAME}`,
+    description: "Manage your posted jobs, edit listings, and track performance.",
   },
   "/career-paths": {
     title: `Career Paths | ${SITE_NAME}`,
@@ -70,10 +74,17 @@ const resolveMetaForPath = (pathname: string): RouteMeta => {
     return ROUTE_METADATA[pathname];
   }
 
-  if (pathname.startsWith("/jobs/")) {
+  if (pathname.startsWith("/jobseeker/jobs/")) {
     return {
       title: `Job Details | ${SITE_NAME}`,
       description: "Review job details and required skills before applying.",
+    };
+  }
+
+  if (pathname.startsWith("/employer/jobs/")) {
+    return {
+      title: `Employer Job Details | ${SITE_NAME}`,
+      description: "Review and manage your posted job details.",
     };
   }
 

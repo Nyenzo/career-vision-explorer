@@ -8,12 +8,10 @@ import { JobApplicationDialog } from "@/components/jobseeker/JobApplicationDialo
 import { useJobApplications } from "@/hooks/use-job-applications";
 import { JobHeader } from "@/components/jobs/JobHeader";
 import { JobActions } from "@/components/jobs/JobActions";
-import { JobDetailsContent } from "@/components/jobs/JobDetailsContent";
 import { JobDetailsView } from "@/components/jobs/JobDetailsView";
 import { CompanyInfoCard } from "@/components/jobs/CompanyInfoCard";
 import { JobNotFound } from "@/components/jobs/JobNotFound";
 import { jobsService } from "@/services/jobs.service";
-import { useAuth } from "@/hooks/use-auth";
 import { apiClient } from "@/lib/api-client";
 
 const JobDetails = () => {
@@ -22,14 +20,7 @@ const JobDetails = () => {
   const [applicationDialogOpen, setApplicationDialogOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const location = useLocation();
-  const { isEmployer, isJobSeeker } = useAuth();
-
-  // Allow job seekers to view and apply for jobs
-  const canApplyForJobs = isJobSeeker();
-
-  const { getApplicationForJob, isLoading: applicationsLoading } = canApplyForJobs
-    ? useJobApplications()
-    : { getApplicationForJob: () => null, isLoading: false };
+  const { getApplicationForJob, isLoading: applicationsLoading } = useJobApplications();
 
   const [job, setJob] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -50,7 +41,7 @@ const JobDetails = () => {
         const fetchedJob = await jobsService.getJobById(id);
         //merge fetched jobs with matchscore from location state
         let matchScore = location.state?.matchScore ?? Math.round((fetchedJob.similarity_score ?? 0) * 100);
-        if (matchScore === 0 && canApplyForJobs) {
+        if (matchScore === 0) {
           try {
             const recommendations = await apiClient.get<Array<{ job_id: string; similarity_score: number }>>(
               '/vector/jobs/recommendations'
@@ -90,7 +81,8 @@ const JobDetails = () => {
   }
 
   // The reliable calculation: This line now only runs AFTER the gatekeeper has confirmed all data is present.
-  const isApplied = !!getApplicationForJob(job.job_id);
+  const jobId = job.job_id || job.id;
+  const isApplied = !!(jobId && getApplicationForJob(jobId));
 
   const handleApply = () => {
     setApplicationDialogOpen(true);
@@ -101,10 +93,6 @@ const JobDetails = () => {
     toast.success(isSaved ? "Job removed from saved jobs" : "Job saved successfully");
   };
 
-  const handleJobUpdate = (updatedJob: any) => {
-    setJob(updatedJob);
-  };
-
   return (
     <Layout>
       <div className="min-h-screen bg-surface">
@@ -113,7 +101,7 @@ const JobDetails = () => {
           <div className="mb-6">
             <Button
               variant="ghost"
-              onClick={() => navigate('/jobs')}
+              onClick={() => navigate('/jobseeker/jobs')}
               className="text-on-surface-variant hover:text-primary hover:bg-surface-container-low"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -124,12 +112,8 @@ const JobDetails = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Main Content */}
             <div className="lg:col-span-8 space-y-8">
-              <JobHeader job={job} />
-              {isEmployer() ? (
-                <JobDetailsContent job={job} onUpdate={handleJobUpdate} />
-              ) : (
-                <JobDetailsView job={job} />
-              )}
+              <JobHeader job={job} showMatchScore={true} />
+              <JobDetailsView job={job} />
             </div>
 
             {/* Sidebar */}

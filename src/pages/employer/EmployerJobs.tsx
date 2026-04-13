@@ -15,12 +15,10 @@ import {
   Share2,
   Power,
   XCircle,
-  Star,
 } from "lucide-react";
 import { useEmployerJobs, EmployerJob } from "@/hooks/use-employer-jobs";
 import { formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import { EditJobDialog } from "@/components/employer/EditJobDialog";
 import { deleteJobDialog } from "@/lib/utils";
 import NewJobPostDialog from "@/components/employer/NewJobPostDialog";
 import Layout from "@/components/layout/Layout";
@@ -49,8 +47,6 @@ const EmployerJobs = () => {
 
   const [activeTab, setActiveTab] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [editingJob, setEditingJob] = useState<EmployerJob | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   // Tabs - using the actual status from the hook
   const tabs = [
@@ -105,25 +101,18 @@ const EmployerJobs = () => {
   };
 
   const handleShare = (jobId: string) => {
-    const url = `${window.location.origin}/jobs/${jobId}`;
+    const url = `${window.location.origin}/employer/jobs/${jobId}`;
     navigator.clipboard.writeText(url);
     alert("Job link copied to clipboard!");
   };
 
   const handleEdit = (job: EmployerJob) => {
-    setEditingJob(job);
-    setIsEditDialogOpen(true);
+    navigate(`/employer/jobs/${job.job_id}/edit`);
   };
 
-  // ✅ FIXED: Use the public job details route
+  // Use employer-specific job details route
   const handleView = (jobId: string) => {
-    navigate(`/jobs/${jobId}`);
-  };
-
-  const handleJobUpdated = () => {
-    fetchJobs(); // Refresh the jobs list
-    setIsEditDialogOpen(false);
-    setEditingJob(null);
+    navigate(`/employer/jobs/${jobId}`);
   };
 
   const getStatusBadge = (status: string) => {
@@ -275,15 +264,6 @@ const EmployerJobs = () => {
           </div>
         </div>
 
-        {/* Edit Job Dialog */}
-        {editingJob && (
-          <EditJobDialog
-            job={editingJob}
-            open={isEditDialogOpen}
-            onOpenChange={setIsEditDialogOpen}
-            onJobUpdated={handleJobUpdated}
-          />
-        )}
       </div>
     </Layout>
   );
@@ -325,12 +305,6 @@ const JobCard: React.FC<JobCardProps> = ({
                 {job.title}
               </h3>
               {getStatusBadge(job.status)}
-              {job.is_premium && (
-                <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 font-medium">
-                  <Star className="h-3 w-3 mr-1" fill="currentColor" />
-                  Premium Boost
-                </Badge>
-              )}
             </div>
 
             {/* Job Details */}
@@ -435,21 +409,6 @@ const JobCard: React.FC<JobCardProps> = ({
                 <Copy className="h-5 w-5" />
               </button>
 
-              <button
-                onClick={() => {
-                  /* Boost functionality */
-                }}
-                className={`p-3 rounded-xl transition-all duration-200 hover:scale-110 hover:shadow-lg ${
-                  job.is_premium
-                    ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
-                    : "bg-amber-50 hover:bg-amber-100 text-amber-600"
-                }`}
-                title={job.is_premium ? "Premium Boost Active" : "Boost Job"}
-              >
-                <Star
-                  className={`h-5 w-5 ${job.is_premium ? "fill-current" : ""}`}
-                />
-              </button>
             </div>
 
             {/* More Actions Dropdown */}
@@ -480,16 +439,6 @@ const JobCard: React.FC<JobCardProps> = ({
                 >
                   <Copy className="h-4 w-4" />
                   <span className="font-medium">Duplicate</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="gap-3 p-3 rounded-xl hover:bg-amber-50 hover:text-amber-700 transition-colors cursor-pointer">
-                  <Star
-                    className={`h-4 w-4 ${
-                      job.is_premium ? "fill-current" : ""
-                    }`}
-                  />
-                  <span className="font-medium">
-                    {job.is_premium ? "Manage Boost" : "Boost Job"}
-                  </span>
                 </DropdownMenuItem>
                 {job.status === "active" ? (
                   <DropdownMenuItem

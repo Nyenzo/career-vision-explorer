@@ -15,6 +15,9 @@ export interface EmployerJob {
   company: string;
   description?: string;
   requirements: string | string[];
+  responsibilities?: string[];
+  benefits?: string[];
+  required_skills?: string[];
   location: string;
   salary_range?: string;
   salary?: string;
@@ -22,42 +25,81 @@ export interface EmployerJob {
   type?: string;
   experience_level?: string;
   experience?: string;
+  application_deadline?: string;
   is_active: boolean;
   status: "active" | "expired" | "draft";
   applications?: number;
   application_count?: number;
   created_at: string;
+  updated_at: string;
   postedDate: string;
   posted_by_name?: string;
   posted_by_company?: string;
-  is_premium?: boolean;
 }
 
 // Helper to transform API Job into UI EmployerJob shape
 function toEmployerJob(job: Job): EmployerJob {
-  // Determine status based on is_active field
+  const raw = job as Job & Record<string, unknown>;
+  const backendStatus = raw.status as
+    | "open"
+    | "draft"
+    | "closed"
+    | undefined;
   let status: "active" | "expired" | "draft" = "active";
-  if (!job.is_active) {
-    status = "expired"; // You might want to add logic to detect drafts vs expired
+  if (backendStatus === "draft") {
+    status = "draft";
+  } else if (backendStatus === "closed") {
+    status = "expired";
+  } else if (job.is_active === false) {
+    status = "expired";
   }
+
+  const backendId = raw.id;
+  const normalizedId = String(job.job_id ?? backendId ?? "");
+  const normalizedTitle = raw.job_title ?? job.title ?? "Untitled Job";
+  const normalizedCompany =
+    raw.company_name ?? job.company ?? raw.posted_by_company ?? "";
+  const normalizedDescription =
+    raw.job_description ?? job.description ?? "";
+  const normalizedRequirements =
+    raw.requirements ?? [];
+  const normalizedResponsibilities =
+    raw.responsibilities ?? [];
+  const normalizedBenefits = raw.benefits ?? [];
+  const normalizedRequiredSkills =
+    raw.required_skills ?? [];
+  const normalizedJobType =
+    raw.job_type ?? job.job_type ?? "full_time";
+  const normalizedLocation = String(raw.location ?? job.location ?? "");
+  const normalizedCreatedAt = String(raw.created_at ?? new Date().toISOString());
+  const normalizedUpdatedAt = String(raw.updated_at ?? normalizedCreatedAt);
 
   return {
     ...job,
-    id: job.job_id, // Use job_id as id for React keys
-    job_id: job.job_id,
-    postedDate: new Date(job.created_at).toISOString().split("T")[0],
+    id: normalizedId,
+    job_id: normalizedId,
+    title: normalizedTitle,
+    company: normalizedCompany,
+    location: normalizedLocation,
+    created_at: normalizedCreatedAt,
+    updated_at: normalizedUpdatedAt,
+    postedDate: new Date(normalizedCreatedAt).toISOString().split("T")[0],
     status: status,
     applications: job.application_count ?? 0,
     application_count: job.application_count ?? 0,
-    description: job.description ?? "",
-    requirements: job.requirements,
+    description: normalizedDescription,
+    requirements: normalizedRequirements,
+    responsibilities: normalizedResponsibilities,
+    benefits: normalizedBenefits,
+    required_skills: normalizedRequiredSkills,
     salary: job.salary_range ?? "",
     salary_range: job.salary_range ?? "",
-    type: job.job_type || "full-time",
-    job_type: job.job_type,
+    type: normalizedJobType,
+    job_type: normalizedJobType,
     experience: job.experience_level ?? "",
     experience_level: job.experience_level,
-    is_premium: false, // Default value
+    application_deadline: raw.application_deadline as string | undefined,
+    is_active: backendStatus ? backendStatus === "open" : job.is_active,
   };
 }
 
@@ -85,13 +127,14 @@ export const useEmployerJobs = () => {
     queryFn: async () => {
       try {
         return await jobsService.getMyJobs(true);
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const err = error as { response?: { status?: number }; code?: string };
         // Use mock data as fallback for network errors or 404s
         if (
-          error.response?.status === 404 ||
-          error.response?.status === 500 ||
-          error.code === "ECONNABORTED" ||
-          error.code === "ERR_NETWORK"
+          err.response?.status === 404 ||
+          err.response?.status === 500 ||
+          err.code === "ECONNABORTED" ||
+          err.code === "ERR_NETWORK"
         ) {
           console.warn("API failed, using mock data for employer jobs");
           toast.info("Using demo data. Some features may be limited.");
@@ -145,7 +188,7 @@ export const useEmployerJobs = () => {
     mutationFn: (jobData) => jobsService.createJob(jobData),
     onSuccess: (newJob, variables) => {
       queryClient.invalidateQueries({ queryKey: [EMPLOYER_JOBS_QUERY_KEY] });
-      toast.success(`Job "${variables.title}" has been created successfully`);
+      toast.success(`Job "${newJob.job_title || newJob.title || "New Job"}" has been created successfully`);
     },
     onError: (error) => {
       toast.error(error.message || "Failed to create job");
@@ -180,7 +223,9 @@ export const useEmployerJobs = () => {
           if (!oldData) return oldData;
 
           return oldData.map((job) =>
-            job.job_id === updatedJob.job_id ? { ...job, ...updatedJob } : job
+            (job.job_id || job.id) === (updatedJob.job_id || updatedJob.id)
+              ? { ...job, ...updatedJob }
+              : job
           );
         }
       );
@@ -210,25 +255,29 @@ export const useEmployerJobs = () => {
     mutationFn: async ({ job }) => {
       // Create a duplicate job with modified title
       const duplicateData: JobCreate = {
-        title: `${job.title} (Copy)`,
-        company: job.company,
+        job_title: `${job.title} (Copy)`,
+        job_description: job.description || "",
         requirements: Array.isArray(job.requirements)
-          ? job.requirements.join("\n")
-          : (job.requirements as string), // Cast to string
+          ? job.requirements
+          : String(job.requirements || "")
+              .split("\n")
+              .map((item) => item.trim())
+              .filter(Boolean),
+        responsibilities: job.responsibilities || [],
+        benefits: job.benefits || [],
+        required_skills: job.required_skills || [],
         location: job.location,
         salary_range: job.salary_range,
-        job_type: job.job_type as any, // Use type assertion for enum types
-        experience_level: job.experience_level as any, // Use type assertion for enum types
-        description: job.description,
-        // Set as inactive (draft) initially
-        is_active: false,
+        job_type: job.job_type as JobCreate["job_type"],
+        experience_level: job.experience_level as JobCreate["experience_level"],
+        status: "draft",
       };
 
       return await jobsService.createJob(duplicateData);
     },
     onSuccess: (newJob) => {
       queryClient.invalidateQueries({ queryKey: [EMPLOYER_JOBS_QUERY_KEY] });
-      toast.success(`Job "${newJob.title}" duplicated successfully`);
+      toast.success(`Job "${newJob.job_title || newJob.title || "Job"}" duplicated successfully`);
     },
     onError: (error) => {
       toast.error(error.message || "Failed to duplicate job");
@@ -276,7 +325,7 @@ export const useEmployerJobs = () => {
       deleteJobMutation.isPending,
     error: error?.message || null,
     fetchJobs: refetch,
-    addJob: createJobMutation.mutate,
+    addJob: createJobMutation.mutateAsync,
     updateJob: (id: string, updates: JobUpdate) =>
       updateJobMutation.mutate({ id, updates }),
     deleteJob: deleteJobMutation.mutate,

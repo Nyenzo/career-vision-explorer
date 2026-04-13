@@ -102,7 +102,7 @@ const WishlistJobCard = ({ job, onRemove }: WishlistJobCardProps) => {
             <p className="text-sm text-gray-600">{job.company}</p>
           </div>
           <div className="flex gap-2">
-<Link to={`/jobs/${job.job_id}`}>
+<Link to={`/jobseeker/jobs/${job.job_id}`}>
               <Button variant="outline" size="sm">
                 <ExternalLink className="h-4 w-4 mr-1" />
                 View

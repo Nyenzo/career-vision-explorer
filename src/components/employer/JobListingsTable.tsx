@@ -48,11 +48,11 @@ export function JobListingsTable() {
     jobType: undefined as string | undefined,
     dateRange: undefined as number | undefined,
   });
-  
+
   const handleViewApplicants = (jobId: string) => {
     navigate(`/employer/jobs/${jobId}/applicants`);
   };
-  
+
   const handleDelete = (jobId: string, jobTitle: string) => {
     deleteJobDialog({
       title: `Delete ${jobTitle}?`,
@@ -123,7 +123,7 @@ export function JobListingsTable() {
                 onChange={(e) => handleSearch(e.target.value)}
               />
             </div>
-            
+
             {/* Filter Controls */}
             <div className="flex gap-3">
               <Select onValueChange={handleJobTypeFilter} defaultValue="all">
@@ -183,7 +183,7 @@ export function JobListingsTable() {
               </div>
               <h3 className="text-lg font-medium mb-2">No jobs found</h3>
               <p className="text-gray-500 mb-6">
-                {searchTerm || filters.jobType 
+                {searchTerm || filters.jobType
                   ? "Try adjusting your filters to see more results"
                   : "Get started by posting your first job"
                 }
@@ -266,7 +266,7 @@ export function JobListingsTable() {
                               View Applicants
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               className="text-red-600"
                               onClick={() => handleDelete(job.id, job.title)}
                             >

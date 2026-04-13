@@ -26,7 +26,7 @@ const HeroSection = () => {
                 </Link>
               </div>
               <div className="mt-3 sm:mt-0 sm:ml-3">
-                <Link to="/jobs">
+                <Link to="/jobseeker/jobs">
                   <Button variant="outline" className="w-full px-8 py-6 text-lg border-2 border-white bg-transparent text-white hover:bg-white hover:text-career-blue font-bold transition-all duration-200">
                     Explore Jobs
                   </Button>

@@ -1,7 +1,6 @@
 
 import { JobApplicationDialog } from "@/components/jobseeker/JobApplicationDialog";
 import { SkillAssessmentDialog } from "@/components/jobseeker/SkillAssessmentDialog";
-import { InterviewScheduleDialog } from "@/components/jobseeker/InterviewScheduleDialog";
 import EditProfileDialog from "@/components/profile/EditProfileDialog";
 import { UserProfile } from "@/hooks/use-user-profile";
 
@@ -10,8 +9,6 @@ interface ProfileDialogsProps {
   setShowApplicationDialog: (show: boolean) => void;
   showSkillsDialog: boolean;
   setShowSkillsDialog: (show: boolean) => void;
-  showInterviewDialog: boolean;
-  setShowInterviewDialog: (show: boolean) => void;
   showEditProfileDialog: boolean;
   setShowEditProfileDialog: (show: boolean) => void;
   userProfile: UserProfile;
@@ -23,8 +20,6 @@ const ProfileDialogs = ({
   setShowApplicationDialog,
   showSkillsDialog,
   setShowSkillsDialog,
-  showInterviewDialog,
-  setShowInterviewDialog,
   showEditProfileDialog,
   setShowEditProfileDialog,
   userProfile,
@@ -41,11 +36,6 @@ const ProfileDialogs = ({
       <SkillAssessmentDialog
         open={showSkillsDialog}
         onOpenChange={setShowSkillsDialog}
-      />
-      
-      <InterviewScheduleDialog
-        open={showInterviewDialog}
-        onOpenChange={setShowInterviewDialog}
       />
 
       <EditProfileDialog

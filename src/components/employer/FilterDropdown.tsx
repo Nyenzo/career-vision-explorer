@@ -31,19 +31,19 @@ export const FilterDropdown = ({ onFilterChange }: FilterProps) => {
     jobType: "all",
     dateRange: 30,
   });
-  
+
   // Count of active filters
   const activeFilterCount = [
     filters.jobType !== "all",
     filters.dateRange !== 30,
   ].filter(Boolean).length;
-  
+
   const handleFilterChange = (key: keyof FilterSettings, value: any) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
     onFilterChange(newFilters);
   };
-  
+
   const clearFilters = () => {
     const defaultFilters = {
       jobType: "all",
@@ -52,7 +52,7 @@ export const FilterDropdown = ({ onFilterChange }: FilterProps) => {
     setFilters(defaultFilters);
     onFilterChange(defaultFilters);
   };
-  
+
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
@@ -71,9 +71,9 @@ export const FilterDropdown = ({ onFilterChange }: FilterProps) => {
           <div className="flex items-center justify-between border-b pb-2">
             <h4 className="font-medium">Filter Jobs</h4>
             {activeFilterCount > 0 && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={clearFilters}
                 className="h-8 text-xs"
               >
@@ -81,11 +81,11 @@ export const FilterDropdown = ({ onFilterChange }: FilterProps) => {
               </Button>
             )}
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="jobType">Job Type</Label>
-            <Select 
-              value={filters.jobType} 
+            <Select
+              value={filters.jobType}
               onValueChange={(value) => handleFilterChange("jobType", value)}
             >
               <SelectTrigger id="jobType">
@@ -101,11 +101,11 @@ export const FilterDropdown = ({ onFilterChange }: FilterProps) => {
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="dateRange">Posted Within</Label>
-            <Select 
-              value={filters.dateRange.toString()} 
+            <Select
+              value={filters.dateRange.toString()}
               onValueChange={(value) => handleFilterChange("dateRange", parseInt(value))}
             >
               <SelectTrigger id="dateRange">
@@ -120,10 +120,10 @@ export const FilterDropdown = ({ onFilterChange }: FilterProps) => {
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="border-t pt-2">
-            <Button 
-              className="w-full" 
+            <Button
+              className="w-full"
               onClick={() => setIsOpen(false)}
             >
               Apply Filters

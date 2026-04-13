@@ -11,6 +11,11 @@ const fallbackText = (value: any) => {
   return value;
 };
 
+const toLabel = (value: any) =>
+    String(fallbackText(value))
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (match) => match.toUpperCase());
+
 export const JobDetailsView = ({ job }: JobDetailsViewProps) => {
   if (!job) return null;
 
@@ -21,17 +26,17 @@ export const JobDetailsView = ({ job }: JobDetailsViewProps) => {
             <div className="bg-surface-container-low p-6 rounded-lg text-center">
                 <span className="text-primary material-symbols-outlined mb-2">fingerprint</span>
                 <p className="text-xs text-on-surface-variant font-label uppercase tracking-widest mb-1">Job ID</p>
-                <p className="font-headline font-semibold">{fallbackText(job.job_id).substring(0, 10)}${job.job_id && '...'}</p>
+                <p className="font-headline font-semibold">{String(fallbackText(job.job_id || job.id)).substring(0, 10)}{(job.job_id || job.id) && "..."}</p>
             </div>
             <div className="bg-surface-container-low p-6 rounded-lg text-center">
                 <span className="text-primary material-symbols-outlined mb-2">military_tech</span>
                 <p className="text-xs text-on-surface-variant font-label uppercase tracking-widest mb-1">Experience</p>
-                <p className="font-headline font-semibold capitalize">{fallbackText(job.experience_level || job.experienceLevel)}</p>
+                <p className="font-headline font-semibold">{toLabel(job.experience_level || job.experienceLevel)}</p>
             </div>
             <div className="bg-surface-container-low p-6 rounded-lg text-center">
                 <span className="text-primary material-symbols-outlined mb-2">school</span>
                 <p className="text-xs text-on-surface-variant font-label uppercase tracking-widest mb-1">Job Type</p>
-                <p className="font-headline font-semibold capitalize">{fallbackText(job.job_type || job.type)}</p>
+                <p className="font-headline font-semibold">{toLabel(job.job_type || job.type)}</p>
             </div>
             <div className="bg-surface-container-low p-6 rounded-lg text-center">
                 <span className="text-primary material-symbols-outlined mb-2">public</span>
@@ -44,7 +49,7 @@ export const JobDetailsView = ({ job }: JobDetailsViewProps) => {
         <section className="bg-surface-container-lowest p-10 rounded-lg shadow-sm border border-surface-container/50">
             <h2 className="text-2xl font-headline font-bold mb-6">About the Role</h2>
             <p className="text-lg text-on-surface-variant leading-relaxed font-body whitespace-pre-wrap">
-                {job.description ? job.description : "No description provided."}
+                {job.job_description || job.description ? (job.job_description || job.description) : "No description provided."}
             </p>
         </section>
 
@@ -98,9 +103,9 @@ export const JobDetailsView = ({ job }: JobDetailsViewProps) => {
                     <span className="material-symbols-outlined text-primary">psychology</span>
                     Required Skills
                 </h3>
-                {job.skills_required?.length || job.skills?.length ? (
+                {job.required_skills?.length || job.skills_required?.length || job.skills?.length ? (
                     <div className="flex flex-wrap gap-2">
-                        {(job.skills_required || job.skills || []).map((skill: string, index: number) => (
+                        {(job.required_skills || job.skills_required || job.skills || []).map((skill: string, index: number) => (
                             <span key={index} className="px-4 py-2 bg-surface-container-low text-on-surface-variant rounded-sm text-sm font-medium">
                                 {skill}
                             </span>

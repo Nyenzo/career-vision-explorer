@@ -4,32 +4,32 @@ import { useAuth } from "@/hooks/use-auth";
 import { toast } from "@/components/ui/sonner";
 import { CallbackSkeleton } from "@/components/ui/skeleton-loaders";
 
-let linkedInCallbackStatus: "idle" | "processing" | "done" = "idle";
+let oauthCallbackStatus: "idle" | "processing" | "done" = "idle";
 
 const LinkedInCallback: React.FC = () => {
   const navigate = useNavigate();
   const { handleOAuthCallback } = useAuth();
 
   useEffect(() => {
-    if (linkedInCallbackStatus === "processing" || linkedInCallbackStatus === "done") {
+    if (oauthCallbackStatus === "processing" || oauthCallbackStatus === "done") {
       return;
     }
 
     const handleCallback = async () => {
-      linkedInCallbackStatus = "processing";
+      oauthCallbackStatus = "processing";
 
       try {
-        console.log("🔍 LinkedInCallback: Starting callback handling");
+        console.log("Starting OAuth callback handling");
 
         await handleOAuthCallback();
-        linkedInCallbackStatus = "done";
+        oauthCallbackStatus = "done";
       } catch (error: any) {
-        linkedInCallbackStatus = "idle";
+        oauthCallbackStatus = "idle";
         console.error("Callback handling failed:", error);
         toast.error("Authentication failed", {
           description:
             error.message ||
-            "Failed to complete LinkedIn login. Please try again.",
+            "Failed to complete sign in. Please try again.",
         });
         navigate("/login?error=auth_failed");
       }

@@ -120,7 +120,7 @@ const [aiResponses, setAiResponses] = useState<string[]>([
       jobseeker: {
         title: "Profile Created Successfully!",
         description: "Your profile is ready. Let's explore career opportunities!",
-        redirect: "/jobs"
+        redirect: "/jobseeker/jobs"
       }
     };
     

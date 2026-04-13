@@ -1,10 +1,10 @@
 import { apiClient } from "../lib/api-client";
-import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import {
   User,
   UserLogin,
   UserRegister,
   TokenResponse,
+  RegisterResponse,
   RefreshTokenRequest,
   PasswordChangeRequest,
   PasswordResetRequest,
@@ -33,12 +33,22 @@ class AuthService {
     return user;
   }
 
-  async register(userData: UserRegister): Promise<TokenResponse> {
-    const response = await apiClient.post<TokenResponse>(
+  async register(userData: UserRegister): Promise<RegisterResponse> {
+    const response = await apiClient.post<RegisterResponse>(
       "/auth/register",
       userData
     );
-    this.setSession(response);
+
+    if (response.access_token && response.refresh_token && response.user_id && response.email && response.account_type) {
+      this.setSession({
+        access_token: response.access_token,
+        refresh_token: response.refresh_token,
+        user_id: response.user_id,
+        email: response.email,
+        account_type: response.account_type,
+      });
+    }
+
     return response;
   }
 
@@ -154,116 +164,80 @@ class AuthService {
   }
 
 
-  /** 🔹 LinkedIn OAuth via Supabase */
-  async signInWithLinkedIn(): Promise<void> {
-    if (!isSupabaseConfigured() || !supabase) {
-      throw new Error(
-        "Supabase is not configured. Check environment variables."
-      );
+  async signInWithLinkedIn(accountType: "job_seeker" | "employer" = "job_seeker"): Promise<void> {
+    localStorage.setItem("oauth_provider", "linkedin");
+    localStorage.setItem("oauth_account_type", accountType);
+
+    const redirectUrl = `${window.location.origin}/auth/callback/linkedin?account_type=${encodeURIComponent(accountType)}`;
+    const response = await apiClient.get<{ authorization_url: string }>(
+      `/auth/linkedin/authorize?account_type=${accountType}&redirect_url=${encodeURIComponent(redirectUrl)}`
+    );
+
+    if (!response.authorization_url) {
+      throw new Error("LinkedIn authorization URL is missing");
     }
 
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "linkedin_oidc",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        queryParams: {
-          access_type: "offline",
-          prompt: "consent",
-        },
-      },
-    });
+    window.location.href = response.authorization_url;
+  }
 
-    if (error) {
-      throw new Error(`LinkedIn authentication failed: ${error.message}`);
+  async signInWithGoogle(accountType: "job_seeker" | "employer" = "job_seeker"): Promise<void> {
+    localStorage.setItem("oauth_provider", "google");
+    localStorage.setItem("oauth_account_type", accountType);
+
+    const redirectUrl = `${window.location.origin}/auth/callback/google?account_type=${encodeURIComponent(accountType)}`;
+    const response = await apiClient.get<{ authorization_url: string }>(
+      `/auth/google/authorize?account_type=${accountType}&redirect_url=${encodeURIComponent(redirectUrl)}`
+    );
+
+    if (!response.authorization_url) {
+      throw new Error("Google authorization URL is missing");
     }
 
-    console.log("LinkedIn OAuth initiated:", data);
+    window.location.href = response.authorization_url;
   }
 
   async handleOAuthCallback(): Promise<TokenResponse> {
     const callbackUrl = new URL(window.location.href);
-    const code = callbackUrl.searchParams.get("code");
-    const state = callbackUrl.searchParams.get("state");
-    const accountType =
-      (localStorage.getItem("oauth_account_type") as
-        | "job_seeker"
-        | "employer"
-        | null) || "job_seeker";
+    const hashParams = new URLSearchParams(callbackUrl.hash.startsWith("#") ? callbackUrl.hash.slice(1) : callbackUrl.hash);
 
-    if (code && isSupabaseConfigured() && supabase) {
-      try {
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.exchangeCodeForSession(code);
-
-        if (error) {
-          throw error;
-        }
-
-        if (!session) {
-          throw new Error("No session returned from LinkedIn");
-        }
-
-        const supabaseUser = session.user;
-        const linkedinProfile = supabaseUser.user_metadata;
-
-        const response = await apiClient.post<TokenResponse>(
-          "/auth/linkedin/verify",
-          {
-            supabase_access_token: session.access_token,
-            supabase_user_id: supabaseUser.id,
-            email: supabaseUser.email,
-            account_type: accountType,
-            user_metadata: linkedinProfile,
-          }
-        );
-
-        if (response.access_token) {
-          this.setSession(response);
-        }
-
-        await supabase.auth.signOut().catch(() => undefined);
-        localStorage.removeItem("oauth_account_type");
-        return response;
-      } catch (error) {
-        console.warn("Supabase OAuth code exchange failed, checking session fallback:", error);
-      }
+    const oauthError = callbackUrl.searchParams.get("error") || hashParams.get("error");
+    const oauthErrorDescription = callbackUrl.searchParams.get("error_description") || hashParams.get("error_description");
+    if (oauthError) {
+      throw new Error(oauthErrorDescription || oauthError.replace(/_/g, " "));
     }
 
-    if (isSupabaseConfigured() && supabase) {
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
+    const code = callbackUrl.searchParams.get("code");
+    const state = callbackUrl.searchParams.get("state");
+    const hashAccessToken = hashParams.get("access_token");
+    const hashRefreshToken = hashParams.get("refresh_token");
+    const accountTypeFromQuery = callbackUrl.searchParams.get("account_type");
+    const accountTypeFromStorage = localStorage.getItem("oauth_account_type");
+    const accountType = accountTypeFromQuery === "employer" || accountTypeFromStorage === "employer" ? "employer" : "job_seeker";
+    const pathSegments = callbackUrl.pathname.split("/").filter(Boolean);
+    const providerFromPath = pathSegments.length >= 3 && pathSegments[0] === "auth" && pathSegments[1] === "callback"
+      ? pathSegments[2]
+      : null;
+    const providerFromQuery = callbackUrl.searchParams.get("provider");
+    const providerFromStorage = localStorage.getItem("oauth_provider");
+    const provider = providerFromPath === "google" || providerFromQuery === "google" || providerFromStorage === "google" ? "google" : "linkedin";
 
-      if (error) {
-        console.warn(`Failed to get Supabase session: ${error.message}`);
-      }
-
-      if (session) {
-        const supabaseUser = session.user;
-        const linkedinProfile = supabaseUser.user_metadata;
-
-        const response = await apiClient.post<TokenResponse>(
-          "/auth/linkedin/verify",
-          {
-            supabase_access_token: session.access_token,
-            supabase_user_id: supabaseUser.id,
-            email: supabaseUser.email,
-            account_type: accountType,
-            user_metadata: linkedinProfile,
-          }
-        );
-
-        if (response.access_token) {
-          this.setSession(response);
+    if (hashAccessToken && hashRefreshToken) {
+      const response = await apiClient.post<TokenResponse>(
+        `/auth/${provider}/verify`,
+        {
+          supabase_access_token: hashAccessToken,
+          refresh_token: hashRefreshToken,
+          account_type: accountType,
         }
+      );
 
-        await supabase.auth.signOut();
-        localStorage.removeItem("oauth_account_type");
-        return response;
+      if (response.access_token) {
+        this.setSession(response);
       }
+
+      localStorage.removeItem("oauth_provider");
+      localStorage.removeItem("oauth_account_type");
+      return response;
     }
 
     if (code) {
@@ -271,19 +245,17 @@ class AuthService {
       if (state) {
         callbackQuery.set("state", state);
       }
+      callbackQuery.set("account_type", accountType);
 
       const response = await apiClient.get<TokenResponse>(
-        `/oauth/linkedin/callback?${callbackQuery.toString()}`
+        `/auth/${provider}/callback?${callbackQuery.toString()}`
       );
 
       if (response.access_token) {
         this.setSession(response);
       }
 
-      if (isSupabaseConfigured() && supabase) {
-        await supabase.auth.signOut().catch(() => undefined);
-      }
-
+      localStorage.removeItem("oauth_provider");
       localStorage.removeItem("oauth_account_type");
       return response;
     }
@@ -302,11 +274,13 @@ class AuthService {
       };
     }
 
+    localStorage.removeItem("oauth_provider");
+    localStorage.removeItem("oauth_account_type");
     throw new Error("No active session found. Try logging in again.");
   }
 
   isOAuthCallback(): boolean {
-    return window.location.pathname === "/auth/callback";
+    return window.location.pathname === "/auth/callback" || window.location.pathname.startsWith("/auth/callback/");
   }
 }
 

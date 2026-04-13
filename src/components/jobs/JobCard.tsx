@@ -100,7 +100,7 @@ export const JobCard = ({ job, isApplied, isSaved, onApply, onSave }: JobCardPro
           <div className="pt-6 flex justify-between items-center border-t border-surface-container">
             <Link 
               className="text-primary font-bold hover:underline underline-offset-4 flex items-center gap-2 transition-all" 
-              to={`/jobs/${job.job_id}`}
+              to={`/jobseeker/jobs/${job.job_id}`}
               state={{ matchScore: job.matchScore, jobData: job }}
             >
               View Details

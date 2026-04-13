@@ -17,11 +17,24 @@ class ProfileService {
   async updateCompanyProfile(
     companyData: Partial<CompanyData>,
   ): Promise<Profile> {
-    return await apiClient.put<Profile>("/profile/", companyData);
+    try {
+      // Fetch the company profile so we can get its ID
+      const me = await apiClient.get<any>("/profiles/company/me");
+      if (me && me.id) {
+        return await apiClient.put<Profile>(`/profiles/company/${me.id}`, companyData);
+      }
+    } catch (e: any) {
+      if (e?.response?.status === 404) {
+        // If it doesn't exist, create it via POST
+        return await apiClient.post<Profile>("/profiles/company/", companyData);
+      }
+      throw e;
+    }
+    throw new Error("Failed to process company profile update");
   }
 
-  async getCompanyProfile(profileId: string): Promise<Profile> {
-    return await apiClient.get<Profile>("/profile/company");
+  async getCompanyProfile(): Promise<CompanyData> {
+    return await apiClient.get<CompanyData>("/profiles/company/me");
   }
 
   async getPublicProfile(userId: string): Promise<Profile> {

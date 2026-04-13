@@ -91,7 +91,7 @@ const JobListingSection = ({ featuredJobs }: JobListingProps) => {
                   ))}
                 </div>
 
-                <Link to={`/jobs/${job.id}`} className="block">
+                <Link to={`/jobseeker/jobs/${job.id}`} className="block">
                   <Button 
                     className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 shadow-md hover:shadow-lg transition-all duration-300 group"
                   >
@@ -109,7 +109,7 @@ const JobListingSection = ({ featuredJobs }: JobListingProps) => {
         </div>
 
         <div className="text-center">
-          <Link to="/jobs">
+          <Link to="/jobseeker/jobs">
             <Button 
               size="lg" 
               className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 py-6 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 group"

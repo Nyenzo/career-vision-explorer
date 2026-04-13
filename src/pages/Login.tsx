@@ -18,7 +18,7 @@ const loginSchema = z.object({
 });
 
 const Login = () => {
-  const { login, signInWithLinkedIn } = useAuth();
+  const { login, signInWithLinkedIn, signInWithGoogle } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof loginSchema>>({
@@ -63,6 +63,23 @@ const Login = () => {
       console.error('LinkedIn login error:', error);
       toast.error("LinkedIn Authentication Failed", {
         description: error.message || "Failed to initiate LinkedIn authentication. Please try again.",
+      });
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      setIsLoading(true);
+      toast.info("Google Authentication", {
+        description: "Redirecting to Google for authentication...",
+      });
+
+      await signInWithGoogle();
+    } catch (error: any) {
+      console.error('Google login error:', error);
+      toast.error("Google Authentication Failed", {
+        description: error.message || "Failed to initiate Google authentication. Please try again.",
       });
       setIsLoading(false);
     }
@@ -151,6 +168,21 @@ const Login = () => {
             
             {/* Social Login */}
             <div className="space-y-4">
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={isLoading}
+                className="w-full flex items-center justify-center gap-3 py-4 px-6 bg-surface-container-low rounded-full hover:bg-surface-container-high transition-colors group disabled:opacity-50"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
+                  <path fill="#EA4335" d="M12 10.2v3.9h5.4c-.2 1.2-1.4 3.6-5.4 3.6-3.2 0-5.9-2.7-5.9-6s2.7-6 5.9-6c1.8 0 3 .8 3.7 1.5l2.5-2.4C16.6 3.3 14.5 2.4 12 2.4 6.8 2.4 2.7 6.6 2.7 12s4.1 9.6 9.3 9.6c5.4 0 8.9-3.8 8.9-9.1 0-.6-.1-1-.1-1.4H12z"/>
+                  <path fill="#34A853" d="M3.9 7.5l3.2 2.4c.9-1.8 2.7-3.1 4.9-3.1 1.8 0 3 .8 3.7 1.5l2.5-2.4C16.6 3.3 14.5 2.4 12 2.4c-3.6 0-6.8 2.1-8.1 5.1z"/>
+                  <path fill="#4A90E2" d="M12 21.6c2.4 0 4.5-.8 6-2.3l-2.8-2.3c-.8.6-1.8 1-3.2 1-2.9 0-5.3-1.9-6.2-4.6l-3.2 2.5c1.4 3.1 4.6 5.7 9.4 5.7z"/>
+                  <path fill="#FBBC05" d="M5.8 13.4c-.2-.6-.3-1.1-.3-1.7s.1-1.2.3-1.7L2.6 7.5C2 8.9 1.7 10.4 1.7 12s.3 3.1.9 4.5l3.2-2.5z"/>
+                </svg>
+                <span className="font-body font-medium text-on-surface-variant">Continue with Google</span>
+              </button>
+
               <button 
                 type="button"
                 onClick={handleLinkedInLogin}

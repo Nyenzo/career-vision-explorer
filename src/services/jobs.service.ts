@@ -23,6 +23,123 @@ interface CacheEntry<T> {
   expiresAt: number;
 }
 
+type BackendJobType = "full_time" | "part_time" | "remote" | "internship";
+type BackendExperienceLevel =
+  | "entry_level"
+  | "mid_level"
+  | "senior_level"
+  | "executive_level";
+
+function normalizeJobType(value?: string): BackendJobType {
+  const normalized = (value || "").toLowerCase().replace(/[-\s]/g, "_");
+  if (normalized === "full_time") return "full_time";
+  if (normalized === "part_time") return "part_time";
+  if (normalized === "remote") return "remote";
+  if (normalized === "internship") return "internship";
+  // Backward compatibility for old UI option not supported by backend enum
+  if (normalized === "contract") return "full_time";
+  return "full_time";
+}
+
+function normalizeExperienceLevel(value?: string): BackendExperienceLevel {
+  const normalized = (value || "").toLowerCase().replace(/[-\s]/g, "_");
+  if (normalized === "entry" || normalized === "entry_level")
+    return "entry_level";
+  if (normalized === "mid" || normalized === "mid_level") return "mid_level";
+  if (normalized === "senior" || normalized === "senior_level")
+    return "senior_level";
+  if (normalized === "lead" || normalized === "executive" || normalized === "executive_level")
+    return "executive_level";
+  return "mid_level";
+}
+
+function normalizeRequirements(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => String(item).trim())
+      .filter((item) => item.length > 0);
+  }
+
+  if (typeof value === "string") {
+    return value
+      .split(/[\n,]/g)
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+  }
+
+  return [];
+}
+
+function transformCreatePayload(jobData: any) {
+  return {
+    job_title: jobData.job_title ?? jobData.title,
+    job_description: jobData.job_description ?? jobData.description,
+    location: jobData.location,
+    salary_range: jobData.salary_range ?? jobData.salary,
+    requirements: normalizeRequirements(jobData.requirements),
+    responsibilities: normalizeRequirements(jobData.responsibilities),
+    benefits: normalizeRequirements(jobData.benefits),
+    required_skills: Array.isArray(jobData.required_skills)
+      ? jobData.required_skills
+      : normalizeRequirements(jobData.required_skills),
+    job_type: normalizeJobType(jobData.job_type ?? jobData.type),
+    experience_level: normalizeExperienceLevel(
+      jobData.experience_level ?? jobData.experience
+    ),
+    ...(jobData.status !== undefined ? { status: jobData.status } : {}),
+    ...(jobData.application_deadline
+      ? { application_deadline: jobData.application_deadline }
+      : {}),
+  };
+}
+
+function transformUpdatePayload(jobData: any) {
+  const transformed: Record<string, unknown> = {
+    ...(jobData.job_title !== undefined || jobData.title !== undefined
+      ? { job_title: jobData.job_title ?? jobData.title }
+      : {}),
+    ...(jobData.job_description !== undefined || jobData.description !== undefined
+      ? { job_description: jobData.job_description ?? jobData.description }
+      : {}),
+    ...(jobData.location !== undefined ? { location: jobData.location } : {}),
+    ...(jobData.salary_range !== undefined || jobData.salary !== undefined
+      ? { salary_range: jobData.salary_range ?? jobData.salary }
+      : {}),
+    ...(jobData.requirements !== undefined
+      ? { requirements: normalizeRequirements(jobData.requirements) }
+      : {}),
+    ...(jobData.responsibilities !== undefined
+      ? { responsibilities: normalizeRequirements(jobData.responsibilities) }
+      : {}),
+    ...(jobData.benefits !== undefined
+      ? { benefits: normalizeRequirements(jobData.benefits) }
+      : {}),
+    ...(jobData.required_skills !== undefined
+      ? {
+          required_skills: Array.isArray(jobData.required_skills)
+            ? jobData.required_skills
+            : normalizeRequirements(jobData.required_skills),
+        }
+      : {}),
+    ...(jobData.job_type !== undefined || jobData.type !== undefined
+      ? { job_type: normalizeJobType(jobData.job_type ?? jobData.type) }
+      : {}),
+    ...(jobData.experience_level !== undefined || jobData.experience !== undefined
+      ? {
+          experience_level: normalizeExperienceLevel(
+            jobData.experience_level ?? jobData.experience
+          ),
+        }
+      : {}),
+    ...(jobData.status !== undefined ? { status: jobData.status } : {}),
+    ...(jobData.application_deadline !== undefined
+      ? { application_deadline: jobData.application_deadline || null }
+      : {}),
+  };
+
+  return transformed;
+}
+
 // ✅ Helper: runtime validation for required string fields
 // In your jobs.service.ts - UPDATE THE VALIDATION FUNCTION
 function validateJobPayload(jobData: any, isUpdate: boolean = false): void {
@@ -46,14 +163,16 @@ function validateJobPayload(jobData: any, isUpdate: boolean = false): void {
         // Only validate string fields that are actually provided
         const stringFields = [
           "title",
+          "job_title",
           "description",
+          "job_description",
           "location",
           "type",
-          "salary",
-          "company",
           "job_type",
-          "experience_level",
+          "salary",
           "salary_range",
+          "company",
+          "experience_level",
         ];
         if (stringFields.includes(field) && typeof value !== "string") {
           invalid.push(field);
@@ -66,21 +185,44 @@ function validateJobPayload(jobData: any, isUpdate: boolean = false): void {
     }
   } else {
     // For creation, validate all required fields
-    const requiredFields = ["title", "description", "location", "company"];
+    const titleValue = jobData.job_title ?? jobData.title;
+    const descriptionValue = jobData.job_description ?? jobData.description;
+    const jobTypeValue = jobData.job_type ?? jobData.type;
+    const experienceLevelValue = jobData.experience_level ?? jobData.experience;
 
     const missing: string[] = [];
     const invalid: string[] = [];
 
-    for (const field of requiredFields) {
-      if (
-        jobData[field] === undefined ||
-        jobData[field] === null ||
-        jobData[field] === ""
-      ) {
-        missing.push(field);
-      } else if (typeof jobData[field] !== "string") {
-        invalid.push(field);
-      }
+    if (titleValue === undefined || titleValue === null || titleValue === "") {
+      missing.push("job_title");
+    } else if (typeof titleValue !== "string") {
+      invalid.push("job_title");
+    }
+
+    if (
+      descriptionValue === undefined ||
+      descriptionValue === null ||
+      descriptionValue === ""
+    ) {
+      missing.push("job_description");
+    } else if (typeof descriptionValue !== "string") {
+      invalid.push("job_description");
+    }
+
+    if (jobTypeValue === undefined || jobTypeValue === null || jobTypeValue === "") {
+      missing.push("job_type");
+    } else if (typeof jobTypeValue !== "string") {
+      invalid.push("job_type");
+    }
+
+    if (
+      experienceLevelValue === undefined ||
+      experienceLevelValue === null ||
+      experienceLevelValue === ""
+    ) {
+      missing.push("experience_level");
+    } else if (typeof experienceLevelValue !== "string") {
+      invalid.push("experience_level");
     }
 
     if (missing.length || invalid.length) {
@@ -223,10 +365,15 @@ class JobsService {
     return await apiClient.get<Job>(`/jobs/${jobId}`);
   }
 
+  async getMyJobById(jobId: string): Promise<Job> {
+    return await apiClient.get<Job>(`/jobs/my-jobs/${jobId}`);
+  }
+
   async createJob(jobData: JobCreate): Promise<Job> {
     try {
       validateJobPayload(jobData, false); // false = creation
-      return await apiClient.post<Job>("/jobs/", jobData);
+      const backendPayload = transformCreatePayload(jobData);
+      return await apiClient.post<Job>("/jobs/", backendPayload);
     } catch (error: any) {
       const msg =
         typeof error.message === "string"
@@ -241,7 +388,8 @@ class JobsService {
   async updateJob(jobId: string, jobData: JobUpdate): Promise<Job> {
     try {
       validateJobPayload(jobData, true); // true = update
-      return await apiClient.put<Job>(`/jobs/${jobId}`, jobData);
+      const backendPayload = transformUpdatePayload(jobData);
+      return await apiClient.put<Job>(`/jobs/${jobId}`, backendPayload);
     } catch (error: any) {
       const msg =
         typeof error.message === "string"
@@ -264,14 +412,14 @@ class JobsService {
 
   async getMyJobs(includeInactive = false): Promise<Job[]> {
     const endpoint = includeInactive
-      ? `/jobs/my-jobs?include_inactive=true`
+      ? `/jobs/my-jobs?include_non_open=true`
       : "/jobs/my-jobs";
     return await apiClient.get<Job[]>(endpoint);
   }
 
   async getAllJobs(includeInactive = false): Promise<Job[]> {
     const endpoint = includeInactive
-      ? `/jobs/admin/jobs/?include_inactive=true`
+      ? `/jobs/admin/jobs/?include_non_open=true`
       : "/jobs/admin/jobs/";
     return await apiClient.get<Job[]>(endpoint);
   }

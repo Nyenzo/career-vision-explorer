@@ -15,6 +15,9 @@ const LinkedInCallback = lazy(() => import("@/pages/auth/LinkedInCallback"));
 // const Notifications = lazy(() => import("@/pages/Notifications"));
 const Jobs = lazy(() => import("@/pages/Jobs"));
 const JobDetails = lazy(() => import("@/pages/JobDetails"));
+const EmployerJobDetails = lazy(() => import("@/pages/employer/EmployerJobDetails"));
+const EmployerEditJobPage = lazy(() => import("@/pages/employer/EmployerEditJobPage"));
+const LegacyJobDetailsRedirect = lazy(() => import("@/pages/LegacyJobDetailsRedirect"));
 const PublicProfile = lazy(() => import("@/pages/PublicProfile"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const Profile = lazy(() => import("@/pages/Profile"));
@@ -27,9 +30,7 @@ const EmployerDashboard = lazy(
   () => import("@/pages/employer/EmployerDashboard")
 );
 const EmployerJobs = lazy(() => import("@/pages/employer/EmployerJobs"));
-const JobApplicants = lazy(() => import("@/pages/employer/JobApplicants"));
 const AllApplicants = lazy(() => import("@/pages/employer/AllApplicants"));
-// EmployerInterviews — page not yet created, route disabled
 
 // Jobseeker
 const JobSeekerDashboard = lazy(
@@ -62,22 +63,6 @@ export const AppRoutes = () => {
             element={
               <Suspense fallback={<PageLoader />}>
                 <Index />
-              </Suspense>
-            }
-          />
-          <Route
-            path="jobs"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <Jobs />
-              </Suspense>
-            }
-          />
-          <Route
-            path="jobs/:id"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <JobDetails />
               </Suspense>
             }
           />
@@ -141,6 +126,14 @@ export const AppRoutes = () => {
           }
         />
         <Route
+          path="/auth/callback/:provider"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <LinkedInCallback />
+            </Suspense>
+          }
+        />
+        <Route
           path="/profile/:id"
           element={
             <Suspense fallback={<PageLoader />}>
@@ -176,6 +169,26 @@ export const AppRoutes = () => {
             }
           />
           <Route
+            path="jobs/:id"
+            element={
+              <ProtectedRoute requiredRole="employer">
+                <Suspense fallback={<PageLoader />}>
+                  <EmployerJobDetails />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="jobs/:id/edit"
+            element={
+              <ProtectedRoute requiredRole="employer">
+                <Suspense fallback={<PageLoader />}>
+                  <EmployerEditJobPage />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="applicants"
             element={
               <ProtectedRoute requiredRole="employer">
@@ -187,7 +200,6 @@ export const AppRoutes = () => {
               </ProtectedRoute>
             }
           />
-          {/* interviews route disabled — EmployerInterviews page not yet created */}
         </Route>
 
         {/* Jobseeker Routes */}
@@ -212,6 +224,26 @@ export const AppRoutes = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="jobs"
+            element={
+              <ProtectedRoute requiredRole="job_seeker">
+                <Suspense fallback={<PageLoader />}>
+                  <Jobs />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="jobs/:id"
+            element={
+              <ProtectedRoute requiredRole="job_seeker">
+                <Suspense fallback={<PageLoader />}>
+                  <JobDetails />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
         </Route>
 
         {/* General Protected Routes */}
@@ -232,6 +264,17 @@ export const AppRoutes = () => {
             <ProtectedRoute>
               <Suspense fallback={<PageLoader />}>
                 <AccountManagement />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/jobs/:id"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<PageLoader />}>
+                <LegacyJobDetailsRedirect />
               </Suspense>
             </ProtectedRoute>
           }

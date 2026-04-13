@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useAuth } from "@/hooks/use-auth";
 import OnboardingWizard from "@/components/onboarding/OnboardingWizard";
-import LinkedInImportDialog from "@/components/auth/LinkedInImportDialog";
+import { UserRegister } from "@/types/auth";
 
 const signupSchema = z.object({
   name: z.string().min(2, {
@@ -19,17 +19,30 @@ const signupSchema = z.object({
   password: z.string().min(8, {
     message: "Password must be at least 8 characters.",
   }),
+  confirmPassword: z.string().min(8, {
+    message: "Confirm password must be at least 8 characters.",
+  }),
   role: z.enum(["jobseeker", "employer"], {
     required_error: "Please select your role.",
   }),
   phoneNumber: z.string().optional(),
   profileImage: z.string().optional(),
-  dateOfBirth: z.string().optional(),
+  dateOfBirth: z.string().min(1, {
+    message: "Date of birth is required.",
+  }),
   // Employer fields
   companyName: z.string().optional(),
   companyWebsite: z.string().url().optional().or(z.literal('')),
   industry: z.string().optional(),
 }).superRefine((data, ctx) => {
+  if (data.password !== data.confirmPassword) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Passwords do not match.",
+      path: ["confirmPassword"],
+    });
+  }
+
   if (data.role === 'jobseeker') {
     if (!data.phoneNumber || data.phoneNumber.length === 0) {
       ctx.addIssue({
@@ -38,24 +51,19 @@ const signupSchema = z.object({
         path: ['phoneNumber'],
       });
     }
-    if (!data.dateOfBirth) {
+  }
+
+  if (data.dateOfBirth) {
+    const dob = new Date(data.dateOfBirth);
+    const today = new Date();
+    const age = today.getFullYear() - dob.getFullYear() -
+      (today < new Date(today.getFullYear(), dob.getMonth(), dob.getDate()) ? 1 : 0);
+    if (age < 18) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Date of birth is required for job seekers.',
+        message: 'You must be at least 18 years old to register.',
         path: ['dateOfBirth'],
       });
-    } else {
-      const dob = new Date(data.dateOfBirth);
-      const today = new Date();
-      const age = today.getFullYear() - dob.getFullYear() -
-        (today < new Date(today.getFullYear(), dob.getMonth(), dob.getDate()) ? 1 : 0);
-      if (age < 18) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'You must be at least 18 years old to register.',
-          path: ['dateOfBirth'],
-        });
-      }
     }
   }
   if (data.role === 'employer') {
@@ -69,15 +77,15 @@ const signupSchema = z.object({
   }
 });
 
+type SignupFormValues = z.infer<typeof signupSchema>;
+type NewUserData = SignupFormValues & { profileImage: string };
+
 const Signup = () => {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { register, signInWithLinkedIn, signInWithGoogle } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [linkedInImportOpen, setLinkedInImportOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [profileImage, setProfileImage] = useState<string>("");
-  const [linkedInDataImported, setLinkedInDataImported] = useState(false);
-  const [newUserData, setNewUserData] = useState<any>(null);
+  const [newUserData, setNewUserData] = useState<NewUserData | null>(null);
 
   const form = useForm<z.infer<typeof signupSchema>>({
     resolver: zodResolver(signupSchema),
@@ -85,6 +93,7 @@ const Signup = () => {
       name: "",
       email: "",
       password: "",
+      confirmPassword: "",
       role: "jobseeker",
       phoneNumber: "",
       profileImage: "",
@@ -97,7 +106,7 @@ const Signup = () => {
 
   const selectedRole = form.watch("role");
 
-  const onSubmit = async (values: z.infer<typeof signupSchema>) => {
+  const onSubmit = async (values: SignupFormValues) => {
     setIsLoading(true);
 
     try {
@@ -105,7 +114,7 @@ const Signup = () => {
 
       const accountType = values.role === 'jobseeker' ? 'job_seeker' : 'employer';
 
-      const registrationData: any = {
+      const registrationData: UserRegister = {
         full_name: values.name,   // API expects full_name
         email: values.email,
         password: values.password,
@@ -113,19 +122,13 @@ const Signup = () => {
       };
 
       if (values.role === 'employer') {
-        registrationData.preferences = {
-          companyName: values.companyName,
-          companyWebsite: values.companyWebsite,
-          industry: values.industry
-        };
-      } else {
-        // Job seeker — send date_of_birth at top level (API field)
-        if (values.dateOfBirth) {
-          registrationData.date_of_birth = values.dateOfBirth;
-        }
-        registrationData.preferences = {
-          phoneNumber: values.phoneNumber
-        };
+        registrationData.company_name = values.companyName || undefined;
+        registrationData.company_website = values.companyWebsite || undefined;
+        registrationData.industry = values.industry || undefined;
+      }
+
+      if (values.dateOfBirth) {
+        registrationData.date_of_birth = values.dateOfBirth;
       }
 
       await register(registrationData);
@@ -136,53 +139,48 @@ const Signup = () => {
         description: "Let's set up your profile to find the perfect opportunities.",
       });
       setShowOnboarding(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to create account. Please try again.";
       toast.error("Registration Failed", {
-        description: error.message || "Failed to create account. Please try again.",
+        description: message,
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleLinkedInSignup = () => {
-    setLinkedInImportOpen(true);
-  };
-
-  const handleLinkedInConnect = async () => {
+  const handleLinkedInSignup = async () => {
     setIsLoading(true);
 
     try {
-      const timestamp = Date.now();
-      const linkedInData = {
-        name: 'John Doe',
-        email: `john.doe${timestamp}@example.com`,
-        password: 'linkedinpass123',
-        profileImage: 'https://via.placeholder.com/150',
-      };
-
-      form.setValue('name', linkedInData.name);
-      form.setValue('email', linkedInData.email);
-      form.setValue('password', linkedInData.password);
-      form.setValue('profileImage', linkedInData.profileImage);
-      setProfileImage(linkedInData.profileImage);
-
-      if (selectedRole === 'employer') {
-        form.setValue('companyName', 'Tech Solutions Inc'); 
-        form.setValue('companyWebsite', 'https://techsolutions.com');
-        form.setValue('industry', 'Technology');
-      }
-
-      setLinkedInImportOpen(false);
-      setLinkedInDataImported(true);
-
-      toast.success("LinkedIn Data Imported", { 
-        description: "Review and complete any missing fields to register."
+      const accountType = selectedRole === "employer" ? "employer" : "job_seeker";
+      toast.info("LinkedIn Authentication", {
+        description: "Redirecting to LinkedIn for authentication...",
       });
+      await signInWithLinkedIn(accountType);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to initiate LinkedIn authentication. Please try again.";
+      toast.error("LinkedIn Authentication Failed", {
+        description: message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    } catch (error) {
-      toast.error("LinkedIn Import Failed", {
-        description: "Failed to import LinkedIn data. Please try again.",
+  const handleGoogleSignup = async () => {
+    setIsLoading(true);
+
+    try {
+      const accountType = selectedRole === "employer" ? "employer" : "job_seeker";
+      toast.info("Google Authentication", {
+        description: "Redirecting to Google for authentication...",
+      });
+      await signInWithGoogle(accountType);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to initiate Google authentication. Please try again.";
+      toast.error("Google Authentication Failed", {
+        description: message,
       });
     } finally {
       setIsLoading(false);
@@ -243,7 +241,7 @@ const Signup = () => {
                       className="w-4 h-4 text-primary focus:ring-primary/20 border-outline-variant bg-transparent" 
                       type="radio" 
                       value="jobseeker" 
-                      disabled={linkedInDataImported || isLoading}
+                      disabled={isLoading}
                     />
                     <span className="ml-4 font-medium text-on-surface">I am Looking for a Job</span>
                     <span className="ml-auto material-symbols-outlined text-outline-variant group-hover:text-primary">person_search</span>
@@ -254,7 +252,7 @@ const Signup = () => {
                       className="w-4 h-4 text-primary focus:ring-primary/20 border-outline-variant bg-transparent" 
                       type="radio" 
                       value="employer" 
-                      disabled={linkedInDataImported || isLoading}
+                      disabled={isLoading}
                     />
                     <span className="ml-4 font-medium text-on-surface">I am Hiring</span>
                     <span className="ml-auto material-symbols-outlined text-outline-variant group-hover:text-primary">person_add</span>
@@ -270,12 +268,12 @@ const Signup = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Full Name</label>
-                        <input {...form.register('name')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="Alex Sterling" type="text" disabled={linkedInDataImported || isLoading}/>
+                        <input {...form.register('name')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="Alex Sterling" type="text" disabled={isLoading}/>
                         {form.formState.errors.name && <p className="text-sm text-error ml-1">{form.formState.errors.name.message as string}</p>}
                       </div>
                       <div className="space-y-2">
                         <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Email Address</label>
-                        <input {...form.register('email')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="alex@visiondrill.com" type="email" disabled={linkedInDataImported || isLoading}/>
+                        <input {...form.register('email')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="alex@visiondrill.com" type="email" disabled={isLoading}/>
                         {form.formState.errors.email && <p className="text-sm text-error ml-1">{form.formState.errors.email.message as string}</p>}
                       </div>
                       <div className="space-y-2 col-span-2 grid grid-cols-2 gap-6">
@@ -298,8 +296,13 @@ const Signup = () => {
                       </div>
                       <div className="space-y-2 md:col-span-2">
                         <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Password</label>
-                        <input {...form.register('password')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="••••••••" type="password" disabled={linkedInDataImported || isLoading}/>
+                        <input {...form.register('password')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="••••••••" type="password" disabled={isLoading}/>
                         {form.formState.errors.password && <p className="text-sm text-error ml-1">{form.formState.errors.password.message as string}</p>}
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Confirm Password</label>
+                        <input {...form.register('confirmPassword')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="••••••••" type="password" disabled={isLoading}/>
+                        {form.formState.errors.confirmPassword && <p className="text-sm text-error ml-1">{form.formState.errors.confirmPassword.message as string}</p>}
                       </div>
                     </div>
                   </div>
@@ -311,12 +314,12 @@ const Signup = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Full Name</label>
-                        <input {...form.register('name')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="Alex Sterling" type="text" disabled={linkedInDataImported || isLoading}/>
+                        <input {...form.register('name')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="Alex Sterling" type="text" disabled={isLoading}/>
                         {form.formState.errors.name && <p className="text-sm text-error ml-1">{form.formState.errors.name.message as string}</p>}
                       </div>
                       <div className="space-y-2">
                         <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Email Address</label>
-                        <input {...form.register('email')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="admin@sterling.com" type="email" disabled={linkedInDataImported || isLoading}/>
+                        <input {...form.register('email')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="admin@sterling.com" type="email" disabled={isLoading}/>
                         {form.formState.errors.email && <p className="text-sm text-error ml-1">{form.formState.errors.email.message as string}</p>}
                       </div>
                       <div className="space-y-2">
@@ -338,10 +341,26 @@ const Signup = () => {
                           <option value="construction">Construction</option>
                         </select>
                       </div>
+                      <div className="space-y-2">
+                        <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Date of Birth</label>
+                        <input
+                          {...form.register('dateOfBirth')}
+                          type="date"
+                          max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
+                          className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all text-on-surface"
+                          disabled={isLoading}
+                        />
+                        {form.formState.errors.dateOfBirth && <p className="text-sm text-error ml-1">{form.formState.errors.dateOfBirth.message as string}</p>}
+                      </div>
                       <div className="space-y-2 md:col-span-2">
                         <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Password</label>
-                        <input {...form.register('password')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="••••••••" type="password" disabled={linkedInDataImported || isLoading}/>
+                        <input {...form.register('password')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="••••••••" type="password" disabled={isLoading}/>
                         {form.formState.errors.password && <p className="text-sm text-error ml-1">{form.formState.errors.password.message as string}</p>}
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Confirm Password</label>
+                        <input {...form.register('confirmPassword')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="••••••••" type="password" disabled={isLoading}/>
+                        {form.formState.errors.confirmPassword && <p className="text-sm text-error ml-1">{form.formState.errors.confirmPassword.message as string}</p>}
                       </div>
                     </div>
                   </div>
@@ -371,8 +390,13 @@ const Signup = () => {
               
               {/* Social Login */}
               <div className="grid grid-cols-2 gap-4">
-                <button type="button" disabled={isLoading} className="flex items-center justify-center gap-2 py-4 px-6 rounded-full bg-surface-container-low hover:bg-surface-container-high transition-colors font-semibold text-sm disabled:opacity-50">
-                  <img alt="Google" className="w-4 h-4" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXr4-l74QJrrgTt0OMU9h1zivmxO93UFZZ-x1k2259hAvOVJWIDrCCaWsZa_QI1v2v_-jlnTz4GFp11DpC5D-rWztJSPOraoNS8SmazRl741sTVCGrrzegyYX3pynXoqN-9vJ5tH4MdGdW8qq02zJM97D0XvC0XBGuQy2mg3wzKo9ujrYbILt3IQgrWptninqxmuCxECU4UGLJw0dDaDPlgxAO1r3us0n576W6BMhbJtGUG608le4dquRmPs1lN5meYfJG6qcXD3M"/>
+                <button type="button" onClick={handleGoogleSignup} disabled={isLoading} className="flex items-center justify-center gap-2 py-4 px-6 rounded-full bg-surface-container-low hover:bg-surface-container-high transition-colors font-semibold text-sm disabled:opacity-50">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill="#EA4335" d="M12 10.2v3.9h5.4c-.2 1.2-1.4 3.6-5.4 3.6-3.2 0-5.9-2.7-5.9-6s2.7-6 5.9-6c1.8 0 3 .8 3.7 1.5l2.5-2.4C16.6 3.3 14.5 2.4 12 2.4 6.8 2.4 2.7 6.6 2.7 12s4.1 9.6 9.3 9.6c5.4 0 8.9-3.8 8.9-9.1 0-.6-.1-1-.1-1.4H12z"/>
+                    <path fill="#34A853" d="M3.9 7.5l3.2 2.4c.9-1.8 2.7-3.1 4.9-3.1 1.8 0 3 .8 3.7 1.5l2.5-2.4C16.6 3.3 14.5 2.4 12 2.4c-3.6 0-6.8 2.1-8.1 5.1z"/>
+                    <path fill="#4A90E2" d="M12 21.6c2.4 0 4.5-.8 6-2.3l-2.8-2.3c-.8.6-1.8 1-3.2 1-2.9 0-5.3-1.9-6.2-4.6l-3.2 2.5c1.4 3.1 4.6 5.7 9.4 5.7z"/>
+                    <path fill="#FBBC05" d="M5.8 13.4c-.2-.6-.3-1.1-.3-1.7s.1-1.2.3-1.7L2.6 7.5C2 8.9 1.7 10.4 1.7 12s.3 3.1.9 4.5l3.2-2.5z"/>
+                  </svg>
                   Sign up with Google
                 </button>
                 <button type="button" onClick={handleLinkedInSignup} disabled={isLoading} className="flex items-center justify-center gap-2 py-4 px-6 rounded-full bg-surface-container-low hover:bg-surface-container-high transition-colors font-semibold text-sm disabled:opacity-50">
@@ -392,14 +416,6 @@ const Signup = () => {
             signupData={newUserData}
           />
         )}
-
-        <LinkedInImportDialog
-          open={linkedInImportOpen}
-          onOpenChange={setLinkedInImportOpen}
-          onConnect={handleLinkedInConnect}
-          isLoading={isLoading}
-          selectedRole={selectedRole}
-        />
       </div>
     </Layout>
   );

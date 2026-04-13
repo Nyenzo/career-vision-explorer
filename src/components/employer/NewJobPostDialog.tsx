@@ -14,7 +14,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -34,51 +33,37 @@ import {
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useEmployerJobs } from "@/hooks/use-employer-jobs";
-import { JobCreate } from "@/types/api";
 
 // Form schema
 const formSchema = z.object({
   title: z.string().min(5, "Job title must be at least 5 characters"),
-  company: z.string().min(2, "Company name is required"),
   description: z.string().min(20, "Description must be at least 20 characters"),
-  requirements: z
-    .string()
-    .min(10, "Requirements must be at least 10 characters"),
-  location: z.string().min(2, "Location is required"),
-  job_type: z.enum([
-    "full-time",
-    "part-time",
-    "contract",
-    "internship",
-    "remote",
+  requirements: z.string().optional(),
+  responsibilities: z.string().optional(),
+  benefits: z.string().optional(),
+  required_skills: z.string().optional(),
+  location: z.string().optional(),
+  job_type: z.enum(["full_time", "part_time", "internship", "remote"]),
+  salary_range: z.string().optional(),
+  experience_level: z.enum([
+    "entry_level",
+    "mid_level",
+    "senior_level",
+    "executive_level",
   ]),
-  salary_range: z.string().min(1, "Salary information is required"),
-  experience_level: z.enum(["entry", "mid", "senior", "lead"]),
-  isBoosted: z.boolean().default(false),
+  status: z.enum(["draft", "open", "closed"]).default("draft"),
+  application_deadline: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-// Mapping to API-compatible values
-const jobTypeMap: Record<FormValues["job_type"], JobCreate["job_type"]> = {
-  "full-time": "Full-time",
-  "part-time": "Part-time",
-  contract: "Contract",
-  internship: "Internship",
-  remote: "Remote",
-};
+interface NewJobPostDialogProps {
+  onJobCreated?: () => void;
+}
 
-const experienceMap: Record<
-  FormValues["experience_level"],
-  JobCreate["experience_level"]
-> = {
-  entry: "Entry Level",
-  mid: "Mid Level",
-  senior: "Senior Level",
-  lead: "Executive",
-};
-
-export default function NewJobPostDialog() {
+export default function NewJobPostDialog({
+  onJobCreated,
+}: NewJobPostDialogProps) {
   const { addJob, loading } = useEmployerJobs();
   const [open, setOpen] = React.useState(false);
 
@@ -86,44 +71,51 @@ export default function NewJobPostDialog() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
-      company: "",
       description: "",
       requirements: "",
+      responsibilities: "",
+      benefits: "",
+      required_skills: "",
       location: "",
-      job_type: "full-time",
+      job_type: "full_time",
       salary_range: "",
-      experience_level: "mid",
-      isBoosted: false,
+      experience_level: "mid_level",
+      status: "draft",
+      application_deadline: "",
     },
   });
 
   async function onSubmit(values: FormValues) {
     try {
-      // Map frontend form values to API payload
-      const jobData = {
-        title: values.title,
-        description: values.description,
-        company: values.company,
+      const backendPayload = {
+        job_title: values.title,
+        job_description: values.description,
         location: values.location,
-        job_type: jobTypeMap[values.job_type], // matches JobCreate type
-        salary_range: values.salary_range, // matches JobCreate type
-        requirements: values.requirements
+        job_type: values.job_type,
+        salary_range: values.salary_range,
+        experience_level: values.experience_level,
+        status: values.status,
+        application_deadline: values.application_deadline || undefined,
+        requirements: (values.requirements || "")
           .split("\n")
           .map((r) => r.trim())
-          .filter(Boolean)
-          .join(", "),
-        experience_level: experienceMap[values.experience_level],
-        ...(values.isBoosted && { isBoosted: true }),
+          .filter(Boolean),
+        responsibilities: (values.responsibilities || "")
+          .split("\n")
+          .map((r) => r.trim())
+          .filter(Boolean),
+        benefits: (values.benefits || "")
+          .split("\n")
+          .map((r) => r.trim())
+          .filter(Boolean),
+        required_skills: (values.required_skills || "")
+          .split("\n")
+          .map((r) => r.trim())
+          .filter(Boolean),
       };
 
-      // Transform to backend-friendly keys before sending
-      const backendPayload = {
-        ...jobData,
-        type: jobData.job_type, // backend expects 'type'
-        salary: jobData.salary_range, // backend expects 'salary'
-      };
-
-      await addJob(backendPayload as any); // cast 'any' to bypass TS, safe here
+      await addJob(backendPayload as any);
+      onJobCreated?.();
 
       setOpen(false);
       form.reset();
@@ -172,21 +164,6 @@ export default function NewJobPostDialog() {
               )}
             />
 
-            {/* Company */}
-            <FormField
-              control={form.control}
-              name="company"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Company</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Tech Solutions Inc." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             {/* Description */}
             <FormField
               control={form.control}
@@ -223,6 +200,62 @@ export default function NewJobPostDialog() {
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="required_skills"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Required Skills</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="List key skills (one per line)"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Optional, but recommended for better matching
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="responsibilities"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Responsibilities</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Responsibilities (one per line)"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="benefits"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Benefits</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Benefits (one per line)"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             {/* Location and Job Type */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
@@ -255,9 +288,8 @@ export default function NewJobPostDialog() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="full-time">Full-time</SelectItem>
-                        <SelectItem value="part-time">Part-time</SelectItem>
-                        <SelectItem value="contract">Contract</SelectItem>
+                        <SelectItem value="full_time">Full-time</SelectItem>
+                        <SelectItem value="part_time">Part-time</SelectItem>
                         <SelectItem value="internship">Internship</SelectItem>
                         <SelectItem value="remote">Remote</SelectItem>
                       </SelectContent>
@@ -303,10 +335,10 @@ export default function NewJobPostDialog() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="entry">Entry Level</SelectItem>
-                        <SelectItem value="mid">Mid Level</SelectItem>
-                        <SelectItem value="senior">Senior Level</SelectItem>
-                        <SelectItem value="lead">Executive</SelectItem>
+                        <SelectItem value="entry_level">Entry Level</SelectItem>
+                        <SelectItem value="mid_level">Mid Level</SelectItem>
+                        <SelectItem value="senior_level">Senior Level</SelectItem>
+                        <SelectItem value="executive_level">Executive</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -315,29 +347,47 @@ export default function NewJobPostDialog() {
               />
             </div>
 
-            {/* Boost */}
-            <FormField
-              control={form.control}
-              name="isBoosted"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-lg border p-4 shadow-sm">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel className="cursor-pointer">
-                      Boost this listing
-                    </FormLabel>
-                    <FormDescription>
-                      Boosted listings appear at the top of search results
-                    </FormDescription>
-                  </div>
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="open">Open</SelectItem>
+                        <SelectItem value="closed">Closed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="application_deadline"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Application Deadline</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <DialogFooter className="gap-2 pt-4">
               <Button

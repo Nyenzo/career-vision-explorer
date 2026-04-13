@@ -35,7 +35,7 @@ const Index = () => {
                 </div>
                 <button 
                   className="bg-gradient-to-r from-primary to-primary-container text-white px-10 py-4 rounded-full font-semibold hover:scale-[1.02] transition-all flex items-center gap-2"
-                  onClick={() => navigate(`/jobs?q=${encodeURIComponent(searchQuery)}`)}
+                  onClick={() => navigate(`/jobseeker/jobs?q=${encodeURIComponent(searchQuery)}`)}
                 >
                   Explore
                 </button>
@@ -72,7 +72,7 @@ const Index = () => {
                 <div className="text-primary font-bold text-sm tracking-widest uppercase mb-2">FOR TALENT</div>
                 <h2 className="text-3xl font-bold font-headline">Featured Jobs</h2>
               </div>
-              <button onClick={() => navigate('/jobs')} className="text-primary font-semibold flex items-center gap-2 hover:gap-3 transition-all">
+              <button onClick={() => navigate('/jobseeker/jobs')} className="text-primary font-semibold flex items-center gap-2 hover:gap-3 transition-all">
                 View All <span className="material-symbols-outlined">arrow_forward</span>
               </button>
             </div>

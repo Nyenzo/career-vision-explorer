@@ -22,6 +22,17 @@ export interface TokenResponse {
   };
 }
 
+export interface RegisterResponse {
+  message: string;
+  requires_email_confirmation: boolean;
+  access_token?: string;
+  refresh_token?: string;
+  user_id?: string;
+  email?: string;
+  account_type?: string;
+  active_role?: string;
+}
+
 export interface UserLogin {
   email: string;
   password: string;
@@ -33,6 +44,9 @@ export interface UserRegister {
   password: string;
   account_type: "job_seeker" | "employer";
   date_of_birth?: string;   // ISO date string, job seekers only
+  company_name?: string;
+  company_website?: string;
+  industry?: string;
 }
 
 export interface RefreshTokenRequest {

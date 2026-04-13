@@ -1,6 +1,5 @@
 import { apiClient } from '@/lib/api-client';
 import { toast } from '@/components/ui/sonner';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 export interface LinkedInAuthResponse {
   access_token: string;
@@ -27,56 +26,21 @@ class LinkedInOAuthService {
    */
   async startOAuthFlow(accountType: 'job_seeker' | 'employer' = 'job_seeker', usePopup: boolean = false): Promise<void> {
     try {
-      // Check if we should use Supabase directly (frontend-only) or backend
-      if (isSupabaseConfigured() && supabase) {
-        // Use Supabase client directly for LinkedIn OIDC
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: 'linkedin_oidc',
-          options: {
-            redirectTo: `${window.location.origin}/auth/callback`,
-            scopes: 'openid profile email',
-            queryParams: {
-              account_type: accountType  // Pass account type in query params
-            }
-          }
-        });
-        
-        if (error) {
-          throw error;
-        }
-        
-        if (data?.url) {
-          if (usePopup) {
-            // Note: Popup flow is complex with Supabase OAuth, redirect is recommended
-            this.openAuthPopup(data.url);
-          } else {
-            // Redirect to LinkedIn
-            window.location.href = data.url;
-          }
-        }
+      const redirectUrl = `${window.location.origin}/auth/callback/linkedin?account_type=${encodeURIComponent(accountType)}`;
+      const response = await apiClient.get<LinkedInAuthorizationResponse>(
+        `/auth/linkedin/authorize?account_type=${accountType}&redirect_url=${encodeURIComponent(redirectUrl)}`
+      );
+
+      if (usePopup) {
+        this.openAuthPopup(response.authorization_url);
       } else {
-        // Fallback to backend OAuth flow
-        const response = await apiClient.get<LinkedInAuthorizationResponse>(
-          `/oauth/linkedin/authorize?account_type=${accountType}&redirect_url=${encodeURIComponent(window.location.origin + '/auth/linkedin/callback')}`
-        );
-        
-        if (usePopup) {
-          this.openAuthPopup(response.authorization_url);
-        } else {
-          window.location.href = response.authorization_url;
-        }
+        window.location.href = response.authorization_url;
       }
     } catch (error: any) {
       console.error('Failed to start LinkedIn OAuth:', error);
-      if (error.status === 503 || error.message?.includes('not configured')) {
-        toast.error('LinkedIn authentication is not available', {
-          description: 'The administrator needs to configure LinkedIn OAuth credentials in Supabase.'
-        });
-      } else {
-        toast.error('Failed to start LinkedIn authentication', {
-          description: error.message || 'Please try again later.'
-        });
-      }
+      toast.error('Failed to start LinkedIn authentication', {
+        description: error.message || 'Please try again later.'
+      });
       throw error;
     }
   }
@@ -136,41 +100,14 @@ class LinkedInOAuthService {
    */
   async handleCallback(code: string, state: string | null): Promise<LinkedInAuthResponse> {
     try {
-      // Extract account type from URL params if available
-      const urlParams = new URLSearchParams(window.location.search);
-      const accountType = urlParams.get('account_type') || 'job_seeker';
-      
-      if (isSupabaseConfigured() && supabase) {
-        // Exchange code for session using Supabase
-        const { data: { session }, error } = await supabase.auth.exchangeCodeForSession(code);
-        
-        if (error) {
-          throw error;
-        }
-        
-        if (!session) {
-          throw new Error('No session returned from LinkedIn');
-        }
-        
-        // Now call our backend to create/update user in our database
-        // The backend will verify the Supabase session and create JWT tokens
-        const response = await apiClient.post<LinkedInAuthResponse>('/auth/linkedin/verify', {
-          supabase_access_token: session.access_token,
-          supabase_user_id: session.user.id,
-          email: session.user.email,
-          account_type: accountType,
-          user_metadata: session.user.user_metadata
-        });
-        
-        return response;
-      } else {
-        // Fallback to backend OAuth flow
-        const response = await apiClient.get<LinkedInAuthResponse>(
-          `/oauth/linkedin/callback?code=${code}${state ? `&state=${state}` : ''}`
-        );
-        
-        return response;
+      const callbackQuery = new URLSearchParams({ code });
+      if (state) {
+        callbackQuery.set('state', state);
       }
+
+      return await apiClient.get<LinkedInAuthResponse>(
+        `/auth/linkedin/callback?${callbackQuery.toString()}`
+      );
     } catch (error: any) {
       console.error('LinkedIn callback failed:', error);
       toast.error('Authentication failed', {

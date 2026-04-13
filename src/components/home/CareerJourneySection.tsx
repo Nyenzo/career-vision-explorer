@@ -96,7 +96,7 @@ const CareerJourneySection = () => {
               <p className="text-muted-foreground mb-8 leading-relaxed">
                 Get matched with opportunities aligned with your skills and career goals from top employers.
               </p>
-              <Link to="/jobs">
+              <Link to="/jobseeker/jobs">
                 <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-3 shadow-md hover:shadow-lg transition-all duration-300">
                   Find Jobs
                 </Button>

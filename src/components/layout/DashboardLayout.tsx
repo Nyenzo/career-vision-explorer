@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import Navbar from "./Navbar";
+import Footer from "./Footer";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -52,7 +54,9 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <Navbar />
       <main className="flex-1">{children}</main>
+      <Footer />
     </div>
   );
 };

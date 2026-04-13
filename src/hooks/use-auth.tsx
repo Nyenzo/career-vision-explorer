@@ -30,7 +30,8 @@ interface AuthContextType {
   isEmployer: () => boolean;
   isJobSeeker: () => boolean;
   setTokens: (accessToken: string, refreshToken: string) => void;
-  signInWithLinkedIn: () => Promise<void>;
+  signInWithLinkedIn: (accountType?: "job_seeker" | "employer") => Promise<void>;
+  signInWithGoogle: (accountType?: "job_seeker" | "employer") => Promise<void>;
   handleOAuthCallback: () => Promise<void>;
   impersonateUser: (targetUser: User) => void;
   stopImpersonation: () => void;
@@ -220,7 +221,14 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   const register = async (userData: UserRegister) => {
     try {
       setIsLoading(true);
-      await authService.register(userData);
+      const registerResponse = await authService.register(userData);
+
+      if (registerResponse.requires_email_confirmation) {
+        toast.success("Registration successful! Check your email to confirm your account.");
+        navigate("/login", { replace: true });
+        return;
+      }
+
       const user = await authService.getCurrentUser();
       authService.setStoredUser(user);
       setUser(user);
@@ -309,11 +317,10 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const signInWithLinkedIn = async () => {
+  const signInWithLinkedIn = async (accountType: "job_seeker" | "employer" = "job_seeker") => {
     try {
       setIsLoading(true);
-      localStorage.setItem("oauth_account_type", "job_seeker");
-      await authService.signInWithLinkedIn();
+      await authService.signInWithLinkedIn(accountType);
     } catch (error: unknown) {
       console.error("LinkedIn sign-in error:", error);
       toast.error("LinkedIn Authentication Failed", {
@@ -323,6 +330,26 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
             "Failed to initiate LinkedIn authentication. Please try again."
           ) ||
           "Failed to initiate LinkedIn authentication. Please try again.",
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signInWithGoogle = async (accountType: "job_seeker" | "employer" = "job_seeker") => {
+    try {
+      setIsLoading(true);
+      await authService.signInWithGoogle(accountType);
+    } catch (error: unknown) {
+      console.error("Google sign-in error:", error);
+      toast.error("Google Authentication Failed", {
+        description:
+          getErrorMessage(
+            error,
+            "Failed to initiate Google authentication. Please try again."
+          ) ||
+          "Failed to initiate Google authentication. Please try again.",
       });
       throw error;
     } finally {
@@ -350,7 +377,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
       await loadUserProfile();
 
       toast.success("Welcome!", {
-        description: "You have been successfully logged in with LinkedIn.",
+        description: "You have been successfully signed in.",
       });
 
       // Redirect to appropriate dashboard
@@ -362,9 +389,9 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         description:
           getErrorMessage(
             error,
-            "Failed to complete LinkedIn authentication. Please try again."
+            "Failed to complete authentication. Please try again."
           ) ||
-          "Failed to complete LinkedIn authentication. Please try again.",
+          "Failed to complete authentication. Please try again.",
       });
       throw error;
     } finally {
@@ -386,6 +413,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     isJobSeeker,
     setTokens,
     signInWithLinkedIn,
+    signInWithGoogle,
     handleOAuthCallback,
     impersonateUser: () => {},
     stopImpersonation,

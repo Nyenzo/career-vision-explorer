@@ -1,25 +1,52 @@
 // Complete API types matching FastAPI backend schemas
 
 export interface Job {
-  job_id: string;
-  title: string;
-  company: string;
-  requirements: string;
-  location: string;
+  // Current backend fields
+  id?: string;
+  job_title?: string;
+  job_description?: string;
+  requirements?: string[];
+  responsibilities?: string[];
+  benefits?: string[];
+  required_skills?: string[];
+  location?: string;
+  job_type?:
+    | "full_time"
+    | "part_time"
+    | "remote"
+    | "internship"
+    | "Full-time"
+    | "Part-time"
+    | "Contract"
+    | "Internship"
+    | "Remote";
   salary_range?: string;
-  posted_by: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  experience_level?:
+    | "entry_level"
+    | "mid_level"
+    | "senior_level"
+    | "executive_level"
+    | "Entry Level"
+    | "Mid Level"
+    | "Senior Level"
+    | "Executive";
+  status?: "draft" | "open" | "closed";
+  application_deadline?: string;
+  company_name?: string;
+  employer_id?: string;
   application_count?: number;
+  created_at?: string;
+  updated_at?: string;
+
+  // Legacy compatibility fields used in older UI modules
+  job_id?: string;
+  title?: string;
+  company?: string;
+  posted_by?: string;
+  is_active?: boolean;
   posted_by_company?: string;
-  // Enhanced fields
-  job_type?: "Full-time" | "Part-time" | "Contract" | "Internship" | "Remote";
-  experience_level?: "Entry Level" | "Mid Level" | "Senior Level" | "Executive";
   skills_required?: string[];
   description?: string;
-  benefits?: string[];
-  application_deadline?: string;
   remote_friendly?: boolean;
   // Profile information (from view)
   posted_by_name?: string;
@@ -28,33 +55,83 @@ export interface Job {
 }
 
 export interface JobCreate {
-  title: string;
-  company: string;
-  requirements: string[];
-  location: string;
+  // Current backend contract (preferred)
+  job_title?: string;
+  job_description?: string;
+  requirements?: string[];
+  responsibilities?: string[];
+  benefits?: string[];
+  required_skills?: string[];
+  location?: string;
+  job_type?:
+    | "full_time"
+    | "part_time"
+    | "remote"
+    | "internship"
+    | "Full-time"
+    | "Part-time"
+    | "Contract"
+    | "Internship"
+    | "Remote";
   salary_range?: string;
-  job_type?: "Full-time" | "Part-time" | "Contract" | "Internship" | "Remote";
-  experience_level?: "Entry Level" | "Mid Level" | "Senior Level" | "Executive";
+  experience_level?:
+    | "entry_level"
+    | "mid_level"
+    | "senior_level"
+    | "executive_level"
+    | "Entry Level"
+    | "Mid Level"
+    | "Senior Level"
+    | "Executive";
+  status?: "draft" | "open" | "closed";
+  application_deadline?: string;
+
+  // Legacy compatibility fields
+  title?: string;
+  company?: string;
   skills_required?: string[];
   description?: string;
-  benefits?: string[];
-  application_deadline?: string;
   remote_friendly?: boolean;
 }
 
 export interface JobUpdate {
+  // Current backend contract (preferred)
+  job_title?: string;
+  job_description?: string;
+  requirements?: string[] | string;
+  responsibilities?: string[];
+  benefits?: string[];
+  required_skills?: string[];
+  job_type?:
+    | "full_time"
+    | "part_time"
+    | "remote"
+    | "internship"
+    | "Full-time"
+    | "Part-time"
+    | "Contract"
+    | "Internship"
+    | "Remote";
+  experience_level?:
+    | "entry_level"
+    | "mid_level"
+    | "senior_level"
+    | "executive_level"
+    | "Entry Level"
+    | "Mid Level"
+    | "Senior Level"
+    | "Executive";
+  status?: "draft" | "open" | "closed";
+  application_deadline?: string;
+
+  // Legacy compatibility fields
   title?: string;
   company?: string;
-  requirements?: string;
   location?: string;
   salary_range?: string;
   is_active?: boolean;
-  job_type?: "Full-time" | "Part-time" | "Contract" | "Internship" | "Remote";
-  experience_level?: "Entry Level" | "Mid Level" | "Senior Level" | "Executive";
   skills_required?: string[];
   description?: string;
-  benefits?: string[];
-  application_deadline?: string;
   remote_friendly?: boolean;
 }
 

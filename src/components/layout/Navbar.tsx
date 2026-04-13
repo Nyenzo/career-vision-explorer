@@ -63,7 +63,7 @@ const Navbar = () => {
   const jobSeekerNavItems = [
     { name: "Home", path: "/" },
     { name: "Dashboard", path: "/jobseeker/dashboard" },
-    { name: "Jobs", path: "/jobs" },
+    { name: "Jobs", path: "/jobseeker/jobs" },
     { name: "Profile", path: "/profile" },
   ];
 
@@ -89,34 +89,28 @@ const Navbar = () => {
             </Link>
           </div>
 
-          {/* Desktop Center Nav - Employer */}
-          <div className="hidden md:flex md:items-center md:justify-center flex-1">
-            {isAuthenticated &&
-              isEmployerUser &&
-              employerNavItems.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive(item.href)
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                    }`}
-                >
-                  {item.name}
-                </Link>
-              ))}
-          </div>
-
           {/* Desktop Right */}
           <div className="hidden md:flex items-center space-x-4">
             {isAuthenticated && (
               <>
 
+                {isEmployerUser && (
+                  <Link
+                    to="/employer/jobs"
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive("/employer/jobs")
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                      }`}
+                  >
+                    Jobs
+                  </Link>
+                )}
+
 
                 {isJobSeekerUser && (
                   <Link
-                    to="/jobs"
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive("/jobs")
+                    to="/jobseeker/jobs"
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive("/jobseeker/jobs")
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                       }`}
