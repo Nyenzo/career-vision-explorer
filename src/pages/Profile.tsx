@@ -1616,8 +1616,8 @@ const Profile: React.FC = () => {
                             });
                           }}
                           className={`px-4 py-1 rounded-full text-xs font-bold border-2 transition-all ${getWorkModeFromPreferences(editForm.preferences) === mode
-                              ? "border-primary bg-primary-fixed text-primary"
-                              : "border-surface-container-high text-slate-500 hover:border-primary/50"
+                            ? "border-primary bg-primary-fixed text-primary"
+                            : "border-surface-container-high text-slate-500 hover:border-primary/50"
                             }`}
                         >
                           {mode}
@@ -1646,8 +1646,8 @@ const Profile: React.FC = () => {
                               });
                             }}
                             className={`px-4 py-1 rounded-full text-xs font-bold border-2 transition-all ${isSelected
-                                ? "border-primary bg-primary-fixed text-primary"
-                                : "border-surface-container-high text-slate-500 hover:border-primary/50"
+                              ? "border-primary bg-primary-fixed text-primary"
+                              : "border-surface-container-high text-slate-500 hover:border-primary/50"
                               }`}
                           >
                             {employmentType}
@@ -1686,8 +1686,8 @@ const Profile: React.FC = () => {
                       key={status}
                       onClick={() => setEditForm({ ...editForm, availability: status as any })}
                       className={`px-4 py-2 rounded-full font-bold text-sm transition-all ${editForm.availability === status
-                          ? "bg-white text-primary shadow-sm border border-slate-100"
-                          : "text-slate-500 bg-surface-container-low hover:bg-slate-200/50"
+                        ? "bg-white text-primary shadow-sm border border-slate-100"
+                        : "text-slate-500 bg-surface-container-low hover:bg-slate-200/50"
                         }`}
                     >
                       {status}

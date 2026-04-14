@@ -74,15 +74,15 @@ export const JobHeader = ({ job, showMatchScore = true }: JobHeaderProps) => {
                 {/* Company Logo + Name */}
                 <div className="w-28 flex-shrink-0">
                     <div className="w-24 h-24 rounded-lg bg-surface-container-low p-4 flex items-center justify-center">
-                    {logoUrl ? (
-                        <img
-                            src={logoUrl}
-                            alt={`${companyName} logo`}
-                            className="w-full h-full object-contain"
-                        />
-                    ) : (
-                        <span className="material-symbols-outlined text-4xl text-outline">domain</span>
-                    )}
+                        {logoUrl ? (
+                            <img
+                                src={logoUrl}
+                                alt={`${companyName} logo`}
+                                className="w-full h-full object-contain"
+                            />
+                        ) : (
+                            <span className="material-symbols-outlined text-4xl text-outline">domain</span>
+                        )}
                     </div>
                     <p className="mt-2 text-sm font-semibold text-on-surface-variant leading-tight line-clamp-2">
                         {companyName}

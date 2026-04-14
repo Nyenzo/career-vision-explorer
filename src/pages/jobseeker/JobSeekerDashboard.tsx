@@ -84,8 +84,8 @@ const JobSeekerDashboard = () => {
                     <Avatar className="w-32 h-32 ring-4 ring-surface-container flex-shrink-0">
                       <AvatarImage src={profile?.avatar_url} />
                       <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold text-3xl">
-                        {profile?.name?.split(" ").map((n) => n[0]).join("").toUpperCase() || 
-                         user?.name?.split(" ").map((n) => n[0]).join("").toUpperCase() || "PN"}
+                        {profile?.name?.split(" ").map((n) => n[0]).join("").toUpperCase() ||
+                          user?.name?.split(" ").map((n) => n[0]).join("").toUpperCase() || "PN"}
                       </AvatarFallback>
                     </Avatar>
                     <div className="absolute bottom-1 right-1 bg-tertiary w-6 h-6 rounded-full border-4 border-surface-container-lowest flex items-center justify-center">
@@ -107,16 +107,16 @@ const JobSeekerDashboard = () => {
                       onClick={() => navigate("/jobseeker/saved-jobs")}
                       className="w-full py-3 px-6 bg-surface-container-low text-primary font-semibold text-sm rounded-full hover:bg-surface-container transition-colors flex items-center justify-center gap-2"
                     >
-                       <Target className="w-4 h-4" />
-                       View Saved Jobs
+                      <Target className="w-4 h-4" />
+                      View Saved Jobs
                     </button>
                     <RoleSwitcher />
                   </div>
                 </div>
               </section>
-              
+
               {/* Recent Activity */}
-               <RecentActivityCard />
+              <RecentActivityCard />
             </div>
 
             {/* Right Column: Profile Completion (Bento Main) & Quick Stats */}

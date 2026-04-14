@@ -9,10 +9,10 @@ export const JobsHeader = () => {
     <section className="max-w-7xl mx-auto px-6 py-12 md:py-20 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
       <div className="space-y-4">
         <h1 className="font-headline text-5xl md:text-6xl font-extrabold tracking-tighter text-on-surface">
-            Find Your Dream Job
+          Find Your Dream Job
         </h1>
         <p className="text-on-surface-variant text-lg max-w-xl">
-            Discover high-end career opportunities curated specifically for your skill set and professional vision.
+          Discover high-end career opportunities curated specifically for your skill set and professional vision.
         </p>
       </div>
       <button
