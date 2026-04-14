@@ -130,6 +130,48 @@ const upsertJobPreferences = (
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 };
 
+const benefitsToEditableText = (benefits?: Array<{ name?: string; description?: string }>) => {
+  if (!Array.isArray(benefits) || benefits.length === 0) {
+    return "";
+  }
+
+  return benefits
+    .map((benefit) => {
+      const name = (benefit?.name || "").trim();
+      const description = (benefit?.description || "").trim();
+      if (!name && !description) {
+        return "";
+      }
+      if (!name) {
+        return description;
+      }
+      return description ? `${name} - ${description}` : name;
+    })
+    .filter(Boolean)
+    .join("\n");
+};
+
+const parseBenefitsInput = (input: string) => {
+  const lines = input
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  return lines.map((line) => {
+    const separatorIndex = line.indexOf(" - ");
+    if (separatorIndex === -1) {
+      return { name: line };
+    }
+
+    const name = line.slice(0, separatorIndex).trim();
+    const description = line.slice(separatorIndex + 3).trim();
+    return {
+      name: name || description,
+      ...(description ? { description } : {}),
+    };
+  });
+};
+
 const Profile: React.FC = () => {
   const { user, isAuthenticated, profile: authProfile } = useAuth();
   const navigate = useNavigate();
@@ -295,30 +337,38 @@ const Profile: React.FC = () => {
       let updatedProfile;
 
       if (user?.account_type === "employer") {
-        // For employers, update profile with top-level company fields
-        const employerProfileData = {
+        const employerCompanyPayload = {
           company_name:
-            cleanPayload.company_name ||
-            cleanPayload.company_data?.company_name,
+            cleanPayload.company_name || cleanPayload.company_data?.company_name,
           industry:
             cleanPayload.industry || cleanPayload.company_data?.industry,
           company_website:
-            cleanPayload.company_website ||
-            cleanPayload.company_data?.company_website,
+            cleanPayload.company_website || cleanPayload.company_data?.company_website,
           company_size:
-            cleanPayload.company_size ||
-            cleanPayload.company_data?.company_size,
-          full_name: cleanPayload.name, // API expects full_name
+            cleanPayload.company_size || cleanPayload.company_data?.company_size,
+          founded_year: cleanPayload.company_data?.founded_year,
+          company_description: cleanPayload.company_data?.company_description,
+          company_culture: cleanPayload.company_data?.company_culture,
+          contact_email: cleanPayload.company_data?.contact_email,
+          contact_phone: cleanPayload.company_data?.contact_phone,
+          benefits: cleanPayload.company_data?.benefits,
+        };
+
+        const employerUserPayload = {
+          ...(cleanPayload.name ? { full_name: cleanPayload.name } : {}),
           bio: cleanPayload.bio,
-          phone: cleanPayload.phone,
           location: cleanPayload.location,
         };
 
-        console.log("🏢 Sending employer profile data:", employerProfileData);
+        console.log("🏢 Sending employer company data:", employerCompanyPayload);
+        await profileService.updateCompanyProfile(employerCompanyPayload);
 
-        updatedProfile = await profileService.updateProfile(
-          employerProfileData
-        );
+        console.log("👤 Sending employer user profile data:", employerUserPayload);
+        await profileService.updateProfile(employerUserPayload);
+        await loadProfile();
+        setEditing(false);
+        toast.success("Profile updated successfully!");
+        return;
       } else {
         // For regular users, remove company data and remap name → full_name
         const {
@@ -770,7 +820,7 @@ const Profile: React.FC = () => {
       industry: profile?.industry || profile?.company_data?.industry || "",
       company_website: profile?.company_website || profile?.company_data?.company_website || "",
       company_size: profile?.company_size || profile?.company_data?.company_size || "",
-      founded_year: profile?.company_data?.founded_year || undefined,
+      founded_year: profile?.founded_year || profile?.company_data?.founded_year || undefined,
       company_description: profile?.company_data?.company_description || "",
       company_culture: profile?.company_data?.company_culture || "",
       contact_email: profile?.company_data?.contact_email || user?.email || "",
@@ -790,7 +840,7 @@ const Profile: React.FC = () => {
     return (
       <div className="space-y-6">
         {/* Company Basic Info */}
-        <Card>
+        <Card className="rounded-3xl border border-slate-200 shadow-none">
           <CardHeader>
             <CardTitle>Company Information</CardTitle>
           </CardHeader>
@@ -960,14 +1010,14 @@ const Profile: React.FC = () => {
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <h4 className="font-semibold">Company Name</h4>
-                    <p className="text-muted-foreground">
+                    <h4 className="text-[10px] tracking-[0.16em] uppercase text-slate-500 font-bold">Company Name</h4>
+                    <p className="text-slate-900 font-semibold mt-1">
                       {companyData.company_name || "Not provided"}
                     </p>
                   </div>
                   <div>
-                    <h4 className="font-semibold">Industry</h4>
-                    <p className="text-muted-foreground">
+                    <h4 className="text-[10px] tracking-[0.16em] uppercase text-slate-500 font-bold">Industry</h4>
+                    <p className="text-slate-900 font-semibold mt-1">
                       {companyData.industry || "Not provided"}
                     </p>
                   </div>
@@ -975,14 +1025,14 @@ const Profile: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <h4 className="font-semibold">Company Size</h4>
-                    <p className="text-muted-foreground">
+                    <h4 className="text-[10px] tracking-[0.16em] uppercase text-slate-500 font-bold">Company Size</h4>
+                    <p className="text-slate-900 font-semibold mt-1">
                       {companyData.company_size || "Not provided"}
                     </p>
                   </div>
                   <div>
-                    <h4 className="font-semibold">Founded Year</h4>
-                    <p className="text-muted-foreground">
+                    <h4 className="text-[10px] tracking-[0.16em] uppercase text-slate-500 font-bold">Founded Year</h4>
+                    <p className="text-slate-900 font-semibold mt-1">
                       {companyData.founded_year || "Not provided"}
                     </p>
                   </div>
@@ -1004,8 +1054,8 @@ const Profile: React.FC = () => {
 
                 {companyData.company_description && (
                   <div>
-                    <h4 className="font-semibold mb-2">About Us</h4>
-                    <p className="text-muted-foreground">
+                    <h4 className="text-[10px] tracking-[0.16em] uppercase text-slate-500 font-bold mb-2">About Us</h4>
+                    <p className="text-slate-700 leading-8">
                       {companyData.company_description}
                     </p>
                   </div>
@@ -1013,8 +1063,8 @@ const Profile: React.FC = () => {
 
                 {companyData.company_culture && (
                   <div>
-                    <h4 className="font-semibold mb-2">Our Culture</h4>
-                    <p className="text-muted-foreground">
+                    <h4 className="text-[10px] tracking-[0.16em] uppercase text-slate-500 font-bold mb-2">Our Culture</h4>
+                    <p className="text-slate-700 leading-8">
                       {companyData.company_culture}
                     </p>
                   </div>
@@ -1025,7 +1075,7 @@ const Profile: React.FC = () => {
         </Card>
 
         {/* Contact Information */}
-        <Card>
+        <Card className="rounded-3xl border border-slate-200 shadow-none">
           <CardHeader>
             <CardTitle>Contact Information</CardTitle>
           </CardHeader>
@@ -1093,7 +1143,7 @@ const Profile: React.FC = () => {
         </Card>
 
         {/* Company Benefits */}
-        <Card>
+        <Card className="rounded-3xl border border-slate-200 shadow-none">
           <CardHeader>
             <CardTitle>Company Benefits</CardTitle>
           </CardHeader>
@@ -1101,47 +1151,31 @@ const Profile: React.FC = () => {
             {editing ? (
               <div className="space-y-4">
                 <Textarea
-                  value={
-                    editForm.company_data?.benefits
-                      ? JSON.stringify(editForm.company_data.benefits, null, 2)
-                      : "[]"
-                  }
+                  value={benefitsToEditableText(
+                    editForm.company_data?.benefits || companyData.benefits
+                  )}
                   onChange={(e) => {
-                    try {
-                      const benefits = JSON.parse(e.target.value);
-                      setEditForm({
-                        ...editForm,
-                        company_data: {
-                          ...editForm.company_data,
-                          benefits,
-                        },
-                      });
-                    } catch { }
+                    const benefits = parseBenefitsInput(e.target.value);
+                    setEditForm({
+                      ...editForm,
+                      company_data: {
+                        ...editForm.company_data,
+                        benefits,
+                      },
+                    });
                   }}
-                  placeholder={`[
-  {
-    "name": "Health Insurance",
-    "description": "Comprehensive health coverage"
-  },
-  {
-    "name": "Remote Work",
-    "description": "Work from anywhere"
-  }
-]`}
+                  placeholder={`Health Insurance - Comprehensive health coverage\nRemote Work\nLearning Budget - Annual stipend for courses and certifications`}
                   rows={6}
                 />
                 <p className="text-sm text-muted-foreground">
-                  Enter benefits as JSON array with name and description fields
+                  Add one benefit per line. Optionally include a description using " - ".
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
                 {companyData.benefits?.length ? (
                   companyData.benefits.map((benefit, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-3 p-3 border rounded-lg"
-                    >
+                    <div key={index} className="flex items-center gap-3 p-4 border border-slate-200 rounded-xl bg-slate-50">
                       <Award className="h-5 w-5 text-blue-500" />
                       <div>
                         <h4 className="font-medium">{benefit.name}</h4>
@@ -1154,53 +1188,16 @@ const Profile: React.FC = () => {
                     </div>
                   ))
                 ) : (
-                  <p className="text-muted-foreground">No benefits added yet</p>
+                  <div className="rounded-2xl border-2 border-dashed border-slate-300 py-10 text-center text-slate-500">
+                    <Plus className="h-5 w-5 mx-auto mb-2" />
+                    No benefits added yet
+                  </div>
                 )}
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Tech Stack */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Tech Stack</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {editing ? (
-              <Textarea
-                value={editForm.company_data?.tech_stack?.join(", ") || ""}
-                onChange={(e) =>
-                  setEditForm({
-                    ...editForm,
-                    company_data: {
-                      ...editForm.company_data,
-                      tech_stack: e.target.value
-                        .split(",")
-                        .map((item) => item.trim())
-                        .filter(Boolean),
-                    },
-                  })
-                }
-                placeholder="React, Node.js, Python, AWS, ..."
-              />
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {companyData.tech_stack?.length ? (
-                  companyData.tech_stack.map((tech, index) => (
-                    <Badge key={index} variant="secondary">
-                      {tech}
-                    </Badge>
-                  ))
-                ) : (
-                  <p className="text-muted-foreground">
-                    No tech stack specified
-                  </p>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
     );
   };
@@ -1244,13 +1241,13 @@ const Profile: React.FC = () => {
   if (isEmployer) {
     return (
       <Layout>
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
-          <div className="container py-8 max-w-4xl mx-auto px-4">
+        <div className="min-h-screen bg-[#eef1f5]">
+          <div className="container py-8 max-w-6xl mx-auto px-4">
             {/* Header */}
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h1 className="text-3xl font-bold">Company Profile</h1>
-                <p className="text-muted-foreground mt-2">
+                <h1 className="text-4xl font-black tracking-tight text-slate-900">Company Profile</h1>
+                <p className="text-slate-600 mt-2 text-lg">
                   Manage your company information and hiring preferences
                 </p>
               </div>
@@ -1264,7 +1261,7 @@ const Profile: React.FC = () => {
                     }
                     setEditing(true);
                   }}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 rounded-2xl bg-[#2f63e9] px-6 py-3 text-white shadow-xl shadow-blue-200/60 hover:bg-[#2858d1]"
                 >
                   <Edit3 className="h-4 w-4" />
                   Edit Profile
@@ -1293,7 +1290,7 @@ const Profile: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
               {/* Left Column - Company Logo & Basic Info */}
               <div className="lg:col-span-1 space-y-6">
-                <Card>
+                <Card className="rounded-3xl border border-slate-200 shadow-none">
                   <CardContent className="p-6">
                     <div className="text-center">
                       <Avatar className="h-32 w-32 mx-auto mb-4">
@@ -1429,6 +1426,22 @@ const Profile: React.FC = () => {
                         </div>
                       </>
                     )}
+                  </CardContent>
+                </Card>
+
+                <Card className="rounded-3xl border border-slate-200 shadow-none">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-xs uppercase tracking-[0.2em] text-slate-500">Quick Stats</CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-2 gap-3 pt-1">
+                    <div className="rounded-xl bg-slate-50 p-3 border border-slate-200">
+                      <p className="text-[10px] uppercase tracking-[0.12em] text-slate-500">Response Rate</p>
+                      <p className="text-2xl font-bold text-emerald-700">98%</p>
+                    </div>
+                    <div className="rounded-xl bg-slate-50 p-3 border border-slate-200">
+                      <p className="text-[10px] uppercase tracking-[0.12em] text-slate-500">Open Roles</p>
+                      <p className="text-2xl font-bold text-blue-700">12</p>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
