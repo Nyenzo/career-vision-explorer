@@ -55,7 +55,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { profileService } from "@/services/profile.service";
 import { toast } from "sonner";
-import { Profile as ProfileType, ProfileUpdate } from "@/types/api";
+import { Profile as ProfileType, ProfileUpdate, CompanyData } from "@/types/api";
 import { useNavigate } from "react-router-dom";
 import whatsapp from "/src/assets/whatsapp.png";
 import stackoverflow from "/src/assets/stackoverflow.png";
@@ -220,11 +220,26 @@ const Profile: React.FC = () => {
     try {
       setLoading(true);
       const profileData = await profileService.getProfile();
+      let companyProfile: CompanyData | null = null;
+
+      if (user?.account_type === "employer") {
+        try {
+          companyProfile = await profileService.getCompanyProfile();
+        } catch (companyError) {
+          console.warn("Failed to load employer company profile", companyError);
+        }
+      }
 
       const sanitizedProfileData = {
         ...profileData,
         // Normalize: DB column is full_name, ensure profile.name is always set
-        name: profileData.name || (profileData as any).full_name || "",
+        name: profileData.name || profileData.full_name || "",
+        company_data: companyProfile || profileData.company_data,
+        company_name: profileData.company_name || companyProfile?.company_name,
+        industry: profileData.industry || companyProfile?.industry,
+        company_website:
+          profileData.company_website || companyProfile?.company_website,
+        company_size: profileData.company_size || companyProfile?.company_size,
         preferences: normalizeJobPreferences(profileData.preferences),
       };
 
@@ -538,7 +553,7 @@ const Profile: React.FC = () => {
 
   const PHOTO_PREVIEW_SIZE = 288;
   const profileAvatarSrc = profile?.avatar_url
-    ? `${profile.avatar_url}${profile.avatar_url.includes("?") ? "&" : "?"}t=${Date.now()}`
+    ? `${profile.avatar_url}${profile.avatar_url.includes("?") ? "&" : "?"}t=${profileImageRefreshKey}`
     : undefined;
   const previewFrame = photoEditorImageSize
     ? getCropFrame(

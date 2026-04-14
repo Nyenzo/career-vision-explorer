@@ -32,6 +32,66 @@ interface Job {
   isActive?: boolean;
 }
 
+const normalizeApiJobToUiJob = (apiJob: any): Job => {
+  let skills: string[] = [];
+  if (Array.isArray(apiJob.skills_required) && apiJob.skills_required.length > 0) {
+    skills = apiJob.skills_required;
+  } else if (apiJob.skills_required && !Array.isArray(apiJob.skills_required)) {
+    skills = [apiJob.skills_required];
+  } else if (Array.isArray(apiJob.required_skills) && apiJob.required_skills.length > 0) {
+    skills = apiJob.required_skills;
+  } else if (apiJob.requirements) {
+    skills = apiJob.requirements
+      .toString()
+      .split(/[,\n\r]+/)
+      .map((s: string) => s.trim())
+      .filter((s: string) => s.length > 0 && s.length < 50)
+      .slice(0, 10);
+  }
+
+  const title = String(apiJob.job_title ?? apiJob.title ?? "Untitled Role");
+  const company = String(
+    apiJob.company_name ??
+    apiJob.company ??
+    apiJob.employer_company_name ??
+    apiJob.posted_by_company ??
+    "Unknown Company"
+  );
+
+  return {
+    id: String(apiJob.job_id || apiJob.id),
+    job_id: String(apiJob.job_id || apiJob.id),
+    title,
+    company,
+    location: String(apiJob.location ?? "Location not specified"),
+    type: String(apiJob.job_type || "Full-time"),
+    salary: String(apiJob.salary_range || "Competitive"),
+    posted: apiJob.created_at
+      ? new Date(apiJob.created_at).toLocaleDateString()
+      : "Recently",
+    matchScore: Number(apiJob.match_score || 0),
+    skills,
+    description: String(
+      apiJob.job_description ||
+      apiJob.description ||
+      apiJob.requirements ||
+      "No description available"
+    ),
+    experienceLevel: String(apiJob.experience_level || "Mid Level"),
+    companyInfo: { logoUrl: apiJob.company_logo_url || undefined },
+    benefits: Array.isArray(apiJob.benefits)
+      ? apiJob.benefits
+      : apiJob.benefits
+        ? [apiJob.benefits]
+        : [],
+    remoteFriendly: Boolean(apiJob.remote_friendly || false),
+    applicationDeadline: apiJob.application_deadline,
+    requirements: String(apiJob.requirements || ""),
+    postedBy: apiJob.posted_by_name || apiJob.posted_by,
+    isActive: apiJob.is_active !== undefined ? apiJob.is_active : true,
+  } as Job;
+};
+
 // Helper function to generate UUID-like strings for mock data compatibility
 const generateMockUUID = (id: string): string => {
   // convert simple id to uuid format for backend compatibilty
@@ -157,28 +217,8 @@ const Jobs = () => {
 
       const apiJobs = jobsResponse.jobs || [];
       if (apiJobs.length > 0) {
-        const transformedJobs = apiJobs.map(
-          (apiJob: any) =>
-            ({
-              id: apiJob.job_id || apiJob.id,
-              job_id: apiJob.job_id || apiJob.id,
-              title: apiJob.title,
-              company: apiJob.company,
-              location: apiJob.location,
-              type: apiJob.job_type || "Full-time",
-              salary: apiJob.salary_range || "Competitive",
-              posted: apiJob.created_at
-                ? new Date(apiJob.created_at).toLocaleDateString()
-                : "Recently",
-              matchScore: 0,
-              skills: apiJob.skills_required || apiJob.skills || [],
-              description:
-                apiJob.description ||
-                apiJob.requirements ||
-                "No description available",
-              experienceLevel: apiJob.experience_level || "Mid Level",
-              companyInfo: { logoUrl: undefined },
-            }) as Job,
+        const transformedJobs = apiJobs.map((apiJob: any) =>
+          normalizeApiJobToUiJob(apiJob)
         );
 
         if (mountedRef.current) {
@@ -256,49 +296,9 @@ const Jobs = () => {
 
       const apiJobs = jobsResponse.jobs || [];
       if (apiJobs.length > 0) {
-        const transformedJobs = apiJobs.map((apiJob: any) => {
-          let skills: string[] = [];
-          if (Array.isArray(apiJob.skills_required) && apiJob.skills_required.length > 0) {
-            skills = apiJob.skills_required;
-          } else if (apiJob.skills_required && !Array.isArray(apiJob.skills_required)) {
-            skills = [apiJob.skills_required];
-          } else if (apiJob.requirements) {
-            skills = apiJob.requirements
-              .toString()
-              .split(/[,\n\r]+/)
-              .map((s: string) => s.trim())
-              .filter((s: string) => s.length > 0 && s.length < 50)
-              .slice(0, 10);
-          }
-
-          return {
-            id: apiJob.job_id || apiJob.id,
-            job_id: apiJob.job_id || apiJob.id,
-            title: apiJob.title,
-            company: apiJob.company,
-            location: apiJob.location,
-            type: apiJob.job_type || "Full-time",
-            salary: apiJob.salary_range || "Competitive",
-            posted: apiJob.created_at
-              ? new Date(apiJob.created_at).toLocaleDateString()
-              : "Recently",
-            matchScore: 0,
-            skills,
-            description: apiJob.description || apiJob.requirements || "No description available",
-            experienceLevel: apiJob.experience_level || "Mid Level",
-            companyInfo: { logoUrl: undefined },
-            benefits: Array.isArray(apiJob.benefits)
-              ? apiJob.benefits
-              : apiJob.benefits
-                ? [apiJob.benefits]
-                : [],
-            remoteFriendly: apiJob.remote_friendly || false,
-            applicationDeadline: apiJob.application_deadline,
-            requirements: apiJob.requirements || "",
-            postedBy: apiJob.posted_by_name || apiJob.posted_by,
-            isActive: apiJob.is_active !== undefined ? apiJob.is_active : true,
-          } as Job;
-        });
+        const transformedJobs = apiJobs.map((apiJob: any) =>
+          normalizeApiJobToUiJob(apiJob)
+        );
 
         if (mountedRef.current) {
           setJobs(dedupeJobs(transformedJobs));

@@ -14,6 +14,34 @@ import { JobNotFound } from "@/components/jobs/JobNotFound";
 import { jobsService } from "@/services/jobs.service";
 import { apiClient } from "@/lib/api-client";
 
+const normalizeJobDetails = (rawJob: any, matchScore: number) => ({
+  ...rawJob,
+  id: rawJob.id || rawJob.job_id,
+  job_id: rawJob.job_id || rawJob.id,
+  title: rawJob.title || rawJob.job_title || "Untitled Role",
+  company:
+    rawJob.company ||
+    rawJob.company_name ||
+    rawJob.employer_company_name ||
+    "Unknown Company",
+  type: rawJob.type || rawJob.job_type || "full_time",
+  salary: rawJob.salary || rawJob.salary_range || "Not specified",
+  posted: rawJob.posted || rawJob.created_at || "recently",
+  companyInfo: {
+    ...(rawJob.companyInfo || {}),
+    name:
+      rawJob.companyInfo?.name ||
+      rawJob.company_name ||
+      rawJob.company ||
+      "Unknown Company",
+    logoUrl:
+      rawJob.companyInfo?.logoUrl ||
+      rawJob.company_logo_url ||
+      undefined,
+  },
+  matchScore,
+});
+
 const JobDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -54,7 +82,7 @@ const JobDetails = () => {
           }
         }
 
-        setJob({ ...fetchedJob, matchScore });
+        setJob(normalizeJobDetails(fetchedJob, matchScore));
       } catch (err) {
         setError("Job not found");
       } finally {
@@ -127,12 +155,12 @@ const JobDetails = () => {
               />
               <CompanyInfoCard
                 company={{
-                  name: job.companyInfo?.name || job.company,
+                  name: job.companyInfo?.name || job.company_name || job.company,
                   size: job.company_size || "N/A",
                   industry: job.company_industry || "N/A",
                   founded: job.company_founded || "N/A",
                   website: job.company_website || "#",
-                  logoUrl: job.companyInfo?.logoUrl
+                  logoUrl: job.companyInfo?.logoUrl || job.company_logo_url
                 }}
               />
             </aside>

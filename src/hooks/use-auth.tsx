@@ -88,20 +88,41 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
 
     try {
       const rawProfile = await profileService.getProfile();
+      let companyProfile: any = null;
+
+      if (user?.account_type === "employer") {
+        try {
+          companyProfile = await profileService.getCompanyProfile();
+        } catch (companyError) {
+          console.warn("Failed to load company profile for employer", companyError);
+        }
+      }
+
       // Normalize: DB column is full_name — ensure profile.name is always set
       const userProfile = {
         ...rawProfile,
         name: rawProfile.name || (rawProfile as any).full_name || "",
+        company_data: companyProfile || (rawProfile as any).company_data,
+        company_name: (rawProfile as any).company_name || companyProfile?.company_name,
+        industry: (rawProfile as any).industry || companyProfile?.industry,
+        company_website:
+          (rawProfile as any).company_website || companyProfile?.company_website,
+        company_size: (rawProfile as any).company_size || companyProfile?.company_size,
       };
       clearTimeout(timeoutId);
       if (!controller.signal.aborted) {
         setProfile(userProfile);
         // Sync name into user if user.name is empty
-        if (userProfile.name) {
+        const displayNameForUser =
+          user?.account_type === "employer"
+            ? userProfile.company_name || userProfile.name
+            : userProfile.name;
+
+        if (displayNameForUser) {
           setUser(prev => {
             if (!prev) return prev;
-            if (prev.name) return prev; // already has a name
-            const updated = { ...prev, name: userProfile.name };
+            if (prev.name === displayNameForUser) return prev;
+            const updated = { ...prev, name: displayNameForUser };
             authService.setStoredUser(updated);
             return updated;
           });
@@ -135,7 +156,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
       // For all other errors (network, timeout, 5xx) we silently continue —
       // the user is still authenticated, profile is just unavailable.
     }
-  }, []);
+  }, [user?.account_type]);
 
   const initializeAuth = useCallback(async () => {
     setIsLoading(true);

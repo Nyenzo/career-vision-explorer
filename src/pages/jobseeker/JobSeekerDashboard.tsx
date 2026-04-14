@@ -103,8 +103,10 @@ const JobSeekerDashboard = () => {
                       <Edit3 className="w-4 h-4" />
                       Edit Profile
                     </button>
-                    <button className="w-full py-3 px-6 bg-surface-container-low text-primary font-semibold text-sm rounded-full hover:bg-surface-container transition-colors flex items-center justify-center gap-2">
-                       {/* This could link to saved jobs later */}
+                    <button
+                      onClick={() => navigate("/jobseeker/saved-jobs")}
+                      className="w-full py-3 px-6 bg-surface-container-low text-primary font-semibold text-sm rounded-full hover:bg-surface-container transition-colors flex items-center justify-center gap-2"
+                    >
                        <Target className="w-4 h-4" />
                        View Saved Jobs
                     </button>

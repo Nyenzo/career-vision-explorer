@@ -42,13 +42,18 @@ export const JobCard = ({ job, isApplied, isSaved, onApply, onSave }: JobCardPro
   return (
     <div className="bg-surface-container-lowest p-8 rounded-lg shadow-[0_2px_10px_rgba(25,28,30,0.06)] hover:shadow-[0_8px_20px_rgba(25,28,30,0.08)] transition-all duration-300 group">
       <div className="flex flex-col md:flex-row gap-8">
-        {/* Company Logo */}
-        <div className="w-20 h-20 rounded-md bg-surface-container-low flex items-center justify-center flex-shrink-0 overflow-hidden border border-surface-container">
-          {job.companyInfo?.logoUrl ? (
-            <img alt={`${job.company} logo`} className="w-12 h-12 object-contain" src={job.companyInfo.logoUrl} />
-          ) : (
-            <span className="material-symbols-outlined text-outline text-3xl">domain</span>
-          )}
+        {/* Company Logo + Name */}
+        <div className="flex-shrink-0 w-28">
+          <div className="w-20 h-20 rounded-md bg-surface-container-low flex items-center justify-center overflow-hidden border border-surface-container">
+            {job.companyInfo?.logoUrl ? (
+              <img alt={`${job.company} logo`} className="w-12 h-12 object-contain" src={job.companyInfo.logoUrl} />
+            ) : (
+              <span className="material-symbols-outlined text-outline text-3xl">domain</span>
+            )}
+          </div>
+          <p className="mt-2 text-sm font-semibold text-on-surface-variant leading-tight line-clamp-2">
+            {job.company || "Unknown Company"}
+          </p>
         </div>
 
         {/* Job Content */}
@@ -56,9 +61,8 @@ export const JobCard = ({ job, isApplied, isSaved, onApply, onSave }: JobCardPro
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <h2 className="font-headline text-2xl font-bold text-on-surface leading-tight group-hover:text-primary transition-colors">
-                {job.title}
+                {job.title || "Untitled Role"}
               </h2>
-              <p className="text-primary font-semibold text-lg">{job.company}</p>
             </div>
             <div className="flex items-center gap-3">
               <div className={`${getMatchColorClassname(job.matchScore)} px-4 py-2 rounded-full flex items-center gap-2`}>
@@ -110,8 +114,8 @@ export const JobCard = ({ job, isApplied, isSaved, onApply, onSave }: JobCardPro
               onClick={(e) => { e.preventDefault(); onApply(job); }}
               disabled={isApplied}
               className={`px-10 py-3 font-bold rounded-full transition-transform active:scale-95 ${isApplied
-                  ? 'bg-secondary-fixed text-on-secondary-fixed shadow-none cursor-default'
-                  : 'gradient-btn text-on-primary hover:scale-[1.02] shadow-md shadow-primary/20'
+                ? 'bg-secondary-fixed text-on-secondary-fixed shadow-none cursor-default'
+                : 'gradient-btn text-on-primary hover:scale-[1.02] shadow-md shadow-primary/20'
                 }`}
             >
               {isApplied ? 'Applied ✓' : 'Apply Now'}

@@ -58,6 +58,10 @@ const Navbar = () => {
   const effectiveRole = profile?.active_role || user?.account_type;
   const isJobSeekerUser = effectiveRole === "job_seeker";
   const isEmployerUser = effectiveRole === "employer";
+  const accountDisplayName =
+    isEmployerUser
+      ? profile?.company_name || profile?.company_data?.company_name || user?.name
+      : user?.name;
   const isActive = (path: string) => location.pathname === path;
 
   const jobSeekerNavItems = [
@@ -132,7 +136,7 @@ const Navbar = () => {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm">
                       <User className="h-4 w-4 mr-1" />
-                      {user?.name}
+                      {accountDisplayName}
                       <ChevronDown className="h-4 w-4 ml-1" />
                     </Button>
                   </DropdownMenuTrigger>

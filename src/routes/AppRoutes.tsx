@@ -39,6 +39,9 @@ const JobSeekerDashboard = lazy(
 const JobSeekerSettings = lazy(
   () => import("@/pages/jobseeker/JobSeekerSettings")
 );
+const SavedJobsPage = lazy(
+  () => import("@/pages/jobseeker/SavedJobsPage")
+);
 
 // Loader
 const PageLoader = () => <PageLoaderSkeleton />;
@@ -240,6 +243,16 @@ export const AppRoutes = () => {
               <ProtectedRoute requiredRole="job_seeker">
                 <Suspense fallback={<PageLoader />}>
                   <JobDetails />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="saved-jobs"
+            element={
+              <ProtectedRoute requiredRole="job_seeker">
+                <Suspense fallback={<PageLoader />}>
+                  <SavedJobsPage />
                 </Suspense>
               </ProtectedRoute>
             }
