@@ -3,6 +3,10 @@ import { Profile, ProfileUpdate, CompanyData } from "../types/api";
 import { trackDbOperation } from "../utils/performance";
 
 class ProfileService {
+  private getStatusCode(error: any): number | undefined {
+    return error?.status || error?.response?.status;
+  }
+
   async getProfile(userId?: string): Promise<Profile> {
     return trackDbOperation("Load Profile", async () => {
       const endpoint = userId ? `/profile/${userId}` : "/profile/";
@@ -24,9 +28,16 @@ class ProfileService {
         return await apiClient.put<Profile>(`/profiles/company/${me.id}`, companyData);
       }
     } catch (e: any) {
-      if (e?.response?.status === 404) {
+      const status = this.getStatusCode(e);
+      if (status === 404) {
         // If it doesn't exist, create it via POST
         return await apiClient.post<Profile>("/profiles/company/", companyData);
+      }
+      if (status === 403) {
+        const compat = await apiClient.get<any>("/profile/company");
+        if (compat && compat.id) {
+          return await apiClient.put<Profile>(`/profiles/company/${compat.id}`, companyData);
+        }
       }
       throw e;
     }
@@ -34,7 +45,15 @@ class ProfileService {
   }
 
   async getCompanyProfile(): Promise<CompanyData> {
-    return await apiClient.get<CompanyData>("/profiles/company/me");
+    try {
+      return await apiClient.get<CompanyData>("/profiles/company/me");
+    } catch (e: any) {
+      const status = this.getStatusCode(e);
+      if (status === 403) {
+        return await apiClient.get<CompanyData>("/profile/company");
+      }
+      throw e;
+    }
   }
 
   async getPublicProfile(userId: string): Promise<Profile> {
@@ -55,7 +74,7 @@ class ProfileService {
   }
 
   async addSkill(skill: string): Promise<void> {
-    await apiClient.post("/profile/skills", { skill });
+    await apiClient.post(`/profile/skills?skill=${encodeURIComponent(skill)}`);
   }
 
   async removeSkill(skill: string): Promise<void> {
@@ -63,7 +82,7 @@ class ProfileService {
   }
 
   async updateSkills(skills: string[]): Promise<void> {
-    await apiClient.put("/profile/skills", { skills });
+    await apiClient.put("/profile/skills", skills);
   }
 
   async searchProfiles(params: {

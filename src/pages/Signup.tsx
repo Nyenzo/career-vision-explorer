@@ -9,6 +9,28 @@ import { useAuth } from "@/hooks/use-auth";
 import OnboardingWizard from "@/components/onboarding/OnboardingWizard";
 import { UserRegister } from "@/types/auth";
 
+const INDUSTRY_OPTIONS = [
+  "Architecture",
+  "Engineering",
+  "Construction",
+  "Real Estate",
+  "Technology",
+  "Design",
+  "Manufacturing",
+  "Healthcare",
+  "Education",
+  "Finance",
+  "Retail",
+  "Hospitality",
+  "Energy",
+  "Transportation",
+  "Media",
+  "Consulting",
+  "Government",
+  "Nonprofit",
+  "Other",
+] as const;
+
 const signupSchema = z.object({
   name: z.string().min(2, {
     message: "Name must be at least 2 characters.",
@@ -53,7 +75,7 @@ const signupSchema = z.object({
     }
   }
 
-  if (data.dateOfBirth) {
+  if (data.dateOfBirth && data.role === 'jobseeker') {
     const dob = new Date(data.dateOfBirth);
     const today = new Date();
     const age = today.getFullYear() - dob.getFullYear() -
@@ -335,18 +357,17 @@ const Signup = () => {
                         <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Industry</label>
                         <select {...form.register('industry')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all text-on-surface appearance-none" disabled={isLoading}>
                           <option value="">Select Industry</option>
-                          <option value="architecture">Architecture</option>
-                          <option value="design">Design</option>
-                          <option value="tech">Technology</option>
-                          <option value="construction">Construction</option>
+                          {INDUSTRY_OPTIONS.map((industry) => (
+                            <option key={industry} value={industry}>{industry}</option>
+                          ))}
                         </select>
                       </div>
                       <div className="space-y-2">
-                        <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Date of Birth</label>
+                        <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Founding Date</label>
                         <input
                           {...form.register('dateOfBirth')}
                           type="date"
-                          max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
+                          max={new Date().toISOString().split('T')[0]}
                           className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all text-on-surface"
                           disabled={isLoading}
                         />

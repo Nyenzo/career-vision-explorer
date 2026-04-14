@@ -15,7 +15,6 @@ export const PublicProfile = lazy(() => import("@/pages/PublicProfile"));
 export const NotFound = lazy(() => import("@/pages/NotFound"));
 
 // General Protected
-export const Profile = lazy(() => import("@/pages/Profile"));
 export const AccountManagement = lazy(() => import("@/pages/AccountManagement"));
 export const LegacyJobDetailsRedirect = lazy(() => import("@/pages/LegacyJobDetailsRedirect"));
 
@@ -24,6 +23,7 @@ export const Jobs = lazy(() => import("@/pages/Jobs"));
 export const JobDetails = lazy(() => import("@/pages/JobDetails"));
 export const JobSeekerDashboard = lazy(() => import("@/pages/jobseeker/JobSeekerDashboard"));
 export const JobSeekerSettings = lazy(() => import("@/pages/jobseeker/JobSeekerSettings"));
+export const JobSeekerProfile = lazy(() => import("@/pages/jobseeker/Profile"));
 
 // Employer
 export const EmployerDashboard = lazy(() => import("@/pages/employer/EmployerDashboard"));
@@ -31,3 +31,4 @@ export const EmployerJobs = lazy(() => import("@/pages/employer/EmployerJobs"));
 export const EmployerJobDetails = lazy(() => import("@/pages/employer/EmployerJobDetails"));
 export const EmployerEditJobPage = lazy(() => import("@/pages/employer/EmployerEditJobPage"));
 export const AllApplicants = lazy(() => import("@/pages/employer/AllApplicants"));
+export const EmployerProfile = lazy(() => import("@/pages/employer/Profile"));

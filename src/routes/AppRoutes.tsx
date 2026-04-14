@@ -1,6 +1,7 @@
 import { Routes, Route, Outlet } from "react-router-dom";
 import { useEffect, lazy, Suspense } from "react";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { PageLoaderSkeleton } from "@/components/ui/skeleton-loaders";
@@ -20,7 +21,8 @@ const EmployerEditJobPage = lazy(() => import("@/pages/employer/EmployerEditJobP
 const LegacyJobDetailsRedirect = lazy(() => import("@/pages/LegacyJobDetailsRedirect"));
 const PublicProfile = lazy(() => import("@/pages/PublicProfile"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
-const Profile = lazy(() => import("@/pages/Profile"));
+const EmployerProfile = lazy(() => import("@/pages/employer/Profile"));
+const JobSeekerProfile = lazy(() => import("@/pages/jobseeker/Profile"));
 const AccountManagement = lazy(() => import("@/pages/AccountManagement"));
 const Privacy = lazy(() => import("@/pages/Privacy"));
 const Terms = lazy(() => import("@/pages/Terms"));
@@ -55,6 +57,8 @@ const ScrollToTop = () => {
 };
 
 export const AppRoutes = () => {
+  const { user } = useAuth();
+
   return (
     <>
       <ScrollToTop />
@@ -203,6 +207,16 @@ export const AppRoutes = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="profile"
+            element={
+              <ProtectedRoute requiredRole="employer">
+                <Suspense fallback={<PageLoader />}>
+                  <EmployerProfile />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
         </Route>
 
         {/* Jobseeker Routes */}
@@ -257,6 +271,16 @@ export const AppRoutes = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="profile"
+            element={
+              <ProtectedRoute requiredRole="job_seeker">
+                <Suspense fallback={<PageLoader />}>
+                  <JobSeekerProfile />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
         </Route>
 
         {/* General Protected Routes */}
@@ -266,7 +290,7 @@ export const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <Suspense fallback={<PageLoader />}>
-                <Profile />
+                {user?.account_type === "employer" ? <EmployerProfile /> : <JobSeekerProfile />}
               </Suspense>
             </ProtectedRoute>
           }

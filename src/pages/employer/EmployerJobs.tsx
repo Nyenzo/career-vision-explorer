@@ -21,7 +21,6 @@ import { formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { deleteJobDialog } from "@/lib/utils";
 import NewJobPostDialog from "@/components/employer/NewJobPostDialog";
-import Layout from "@/components/layout/Layout";
 
 import {
   DropdownMenu,
@@ -152,118 +151,116 @@ const EmployerJobs = () => {
   );
 
   return (
-    <Layout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 lg:p-8">
-        <div className="max-w-7xl mx-auto space-y-8">
-          {/* Header - Removed stats and made unique */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-3xl border border-white/50 shadow-2xl overflow-hidden">
-            <div className="p-8 lg:p-12 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-              <div className="space-y-4">
-                <div className="flex items-center gap-4 mb-2">
-                  <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-lg">
-                    <Briefcase className="h-8 w-8 text-white" />
-                  </div>
-                  <div>
-                    <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-slate-800 via-blue-700 to-purple-700 bg-clip-text text-transparent tracking-tight">
-                      Recruitment Hub
-                    </h1>
-                    <p className="text-slate-500 text-sm font-medium mt-1">
-                      Your Gateway to Exceptional Talent
-                    </p>
-                  </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header - Removed stats and made unique */}
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl border border-white/50 shadow-2xl overflow-hidden">
+          <div className="p-8 lg:p-12 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 mb-2">
+                <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-lg">
+                  <Briefcase className="h-8 w-8 text-white" />
                 </div>
-                <p className="text-slate-600 text-lg lg:text-xl font-medium max-w-2xl">
-                  Craft compelling opportunities and connect with top-tier
-                  candidates through our intelligent hiring platform
-                </p>
-              </div>
-              <div className="lg:shrink-0">
-                <NewJobPostDialog onJobCreated={fetchJobs} />
-              </div>
-            </div>
-          </div>
-
-          {/* Navigation & Search */}
-          <div className="bg-white/70 backdrop-blur-xl rounded-2xl border border-white/50 shadow-xl p-6">
-            <div className="flex flex-col lg:flex-row justify-between gap-6">
-              {/* Tabs */}
-              <div className="flex flex-wrap gap-2">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`relative px-5 py-3 rounded-xl font-medium transition-all duration-200 whitespace-nowrap ${activeTab === tab.id
-                        ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transform scale-105"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-white/80 hover:shadow-md"
-                      }`}
-                  >
-                    <span className="relative z-10">{tab.label}</span>
-                    <Badge
-                      className={`ml-2 ${activeTab === tab.id
-                          ? "bg-white/20 text-white border-white/30"
-                          : "bg-slate-100 text-slate-600 border-slate-200"
-                        }`}
-                    >
-                      {tab.count}
-                    </Badge>
-                  </button>
-                ))}
-              </div>
-
-              {/* Search */}
-              <div className="relative lg:w-80">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 h-5 w-5" />
-                <input
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setSearchQuery(e.target.value);
-                  }}
-                  placeholder="Search jobs, skills, locations..."
-                  className="pl-12 pr-4 py-3 border-0 rounded-xl w-full bg-white/80 backdrop-blur-sm shadow-lg focus:shadow-xl focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 text-slate-700 placeholder:text-slate-400"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Jobs Grid */}
-          <div className="space-y-4">
-            {filteredJobsByTab.length > 0 ? (
-              filteredJobsByTab.map((job) => (
-                <JobCard
-                  key={job.job_id}
-                  job={job}
-                  onEdit={handleEdit}
-                  onDuplicate={handleDuplicate}
-                  onActivate={handleActivate}
-                  onClose={handleClose}
-                  onDelete={handleDelete}
-                  onShare={handleShare}
-                  onView={handleView} // ✅ Use the fixed handleView function
-                  getStatusBadge={getStatusBadge}
-                />
-              ))
-            ) : (
-              <div className="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/50 shadow-lg p-12 text-center">
-                <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Briefcase className="h-12 w-12 text-slate-400" />
+                <div>
+                  <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-slate-800 via-blue-700 to-purple-700 bg-clip-text text-transparent tracking-tight">
+                    Recruitment Hub
+                  </h1>
+                  <p className="text-slate-500 text-sm font-medium mt-1">
+                    Your Gateway to Exceptional Talent
+                  </p>
                 </div>
-                <h3 className="text-xl font-semibold text-slate-700 mb-2">
-                  No jobs found
-                </h3>
-                <p className="text-slate-500 mb-6">
-                  {searchTerm
-                    ? "Try adjusting your search terms"
-                    : "Start by creating your first job posting"}
-                </p>
-                {!searchTerm && <NewJobPostDialog onJobCreated={fetchJobs} />}
               </div>
-            )}
+              <p className="text-slate-600 text-lg lg:text-xl font-medium max-w-2xl">
+                Craft compelling opportunities and connect with top-tier
+                candidates through our intelligent hiring platform
+              </p>
+            </div>
+            <div className="lg:shrink-0">
+              <NewJobPostDialog onJobCreated={fetchJobs} />
+            </div>
           </div>
         </div>
 
+        {/* Navigation & Search */}
+        <div className="bg-white/70 backdrop-blur-xl rounded-2xl border border-white/50 shadow-xl p-6">
+          <div className="flex flex-col lg:flex-row justify-between gap-6">
+            {/* Tabs */}
+            <div className="flex flex-wrap gap-2">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`relative px-5 py-3 rounded-xl font-medium transition-all duration-200 whitespace-nowrap ${activeTab === tab.id
+                    ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transform scale-105"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/80 hover:shadow-md"
+                    }`}
+                >
+                  <span className="relative z-10">{tab.label}</span>
+                  <Badge
+                    className={`ml-2 ${activeTab === tab.id
+                      ? "bg-white/20 text-white border-white/30"
+                      : "bg-slate-100 text-slate-600 border-slate-200"
+                      }`}
+                  >
+                    {tab.count}
+                  </Badge>
+                </button>
+              ))}
+            </div>
+
+            {/* Search */}
+            <div className="relative lg:w-80">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 h-5 w-5" />
+              <input
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setSearchQuery(e.target.value);
+                }}
+                placeholder="Search jobs, skills, locations..."
+                className="pl-12 pr-4 py-3 border-0 rounded-xl w-full bg-white/80 backdrop-blur-sm shadow-lg focus:shadow-xl focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 text-slate-700 placeholder:text-slate-400"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Jobs Grid */}
+        <div className="space-y-4">
+          {filteredJobsByTab.length > 0 ? (
+            filteredJobsByTab.map((job) => (
+              <JobCard
+                key={job.job_id}
+                job={job}
+                onEdit={handleEdit}
+                onDuplicate={handleDuplicate}
+                onActivate={handleActivate}
+                onClose={handleClose}
+                onDelete={handleDelete}
+                onShare={handleShare}
+                onView={handleView} // ✅ Use the fixed handleView function
+                getStatusBadge={getStatusBadge}
+              />
+            ))
+          ) : (
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/50 shadow-lg p-12 text-center">
+              <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Briefcase className="h-12 w-12 text-slate-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-slate-700 mb-2">
+                No jobs found
+              </h3>
+              <p className="text-slate-500 mb-6">
+                {searchTerm
+                  ? "Try adjusting your search terms"
+                  : "Start by creating your first job posting"}
+              </p>
+              {!searchTerm && <NewJobPostDialog onJobCreated={fetchJobs} />}
+            </div>
+          )}
+        </div>
       </div>
-    </Layout>
+
+    </div>
   );
 };
 
