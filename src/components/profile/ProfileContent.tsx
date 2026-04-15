@@ -480,7 +480,38 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
     setIsPhotoEditorOpen(false);
   };
 
+  const isGoogleHostedAvatar = (src: string) =>
+    /^https?:\/\/lh3\.googleusercontent\.com\//i.test(src);
+
+  const handlePhotoEditorDialogWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    const container = event.currentTarget;
+    if (container.scrollHeight <= container.clientHeight) {
+      return;
+    }
+
+    const atTop = container.scrollTop <= 0;
+    const atBottom =
+      container.scrollTop + container.clientHeight >= container.scrollHeight - 1;
+
+    if ((event.deltaY < 0 && atTop) || (event.deltaY > 0 && atBottom)) {
+      event.preventDefault();
+    }
+
+    event.stopPropagation();
+  };
+
   const openPhotoEditorWithSource = (src: string) => {
+    if (isGoogleHostedAvatar(src)) {
+      toast.info("Google profile photos cannot be edited directly. Upload a local image to edit.");
+      setPhotoEditorSrc(null);
+      setPhotoEditorImageSize(null);
+      setPhotoEditorZoom(1.2);
+      setPhotoEditorX(0);
+      setPhotoEditorY(0);
+      setIsPhotoEditorOpen(true);
+      return;
+    }
+
     const image = new Image();
     if (src.startsWith("http://") || src.startsWith("https://")) {
       image.crossOrigin = "anonymous";
@@ -636,7 +667,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
 
   const PHOTO_PREVIEW_SIZE = 288;
   const profileAvatarSrc = profile?.avatar_url
-    ? `${profile.avatar_url}${profile.avatar_url.includes("?") ? "&" : "?"}t=${profileImageRefreshKey}`
+    ? isGoogleHostedAvatar(profile.avatar_url)
+      ? profile.avatar_url
+      : `${profile.avatar_url}${profile.avatar_url.includes("?") ? "&" : "?"}t=${profileImageRefreshKey}`
     : undefined;
   const previewFrame = photoEditorImageSize
     ? getCropFrame(
@@ -1758,7 +1791,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                 <div className="relative group flex-shrink-0">
                   <div className="w-24 h-24 rounded-[20px] overflow-hidden border-2 border-white shadow-sm bg-surface-container-high relative cursor-pointer" onClick={openPhotoEditorPanel}>
                     {profileAvatarSrc ? (
-                      <img src={profileAvatarSrc} alt={profile?.name || "Profile"} className="w-full h-full object-cover" />
+                      <img
+                        src={profileAvatarSrc}
+                        alt={profile?.name || "Profile"}
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-slate-400">
                         {profile?.name?.charAt(0)?.toUpperCase()}
@@ -2366,7 +2404,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
           closePhotoEditor();
         }
       }}>
-        <DialogContent className="sm:max-w-xl">
+        <DialogContent
+          className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-xl max-h-[90vh] overflow-y-auto overscroll-contain p-4 sm:p-6"
+          onWheel={handlePhotoEditorDialogWheel}
+          onTouchMoveCapture={(event) => event.stopPropagation()}
+        >
           <DialogHeader>
             <DialogTitle>Fit Profile Photo</DialogTitle>
             <DialogDescription>
@@ -2375,7 +2417,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="mx-auto h-72 w-72 overflow-hidden rounded-full border-4 border-muted bg-muted">
+            <div className="mx-auto h-60 w-60 sm:h-72 sm:w-72 overflow-hidden rounded-full border-4 border-muted bg-muted">
               {photoEditorSrc && previewFrame && (
                 <div className="relative h-full w-full overflow-hidden">
                   <img
