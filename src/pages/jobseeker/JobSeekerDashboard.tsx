@@ -100,7 +100,6 @@ const JobSeekerDashboard = () => {
                   </p>
                   <div className="flex flex-col w-full gap-3">
                     <button onClick={handleEditProfile} className="w-full py-3 px-6 bg-primary-container text-on-primary rounded-full font-semibold text-sm hover:scale-[1.02] transition-transform flex items-center justify-center gap-2">
-                      <Edit3 className="w-4 h-4" />
                       Edit Profile
                     </button>
                     <button

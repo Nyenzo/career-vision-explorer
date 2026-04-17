@@ -57,7 +57,7 @@ export const ProfileCompletionCard = () => {
       score += sectionWeights.work_experience;
     }
 
-    if (profile.resume_link) score += sectionWeights.resume_link;
+    if (profile.resume_url || profile.resume_link) score += sectionWeights.resume_link;
 
     let socialProfiles = 0;
     if (profile.linkedin_url) socialProfiles++;
@@ -120,7 +120,7 @@ export const ProfileCompletionCard = () => {
       {
         key: "resume",
         label: "Upload Your Resume",
-        completed: !!profile.resume_link,
+        completed: !!(profile.resume_url || profile.resume_link),
         action: "/profile",
       },
       {
@@ -264,9 +264,8 @@ export const ProfileCompletionCard = () => {
                 className="flex items-center justify-between p-2 bg-gray-50 rounded-lg text-sm"
               >
                 <span
-                  className={`font-medium ${
-                    section.completed ? "text-gray-600" : "text-gray-700"
-                  }`}
+                  className={`font-medium ${section.completed ? "text-gray-600" : "text-gray-700"
+                    }`}
                 >
                   {section.label}
                 </span>

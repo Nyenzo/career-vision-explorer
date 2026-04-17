@@ -149,6 +149,7 @@ export interface Application {
   applicant_name?: string;
   applicant_email?: string;
   resume_link?: string;
+  cv_url?: string;
   match_score?: number;
   applicant_skills?: string[];
   matched_skills?: string[];
@@ -165,6 +166,7 @@ export interface Application {
 export interface ApplicationCreate {
   job_id: string;
   cover_letter?: string;
+  cv_url?: string;
 }
 
 export interface ApplicationUpdate {
@@ -180,6 +182,7 @@ export interface Profile {
   email: string;
   skills: string[];
   resume_link?: string;
+  resume_url?: string;
   account_type: "job_seeker" | "employer";
   created_at: string;
   updated_at: string;
@@ -188,7 +191,7 @@ export interface Profile {
   location?: string;
   experience_years?: number;
   education?: Education[];
-  phone?: string;
+  phone_number?: string;
   linkedin_url?: string;
   github_url?: string;
   twitter_url?: string;
@@ -220,6 +223,7 @@ export interface Profile {
   projects?: Project[];
   preferences?: Record<string, any>;
   active_role?: string;
+  professional_title?: string;
   profile_completion_percentage?: number;
 
   // ✅ ADD THESE TOP-LEVEL COMPANY FIELDS:
@@ -248,11 +252,12 @@ export interface Education {
 export interface WorkExperience {
   company: string;
   position: string;
-  duration: string;
   description: string;
   start_date?: string;
   end_date?: string;
-  current?: boolean;
+  currently_working?: boolean;
+  /** @deprecated use start_date/end_date/currently_working instead */
+  duration?: string;
 }
 
 export interface Project {
@@ -314,7 +319,7 @@ export interface ProfileUpdate {
   location?: string;
   experience_years?: number;
   education?: string;
-  phone?: string;
+  phone_number?: string;
   linkedin_url?: string;
   github_url?: string;
   twitter_url?: string;
@@ -342,12 +347,7 @@ export interface ProfileUpdate {
   work_authorization?: string;
   languages?: string[];
   certifications?: string[];
-  work_experience?: Array<{
-    company: string;
-    position: string;
-    duration: string;
-    description: string;
-  }>;
+  work_experience?: WorkExperience[];
   projects?: Array<{
     name: string;
     description: string;
@@ -356,6 +356,7 @@ export interface ProfileUpdate {
   }>;
   preferences?: Record<string, any>;
   active_role?: string;
+  professional_title?: string;
 
   // Company-specific fields
   company_name?: string;

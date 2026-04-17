@@ -13,7 +13,7 @@ import { JobSummaryCard } from "./application/JobSummaryCard";
 import { CoverLetterSection } from "./application/CoverLetterSection";
 import { ResumeUploadSection } from "./application/ResumeUploadSection";
 import { ApplicationActions } from "./application/ApplicationActions";
-import { applicationsService, aiService } from "@/services";
+import { applicationsService, profileService } from "@/services";
 import { ApplicationCreate } from "@/types/api";
 import { useEffect } from "react";
 
@@ -45,8 +45,8 @@ export const JobApplicationDialog = ({
   const [coverLetter, setCoverLetter] = useState("");
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isUploadingCV, setIsUploadingCV] = useState(false);
   const [cvUploaded, setCvUploaded] = useState(false);
+  const [existingResumeUrl, setExistingResumeUrl] = useState<string | null>(null);
   const [resumeError, setResumeError] = useState(false);
 
   const { isJobSeeker, isAuthenticated, user } = useAuth();
@@ -56,16 +56,24 @@ export const JobApplicationDialog = ({
 
   // Always call hooks unconditionally (Rules of Hooks)
   const { refetch: refetchFn } = useJobApplications();
-  const refetchApplications = canApplyForJobs ? refetchFn : () => {};
+  const refetchApplications = canApplyForJobs ? refetchFn : () => { };
 
   useEffect(() => {
-    async function checkCVStatus() {
+    async function loadCVStatus() {
       if (open && canApplyForJobs) {
-        const isCVParsed = await aiService.checkIfCVParsed();
-        setCvUploaded(isCVParsed);
+        try {
+          const profile = await profileService.getProfile();
+          const resumeUrl = profile.resume_url || profile.resume_link;
+          const hasResume = !!resumeUrl;
+          setCvUploaded(hasResume);
+          setExistingResumeUrl(resumeUrl || null);
+        } catch {
+          setCvUploaded(false);
+          setExistingResumeUrl(null);
+        }
       }
     }
-    checkCVStatus();
+    loadCVStatus();
   }, [open, canApplyForJobs]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -86,10 +94,10 @@ export const JobApplicationDialog = ({
       return;
     }
 
-    // Require resume if not already uploaded
+    // Require resume if not already on profile and no new file selected
     if (!resumeFile && !cvUploaded) {
       setResumeError(true);
-      toast.error("CV is required to apply for this job");
+      toast.error("Please upload your CV to apply for this job");
       return;
     }
     setResumeError(false);
@@ -97,55 +105,10 @@ export const JobApplicationDialog = ({
     setIsSubmitting(true);
 
     try {
-      // If resume file is provided and CV not already uploaded, parse it first
-      if (resumeFile && !cvUploaded) {
-        setIsUploadingCV(true);
-        toast.info("Parsing your CV, please wait...");
-
-        try {
-          const parseResult = await aiService.uploadAndParseCV(resumeFile);
-          console.log("CV parse result:", parseResult);
-
-          if (parseResult.status === "success" || parseResult.success) {
-            toast.success("CV parsed and profile updated successfully!");
-            setCvUploaded(true);
-          } else {
-            toast.error(
-              parseResult.message || "Failed to parse CV. Please try again."
-            );
-            return;
-          }
-        } catch (error: any) {
-          console.error("CV parsing error:", error);
-
-          // More specific error messages
-          if (error.status === 413) {
-            toast.error(
-              "File too large. Please upload a file smaller than 10MB."
-            );
-          } else if (error.status === 400) {
-            toast.error(
-              "Invalid file type. Please upload PDF, DOCX, or TXT files."
-            );
-          } else if (error.status === 503) {
-            toast.error(
-              "CV parsing service is temporarily unavailable. Please try again later."
-            );
-          } else {
-            toast.error(
-              error.message || "Failed to upload CV. Please try again."
-            );
-          }
-          return;
-        } finally {
-          setIsUploadingCV(false);
-        }
-      }
-
-      // Continue with application submission...
       const applicationData: ApplicationCreate = {
         job_id: job.job_id,
         cover_letter: coverLetter,
+        cv_url: existingResumeUrl || undefined,
       };
 
       await applicationsService.createApplication(applicationData, null);
@@ -190,11 +153,12 @@ export const JobApplicationDialog = ({
             resumeFile={resumeFile}
             setResumeFile={setResumeFile}
             cvAlreadyUploaded={cvUploaded}
+            existingResumeUrl={existingResumeUrl}
             showError={resumeError}
           />
 
           <ApplicationActions
-            isSubmitting={isSubmitting || isUploadingCV}
+            isSubmitting={isSubmitting}
             onCancel={() => onOpenChange(false)}
           />
         </form>
@@ -202,3 +166,4 @@ export const JobApplicationDialog = ({
     </Dialog>
   );
 };
+

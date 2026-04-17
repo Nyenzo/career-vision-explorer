@@ -73,6 +73,14 @@ class ProfileService {
     return await apiClient.uploadFile<any>("/profile/image", file, "image");
   }
 
+  async uploadResume(file: File): Promise<{ resume_url: string; message: string }> {
+    return await apiClient.uploadFile<{ resume_url: string; message: string }>(
+      "/profile/resume",
+      file,
+      "resume"
+    );
+  }
+
   async addSkill(skill: string): Promise<void> {
     await apiClient.post(`/profile/skills?skill=${encodeURIComponent(skill)}`);
   }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { toast } from "@/components/ui/sonner";
@@ -38,12 +39,12 @@ const signupSchema = z.object({
   email: z.string().email({
     message: "Please enter a valid email address.",
   }),
-  password: z.string().min(8, {
-    message: "Password must be at least 8 characters.",
-  }),
-  confirmPassword: z.string().min(8, {
-    message: "Confirm password must be at least 8 characters.",
-  }),
+  password: z.string()
+    .min(8, { message: "Password must be at least 8 characters." })
+    .regex(/[a-z]/, { message: "Must contain at least one lowercase letter." })
+    .regex(/[A-Z]/, { message: "Must contain at least one uppercase letter." })
+    .regex(/[0-9]/, { message: "Must contain at least one number." }),
+  confirmPassword: z.string().min(1, { message: "Please confirm your password." }),
   role: z.enum(["jobseeker", "employer"], {
     required_error: "Please select your role.",
   }),
@@ -127,6 +128,10 @@ const Signup = () => {
   });
 
   const selectedRole = form.watch("role");
+  const watchedPassword = form.watch("password");
+  const watchedConfirmPassword = form.watch("confirmPassword");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const onSubmit = async (values: SignupFormValues) => {
     setIsLoading(true);
@@ -318,12 +323,26 @@ const Signup = () => {
                       </div>
                       <div className="space-y-2 md:col-span-2">
                         <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Password</label>
-                        <input {...form.register('password')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="••••••••" type="password" disabled={isLoading} />
+                        <div className="relative">
+                          <input {...form.register('password')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 pr-12 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="••••••••" type={showPassword ? "text" : "password"} disabled={isLoading} />
+                          <button type="button" tabIndex={-1} className="absolute right-4 top-1/2 -translate-y-1/2 text-outline-variant hover:text-on-surface transition-colors" onClick={() => setShowPassword(v => !v)}>
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                        <p className="text-xs text-on-surface-variant ml-1">Must contain uppercase, lowercase letters and a number</p>
                         {form.formState.errors.password && <p className="text-sm text-error ml-1">{form.formState.errors.password.message as string}</p>}
                       </div>
                       <div className="space-y-2 md:col-span-2">
                         <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Confirm Password</label>
-                        <input {...form.register('confirmPassword')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="••••••••" type="password" disabled={isLoading} />
+                        <div className="relative">
+                          <input {...form.register('confirmPassword')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 pr-12 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="••••••••" type={showConfirmPassword ? "text" : "password"} disabled={isLoading} />
+                          <button type="button" tabIndex={-1} className="absolute right-4 top-1/2 -translate-y-1/2 text-outline-variant hover:text-on-surface transition-colors" onClick={() => setShowConfirmPassword(v => !v)}>
+                            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                        {watchedConfirmPassword && watchedPassword !== watchedConfirmPassword && (
+                          <p className="text-sm text-error ml-1">Passwords do not match</p>
+                        )}
                         {form.formState.errors.confirmPassword && <p className="text-sm text-error ml-1">{form.formState.errors.confirmPassword.message as string}</p>}
                       </div>
                     </div>
@@ -375,12 +394,26 @@ const Signup = () => {
                       </div>
                       <div className="space-y-2 md:col-span-2">
                         <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Password</label>
-                        <input {...form.register('password')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="••••••••" type="password" disabled={isLoading} />
+                        <div className="relative">
+                          <input {...form.register('password')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 pr-12 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="••••••••" type={showPassword ? "text" : "password"} disabled={isLoading} />
+                          <button type="button" tabIndex={-1} className="absolute right-4 top-1/2 -translate-y-1/2 text-outline-variant hover:text-on-surface transition-colors" onClick={() => setShowPassword(v => !v)}>
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                        <p className="text-xs text-on-surface-variant ml-1">Must contain uppercase, lowercase letters and a number</p>
                         {form.formState.errors.password && <p className="text-sm text-error ml-1">{form.formState.errors.password.message as string}</p>}
                       </div>
                       <div className="space-y-2 md:col-span-2">
                         <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest px-1">Confirm Password</label>
-                        <input {...form.register('confirmPassword')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="••••••••" type="password" disabled={isLoading} />
+                        <div className="relative">
+                          <input {...form.register('confirmPassword')} className="w-full bg-surface-container-low border-none rounded-md px-5 py-4 pr-12 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="••••••••" type={showConfirmPassword ? "text" : "password"} disabled={isLoading} />
+                          <button type="button" tabIndex={-1} className="absolute right-4 top-1/2 -translate-y-1/2 text-outline-variant hover:text-on-surface transition-colors" onClick={() => setShowConfirmPassword(v => !v)}>
+                            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                        {watchedConfirmPassword && watchedPassword !== watchedConfirmPassword && (
+                          <p className="text-sm text-error ml-1">Passwords do not match</p>
+                        )}
                         {form.formState.errors.confirmPassword && <p className="text-sm text-error ml-1">{form.formState.errors.confirmPassword.message as string}</p>}
                       </div>
                     </div>

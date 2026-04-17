@@ -51,47 +51,51 @@ export function ApplicantProfileDialog({
   };
 
   const handleDownloadResume = async () => {
-    if (!applicant.resume_link) {
+    const directUrl = applicant.cv_url || applicant.resume_link;
+    if (!directUrl) {
       toast.error("No resume available for this applicant.");
       return;
     }
 
-    try {
-      // Use the backend proxy endpoint to download the resume
-      const token = localStorage.getItem('access_token');
-      const baseUrl = API_CONFIG.BASE_URL;
-      const response = await fetch(
-        `${baseUrl}/applications/resume/download?user_id=${applicant.user_id}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+    // If user_id is available, use the backend proxy; otherwise open URL directly
+    if (applicant.user_id) {
+      try {
+        const token = localStorage.getItem('access_token');
+        const baseUrl = API_CONFIG.BASE_URL;
+        const response = await fetch(
+          `${baseUrl}/applications/resume/download?user_id=${applicant.user_id}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Download failed (${response.status})`);
         }
-      );
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.detail || `Download failed (${response.status})`);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const contentDisposition = response.headers.get('Content-Disposition');
+        const filename = contentDisposition?.match(/filename=(.+)/)?.[1] || 'resume.pdf';
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+        toast.success("Resume downloaded successfully!");
+        return;
+      } catch {
+        // Fall through to direct URL open
       }
-
-      // Create a blob and trigger download inline
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      // Extract filename from Content-Disposition header or fallback
-      const contentDisposition = response.headers.get('Content-Disposition');
-      const filename = contentDisposition?.match(/filename=(.+)/)?.[1] || 'resume.pdf';
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      a.remove();
-      toast.success("Resume downloaded successfully!");
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Failed to download resume.";
-      toast.error(message);
     }
+
+    // Fallback: open the CV URL directly
+    window.open(directUrl, '_blank', 'noopener,noreferrer');
+    toast.success("Resume opened in new tab.");
   };
 
   return (
@@ -99,7 +103,7 @@ export function ApplicantProfileDialog({
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Applicant Profile</DialogTitle>
           <DialogDescription>
@@ -107,7 +111,7 @@ export function ApplicantProfileDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 overflow-y-auto flex-1 pr-1">
           {/* Applicant Info & Match Score */}
           <div className="flex justify-between items-start">
             <div className="space-y-1">
@@ -213,7 +217,7 @@ export function ApplicantProfileDialog({
           <div>
             <h4 className="font-medium mb-2">Resume</h4>
             <div className="bg-gray-50 p-4 rounded border">
-              {applicant.resume_link ? (
+              {(applicant.cv_url || applicant.resume_link) ? (
                 <div className="flex items-center justify-center gap-3">
                   <Button
                     variant="outline"

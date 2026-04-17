@@ -216,6 +216,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
   const experience_yearsInputRef = useRef<HTMLInputElement>(null);
   const twitterInputRef = useRef<HTMLTextAreaElement>(null);
   const profileImageInputRef = useRef<HTMLInputElement>(null);
+  const companyLogoInputRef = useRef<HTMLInputElement>(null);
   const resumeInputRef = useRef<HTMLTextAreaElement>(null);
   const stackoverflowInputRef = useRef<HTMLTextAreaElement>(null);
   const projectsInputRef = useRef<HTMLDivElement>(null);
@@ -643,16 +644,28 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
 
       const uploadResult = await profileService.uploadProfileImage(croppedFile);
       if (uploadResult?.image_url) {
-        // The upload endpoint already persists the avatar — just update local state
-        setProfile((prev) =>
-          prev ? { ...prev, avatar_url: uploadResult.image_url } : prev
-        );
-        setEditForm((prev) => ({
-          ...prev,
-          avatar_url: uploadResult.image_url,
-        }));
+        // The upload endpoint already persists the image and returns the URL, so we can directly update the profile state without refetching.
+        if (isEmployer) {
+          setProfile((prev) =>
+            prev ? {
+              ...prev,
+              company_data: {
+                ...(prev.company_data || {}),
+                company_logo_url: uploadResult.image_url,
+              } as CompanyData,
+            } : prev
+          );
+        } else {
+          setProfile((prev) =>
+            prev ? { ...prev, avatar_url: uploadResult.image_url } : prev
+          );
+          setEditForm((prev) => ({
+            ...prev,
+            avatar_url: uploadResult.image_url,
+          }));
+        }
         setProfileImageRefreshKey(Date.now());
-        toast.success("Profile image updated successfully");
+        toast.success(isEmployer ? "Company logo updated successfully" : "Profile image updated successfully");
         closePhotoEditor();
       } else {
         toast.error("Upload succeeded but no image URL was returned.");
@@ -699,6 +712,25 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
     if (event.target.files) {
       setResumeFile(event.target.files[0]);
     }
+  };
+
+  const handleResumeUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setResumeFile(file);
+    try {
+      const result = await profileService.uploadResume(file);
+      toast.success("Resume uploaded successfully!");
+      setProfile(prev => {
+        if (!prev) return prev;
+        const updated = { ...prev, resume_link: result.resume_url, resume_url: result.resume_url };
+        return { ...updated, profile_completion_percentage: calculateProfileCompletion(updated) };
+      });
+    } catch {
+      toast.error("Failed to upload resume. Please try again.");
+    }
+    // Reset input so re-selecting the same file triggers onChange again
+    event.target.value = "";
   };
 
   const getAvailabilityColor = (status: string) => {
@@ -761,7 +793,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
       score += sectionWeights.work_experience;
     }
 
-    if (data.resume_link) score += sectionWeights.resume_link;
+    if (data.resume_url || data.resume_link) score += sectionWeights.resume_link;
 
     let socialProfiles = 0;
     if (data.linkedin_url) socialProfiles++;
@@ -1327,9 +1359,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                     }
                     setEditing(true);
                   }}
-                  className="flex items-center gap-2 rounded-2xl bg-[#2f63e9] px-6 py-3 text-white shadow-xl shadow-blue-200/60 hover:bg-[#2858d1]"
+                  className="rounded-2xl bg-[#2f63e9] px-6 py-3 text-white shadow-xl shadow-blue-200/60 hover:bg-[#2858d1]"
                 >
-                  <Edit3 className="h-4 w-4" />
                   Edit Profile
                 </Button>
               ) : (
@@ -1359,16 +1390,31 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                 <Card className="rounded-3xl border border-slate-200 shadow-none">
                   <CardContent className="p-6">
                     <div className="text-center">
-                      <Avatar className="h-32 w-32 mx-auto mb-4">
-                        <AvatarImage src={companyData.company_logo_url} />
-                        <AvatarFallback className="text-2xl">
-                          {companyData.company_name
-                            ?.split(" ")
-                            .map((n) => n[0])
-                            .join("")
-                            .toUpperCase() || "CO"}
-                        </AvatarFallback>
-                      </Avatar>
+                      <div className="relative inline-block mb-4 group">
+                        <Avatar className="h-32 w-32">
+                          <AvatarImage src={companyData.company_logo_url} />
+                          <AvatarFallback className="text-2xl">
+                            {companyData.company_name
+                              ?.split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                              .toUpperCase() || "CO"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div
+                          className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                          onClick={() => companyLogoInputRef.current?.click()}
+                        >
+                          <span className="material-symbols-outlined text-white text-base">photo_camera</span>
+                        </div>
+                        <input
+                          ref={companyLogoInputRef}
+                          type="file"
+                          className="hidden"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                        />
+                      </div>
 
                       {editing ? (
                         <div className="space-y-3">
@@ -1519,6 +1565,102 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
             </div>
           </div>
         </div>
+
+        {/* Photo / Logo editor modal */}
+        <Dialog open={isPhotoEditorOpen} onOpenChange={(open) => {
+          if (!open) closePhotoEditor();
+        }}>
+          <DialogContent
+            className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-xl max-h-[90vh] overflow-y-auto overscroll-contain p-4 sm:p-6"
+            onWheel={handlePhotoEditorDialogWheel}
+            onTouchMoveCapture={(event) => event.stopPropagation()}
+          >
+            <DialogHeader>
+              <DialogTitle>Fit Company Logo</DialogTitle>
+              <DialogDescription>
+                Adjust zoom and position before saving.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="mx-auto h-60 w-60 sm:h-72 sm:w-72 overflow-hidden rounded-lg border-4 border-muted bg-muted">
+                {photoEditorSrc && previewFrame && (
+                  <div className="relative h-full w-full overflow-hidden">
+                    <img
+                      src={photoEditorSrc}
+                      alt="Logo fit preview"
+                      className="absolute max-w-none"
+                      style={{
+                        left: `${previewFrame.drawX}px`,
+                        top: `${previewFrame.drawY}px`,
+                        width: `${previewFrame.drawWidth}px`,
+                        height: `${previewFrame.drawHeight}px`,
+                      }}
+                    />
+                  </div>
+                )}
+                {!photoEditorSrc && (
+                  <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+                    Choose an image to continue
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-center">
+                <Button variant="outline" onClick={() => companyLogoInputRef.current?.click()}>
+                  Change Image
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-sm font-medium">Zoom</label>
+                  <Input
+                    type="range"
+                    min={1.05}
+                    max={3}
+                    step={0.01}
+                    value={photoEditorZoom}
+                    onChange={(e) => setPhotoEditorZoom(Number(e.target.value))}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Horizontal Position</label>
+                  <Input
+                    type="range"
+                    min={-100}
+                    max={100}
+                    step={1}
+                    value={photoEditorX}
+                    onChange={(e) => setPhotoEditorX(Number(e.target.value))}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Vertical Position</label>
+                  <Input
+                    type="range"
+                    min={-100}
+                    max={100}
+                    step={1}
+                    value={photoEditorY}
+                    onChange={(e) => setPhotoEditorY(Number(e.target.value))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={closePhotoEditor}>
+                Cancel
+              </Button>
+              <Button onClick={handlePhotoEditorSave} disabled={loading || !photoEditorSrc}>
+                {loading ? "Saving..." : "Save Logo"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </Layout>
     );
   }
@@ -1535,13 +1677,13 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
             <section className="bg-surface-container-lowest rounded-lg p-8 shadow-[0_20px_40px_rgba(25,28,30,0.04)]">
               <h3 className="font-headline text-lg font-bold mb-6 text-slate-900">Resume Management</h3>
               <div className="flex flex-col gap-4">
-                {profile?.resume_link && !editing ? (
+                {(profile?.resume_url || profile?.resume_link) && !editing ? (
                   <div className="p-4 bg-surface-container-low rounded-lg border border-outline-variant flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <FileText className="h-5 w-5 text-primary" />
                       <span className="text-sm font-semibold text-slate-700">Current Resume</span>
                     </div>
-                    <a href={profile.resume_link} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 transition-colors">
+                    <a href={profile.resume_url || profile.resume_link} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 transition-colors">
                       <Download className="h-4 w-4" />
                     </a>
                   </div>
@@ -1891,6 +2033,25 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
               </div>
             </header>
 
+            {/* Bio Section */}
+            <section className="bg-surface-container-lowest rounded-lg pt-6 pb-6 px-8 shadow-[0_20px_40px_rgba(25,28,30,0.04)]">
+              <h3 className="font-headline text-lg font-bold mb-4 text-slate-900 border-b border-surface-container-low pb-4">Bio</h3>
+              {editing ? (
+                <textarea
+                  ref={bioInputRef}
+                  value={editForm.bio || ""}
+                  onChange={e => setEditForm({ ...editForm, bio: e.target.value })}
+                  placeholder="Write a short professional summary about yourself..."
+                  rows={4}
+                  className="w-full bg-surface-container-low border-0 outline-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all text-sm font-medium text-slate-800 resize-none"
+                />
+              ) : (
+                <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+                  {profile?.bio || <span className="text-slate-400 italic">No bio yet. Click Edit Profile to add one.</span>}
+                </p>
+              )}
+            </section>
+
             {/* Personal Details Form */}
             <section className="bg-surface-container-lowest rounded-lg pt-6 pb-8 px-8 shadow-[0_20px_40px_rgba(25,28,30,0.04)]">
               <h3 className="font-headline text-lg font-bold mb-6 text-slate-900 border-b border-surface-container-low pb-4">Personal details</h3>
@@ -1918,14 +2079,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                   {editing ? (
                     <input
                       type="text"
-                      value={editForm.active_role || ""}
-                      onChange={e => setEditForm({ ...editForm, active_role: e.target.value })}
+                      value={editForm.professional_title || ""}
+                      onChange={e => setEditForm({ ...editForm, professional_title: e.target.value })}
                       className="w-full bg-surface-container-low border-0 outline-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all text-sm font-medium text-slate-800"
                       placeholder="e.g., Full Stack Developer"
                     />
                   ) : (
                     <div className="w-full bg-slate-50 border border-slate-100 rounded-lg px-4 py-3 text-sm font-semibold text-slate-700">
-                      {profile?.active_role || "-"}
+                      {profile?.professional_title || profile?.active_role || "-"}
                     </div>
                   )}
                 </div>
@@ -1936,13 +2097,13 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                     <input
                       ref={phoneInputRef}
                       type="tel"
-                      value={editForm.phone || ""}
-                      onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
+                      value={editForm.phone_number || ""}
+                      onChange={e => setEditForm({ ...editForm, phone_number: e.target.value })}
                       className="w-full bg-surface-container-low border-0 outline-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all text-sm font-medium text-slate-800"
                     />
                   ) : (
                     <div className="w-full bg-slate-50 border border-slate-100 rounded-lg px-4 py-3 text-sm font-semibold text-slate-700">
-                      {profile?.phone || "-"}
+                      {profile?.phone_number || "-"}
                     </div>
                   )}
                 </div>
@@ -2049,7 +2210,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                 {editing && (
                   <button
                     onClick={() => {
-                      const emptyExp = { company: "", position: "", duration: "", description: "" };
+                      const emptyExp = { company: "", position: "", description: "", start_date: "", end_date: "", currently_working: false };
                       setEditForm({ ...editForm, work_experience: [...(editForm.work_experience || []), emptyExp] });
                     }}
                     className="text-primary font-bold text-sm flex items-center gap-1 hover:underline"
@@ -2091,14 +2252,30 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                           }} className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1" />
                         </div>
                         <div>
-                          <label className="text-xs font-bold text-slate-500">Duration</label>
-                          <input type="text" value={exp.duration || ""} placeholder="e.g. 2020 - 2023" onChange={e => {
+                          <label className="text-xs font-bold text-slate-500">Start Date</label>
+                          <input type="month" value={exp.start_date || ""} onChange={e => {
                             const nx = [...(editForm.work_experience || [])];
-                            nx[index] = { ...nx[index], duration: e.target.value };
+                            nx[index] = { ...nx[index], start_date: e.target.value };
                             setEditForm({ ...editForm, work_experience: nx });
                           }} className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1" />
                         </div>
+                        <div>
+                          <label className="text-xs font-bold text-slate-500">End Date</label>
+                          <input type="month" value={exp.end_date || ""} disabled={!!exp.currently_working} onChange={e => {
+                            const nx = [...(editForm.work_experience || [])];
+                            nx[index] = { ...nx[index], end_date: e.target.value };
+                            setEditForm({ ...editForm, work_experience: nx });
+                          }} className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1 disabled:opacity-40 disabled:cursor-not-allowed" />
+                        </div>
                       </div>
+                      <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
+                        <input type="checkbox" checked={!!exp.currently_working} onChange={e => {
+                          const nx = [...(editForm.work_experience || [])];
+                          nx[index] = { ...nx[index], currently_working: e.target.checked, end_date: e.target.checked ? "" : nx[index].end_date };
+                          setEditForm({ ...editForm, work_experience: nx });
+                        }} className="rounded" />
+                        <span>I currently work here</span>
+                      </label>
                       <div>
                         <label className="text-xs font-bold text-slate-500">Description</label>
                         <textarea value={exp.description || ""} onChange={e => {
@@ -2122,7 +2299,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                               <h4 className="text-base font-bold text-slate-900 leading-tight">{exp.position}</h4>
                               <p className="text-[#1a56db] font-semibold text-sm mt-0.5">{exp.company}</p>
                             </div>
-                            <span className="text-xs text-slate-400 font-medium bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100 flex-shrink-0 ml-4">{exp.duration}</span>
+                            <span className="text-xs text-slate-400 font-medium bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100 flex-shrink-0 ml-4">
+                              {exp.start_date
+                                ? `${exp.start_date} – ${exp.currently_working ? "Present" : (exp.end_date || "")}`
+                                : (exp.duration || "")}
+                            </span>
                           </div>
                           {exp.description && (
                             <p className="text-slate-500 text-sm leading-relaxed mt-2">{exp.description}</p>
@@ -2374,22 +2555,22 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                   <div className="w-14 h-14 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0">
                     <span className="material-symbols-outlined text-white text-3xl">description</span>
                   </div>
-                  <div className="flex-1 text-center md:text-left">
+                  <div className="flex-1">
+                    <div className="flex flex-wrap gap-3 mb-3">
+                      <label className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 bg-white text-[#1a56db] font-bold rounded-full hover:bg-blue-50 transition-colors text-sm shadow">
+                        <span className="material-symbols-outlined text-[18px]">upload_file</span>
+                        Upload New Resume
+                        <input type="file" className="hidden" accept=".pdf,.docx,.txt" onChange={handleResumeUpload} />
+                      </label>
+                      {(profile?.resume_url || profile?.resume_link) && (
+                        <a href={profile.resume_url || profile.resume_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 text-white font-bold rounded-full hover:bg-white/20 transition-colors text-sm border border-white/30">
+                          <span className="material-symbols-outlined text-[18px]">visibility</span>
+                          Preview Current
+                        </a>
+                      )}
+                    </div>
                     <h3 className="font-headline text-lg font-bold text-white mb-1">Ready to apply for new roles?</h3>
                     <p className="text-blue-200 text-sm">Keep your resume up to date to increase your chances of landing the right opportunity.</p>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
-                    <label className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 bg-white text-[#1a56db] font-bold rounded-full hover:bg-blue-50 transition-colors text-sm shadow">
-                      <span className="material-symbols-outlined text-[18px]">upload_file</span>
-                      Upload New Resume
-                      <input type="file" className="hidden" accept=".pdf,.docx" onChange={handleFileChange} />
-                    </label>
-                    {profile?.resume_link && (
-                      <a href={profile.resume_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 text-white font-bold rounded-full hover:bg-white/20 transition-colors text-sm border border-white/30">
-                        <span className="material-symbols-outlined text-[18px]">visibility</span>
-                        Preview Current
-                      </a>
-                    )}
                   </div>
                 </div>
               </section>

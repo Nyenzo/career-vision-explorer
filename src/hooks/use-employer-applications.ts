@@ -21,10 +21,15 @@ export interface EmployerApplication extends Application {
 
 // Helper to transform API Application into UI EmployerApplication shape
 function toEmployerApplication(app: Application): EmployerApplication {
+  const rawDate = app.applied_at || app.created_at;
+  const parsedDate = rawDate ? new Date(rawDate) : null;
+  const appliedDate = parsedDate && !isNaN(parsedDate.getTime())
+    ? parsedDate.toLocaleDateString()
+    : 'Unknown date';
   return {
     ...app,
     id: app.application_id,
-    appliedDate: new Date(app.applied_at).toLocaleDateString(),
+    appliedDate,
     applicantInfo: {
       name: app.applicant_name || 'Unknown Applicant',
       email: app.applicant_email || '',
@@ -64,8 +69,8 @@ export const useEmployerApplications = () => {
         return response; // Return the applications directly
       } catch (error: any) {
         // Use mock data as fallback for network errors or 404s
-        if (error.response?.status === 404 || error.response?.status === 500 || 
-            error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK') {
+        if (error.response?.status === 404 || error.response?.status === 500 ||
+          error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK') {
           console.warn('API failed, using mock data for employer applications');
           toast.info('Using demo data. Some features may be limited.');
           return await employerMockService.getEmployerApplications();
@@ -97,15 +102,15 @@ export const useEmployerApplications = () => {
   // Filter applications based on status, job, and search
   const filteredApplications = useMemo(() => {
     return employerApplications.filter(app => {
-      const matchesStatus = 
-        statusFilter === 'all' || 
+      const matchesStatus =
+        statusFilter === 'all' ||
         app.status.toLowerCase() === statusFilter.toLowerCase();
 
-      const matchesJob = 
-        jobFilter === 'all' || 
+      const matchesJob =
+        jobFilter === 'all' ||
         app.job_id === jobFilter;
 
-      const matchesSearch = 
+      const matchesSearch =
         searchQuery === '' ||
         app.applicantInfo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         app.applicantInfo.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -117,11 +122,11 @@ export const useEmployerApplications = () => {
 
   // Review application mutation
   const reviewApplicationMutation = useMutation<
-    Application, 
-    Error, 
+    Application,
+    Error,
     { applicationId: string; status: 'Reviewed' | 'Accepted' | 'Rejected'; notes?: string }
   >({
-    mutationFn: ({ applicationId, status, notes }) => 
+    mutationFn: ({ applicationId, status, notes }) =>
       applicationsService.reviewApplication(applicationId, status, notes),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [EMPLOYER_APPLICATIONS_QUERY_KEY] });
@@ -163,7 +168,7 @@ export const useEmployerApplications = () => {
   // Get unique jobs for filtering
   const uniqueJobs = useMemo(() => {
     const jobMap = new Map<string, { id: string; title: string; company: string }>();
-    
+
     employerApplications.forEach(app => {
       if (!jobMap.has(app.job_id)) {
         jobMap.set(app.job_id, {
@@ -189,7 +194,7 @@ export const useEmployerApplications = () => {
     setJobFilter,
     searchQuery,
     setSearchQuery,
-    reviewApplication: (applicationId: string, status: 'Reviewed' | 'Accepted' | 'Rejected', notes?: string) => 
+    reviewApplication: (applicationId: string, status: 'Reviewed' | 'Accepted' | 'Rejected', notes?: string) =>
       reviewApplicationMutation.mutate({ applicationId, status, notes }),
     getApplicationsForJob,
     stats,
