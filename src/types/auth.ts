@@ -43,7 +43,10 @@ export interface UserRegister {
   email: string;
   password: string;
   account_type: "job_seeker" | "employer";
-  date_of_birth?: string;   // ISO date string; job seeker DOB / employer founding date
+  phone_number?: string;
+  date_of_birth?: string;   // ISO date string; job seeker DOB only
+  founding_date?: string;  // ISO date string; employer company founding date
+  role_title?: string;     // employer's position in the company (CEO, HR Manager, etc.)
   company_name?: string;
   company_website?: string;
   industry?: string;

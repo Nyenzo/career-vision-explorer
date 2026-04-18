@@ -24,13 +24,13 @@ interface AuthContextType {
   register: (userData: UserRegister) => Promise<void>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
-  hasRole: (
-    role: "job_seeker" | "employer"
-  ) => boolean;
+  hasRole: (role: "job_seeker" | "employer") => boolean;
   isEmployer: () => boolean;
   isJobSeeker: () => boolean;
   setTokens: (accessToken: string, refreshToken: string) => void;
-  signInWithLinkedIn: (accountType?: "job_seeker" | "employer") => Promise<void>;
+  signInWithLinkedIn: (
+    accountType?: "job_seeker" | "employer",
+  ) => Promise<void>;
   signInWithGoogle: (accountType?: "job_seeker" | "employer") => Promise<void>;
   handleOAuthCallback: () => Promise<void>;
   impersonateUser: (targetUser: User) => void;
@@ -94,7 +94,10 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         try {
           companyProfile = await profileService.getCompanyProfile();
         } catch (companyError) {
-          console.warn("Failed to load company profile for employer", companyError);
+          console.warn(
+            "Failed to load company profile for employer",
+            companyError,
+          );
         }
       }
 
@@ -103,11 +106,20 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         ...rawProfile,
         name: rawProfile.name || (rawProfile as any).full_name || "",
         company_data: companyProfile || (rawProfile as any).company_data,
-        company_name: (rawProfile as any).company_name || companyProfile?.company_name,
+        company_name:
+          (rawProfile as any).company_name || companyProfile?.company_name,
         industry: (rawProfile as any).industry || companyProfile?.industry,
         company_website:
-          (rawProfile as any).company_website || companyProfile?.company_website,
-        company_size: (rawProfile as any).company_size || companyProfile?.company_size,
+          (rawProfile as any).company_website ||
+          companyProfile?.company_website,
+        company_size:
+          (rawProfile as any).company_size || companyProfile?.company_size,
+        // Remap backend field names to frontend field names
+        phone_number:
+          (rawProfile as any).phone || (rawProfile as any).phone_number,
+        avatar_url:
+          (rawProfile as any).profile_image_url ||
+          (rawProfile as any).avatar_url,
       };
       clearTimeout(timeoutId);
       if (!controller.signal.aborted) {
@@ -119,7 +131,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
             : userProfile.name;
 
         if (displayNameForUser) {
-          setUser(prev => {
+          setUser((prev) => {
             if (!prev) return prev;
             if (prev.name === displayNameForUser) return prev;
             const updated = { ...prev, name: displayNameForUser };
@@ -131,7 +143,9 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     } catch (err: unknown) {
       clearTimeout(timeoutId);
       if (controller.signal.aborted) {
-        console.warn("Profile load timed out or was cancelled — continuing without profile");
+        console.warn(
+          "Profile load timed out or was cancelled — continuing without profile",
+        );
         return;
       }
       console.error("Error loading profile:", err);
@@ -142,7 +156,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
           const userProfile = await profileService.getProfile();
           setProfile(userProfile);
           if (userProfile.name) {
-            setUser(prev => {
+            setUser((prev) => {
               if (!prev || prev.name) return prev;
               const updated = { ...prev, name: userProfile.name };
               authService.setStoredUser(updated);
@@ -175,7 +189,9 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
           console.warn("Failed to fetch fresh user, using stored one");
         }
 
-        const impersonationData = localStorage.getItem("visiondrillImpersonation");
+        const impersonationData = localStorage.getItem(
+          "visiondrillImpersonation",
+        );
         if (impersonationData) {
           try {
             const { originalUser: storedOriginalUser, impersonatedUser } =
@@ -198,7 +214,8 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     }
 
     // Load profile in the background (non-blocking)
-    if (authService.isAuthenticated()) {
+    // Skip if we're on an OAuth callback path — handleOAuthCallback will load the profile
+    if (authService.isAuthenticated() && !authService.isOAuthCallback()) {
       loadUserProfile();
     }
   }, [loadUserProfile]);
@@ -245,7 +262,9 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
       const registerResponse = await authService.register(userData);
 
       if (registerResponse.requires_email_confirmation) {
-        toast.success("Registration successful! Check your email to confirm your account.");
+        toast.success(
+          "Registration successful! Check your email to confirm your account.",
+        );
         navigate("/login", { replace: true });
         return;
       }
@@ -291,14 +310,14 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const hasRole = (role: "job_seeker" | "employer") => {
-    const effectiveRole = (profile?.active_role as User["account_type"] | undefined) || user?.account_type;
+    const effectiveRole =
+      (profile?.active_role as User["account_type"] | undefined) ||
+      user?.account_type;
     return effectiveRole === role;
   };
 
   const isEmployer = () => hasRole("employer");
   const isJobSeeker = () => hasRole("job_seeker");
-
-
 
   const stopImpersonation = () => {
     if (!isImpersonating || !originalUser) return;
@@ -338,7 +357,9 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const signInWithLinkedIn = async (accountType: "job_seeker" | "employer" = "job_seeker") => {
+  const signInWithLinkedIn = async (
+    accountType: "job_seeker" | "employer" = "job_seeker",
+  ) => {
     try {
       setIsLoading(true);
       await authService.signInWithLinkedIn(accountType);
@@ -348,9 +369,8 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         description:
           getErrorMessage(
             error,
-            "Failed to initiate LinkedIn authentication. Please try again."
-          ) ||
-          "Failed to initiate LinkedIn authentication. Please try again.",
+            "Failed to initiate LinkedIn authentication. Please try again.",
+          ) || "Failed to initiate LinkedIn authentication. Please try again.",
       });
       throw error;
     } finally {
@@ -358,7 +378,9 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const signInWithGoogle = async (accountType: "job_seeker" | "employer" = "job_seeker") => {
+  const signInWithGoogle = async (
+    accountType: "job_seeker" | "employer" = "job_seeker",
+  ) => {
     try {
       setIsLoading(true);
       await authService.signInWithGoogle(accountType);
@@ -368,9 +390,8 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         description:
           getErrorMessage(
             error,
-            "Failed to initiate Google authentication. Please try again."
-          ) ||
-          "Failed to initiate Google authentication. Please try again.",
+            "Failed to initiate Google authentication. Please try again.",
+          ) || "Failed to initiate Google authentication. Please try again.",
       });
       throw error;
     } finally {
@@ -388,9 +409,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         user_id: tokenResponse.user_id,
         name: "",
         email: tokenResponse.email,
-        account_type: tokenResponse.account_type as
-          | "job_seeker"
-          | "employer",
+        account_type: tokenResponse.account_type as "job_seeker" | "employer",
       };
 
       authService.setStoredUser(user);
@@ -410,9 +429,8 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         description:
           getErrorMessage(
             error,
-            "Failed to complete authentication. Please try again."
-          ) ||
-          "Failed to complete authentication. Please try again.",
+            "Failed to complete authentication. Please try again.",
+          ) || "Failed to complete authentication. Please try again.",
       });
       throw error;
     } finally {
@@ -436,7 +454,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     signInWithLinkedIn,
     signInWithGoogle,
     handleOAuthCallback,
-    impersonateUser: () => { },
+    impersonateUser: () => {},
     stopImpersonation,
     isImpersonating,
     originalUser,
