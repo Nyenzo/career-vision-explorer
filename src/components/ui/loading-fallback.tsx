@@ -42,7 +42,7 @@ export const LoadingFallback = () => (
 );
 
 export const CardLoadingFallback = () => (
-  <div className="space-y-4 p-6 border rounded-lg animate-pulse">
+  <div className="space-y-4 p-6 border rounded-lg">
     <div className="flex items-center space-x-4">
       <Skeleton className="h-12 w-12 rounded-full" />
       <div className="space-y-2">
@@ -60,7 +60,7 @@ export const CardLoadingFallback = () => (
 export const TableLoadingFallback = () => (
   <div className="space-y-4">
     {Array.from({ length: 5 }).map((_, i) => (
-      <div key={i} className="flex items-center space-x-4 p-4 border rounded animate-pulse">
+      <div key={i} className="flex items-center space-x-4 p-4 border rounded">
         <Skeleton className="h-8 w-8 rounded-full" />
         <Skeleton className="h-4 w-32" />
         <Skeleton className="h-4 w-24" />

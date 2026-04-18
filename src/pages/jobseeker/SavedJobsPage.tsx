@@ -8,6 +8,7 @@ import { useJobApplications } from "@/hooks/use-job-applications";
 import { Bookmark, Briefcase, MapPin, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { SavedJobCardSkeleton } from "@/components/ui/skeleton-loaders";
 
 const SavedJobsPage = () => {
     const navigate = useNavigate();
@@ -241,9 +242,10 @@ const SavedJobsPage = () => {
                             )}
 
                             {activeTab === "applied" && isApplicationsLoading && (
-                                <article className="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm">
-                                    <h3 className="text-2xl font-semibold text-slate-900">Loading applied jobs...</h3>
-                                </article>
+                                <>
+                                    <SavedJobCardSkeleton />
+                                    <SavedJobCardSkeleton />
+                                </>
                             )}
 
                             {activeTab === "applied" && !isApplicationsLoading && sortedAppliedJobs.length === 0 && (

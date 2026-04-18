@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent } from "@/components/ui/card";
 import { Briefcase, Globe, Users, Smile, Building, Image, Upload } from "lucide-react";
 import { TypingQuestion } from "./steps/TypingQuestion";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface EmployerStepRendererProps {
   currentStep: number;
@@ -210,8 +211,13 @@ export const EmployerStepRenderer = ({
   // Safety check to prevent out of bounds access
   if (!StepComponent) {
     return (
-      <div className="text-center py-8">
-        <p className="text-gray-500">Loading...</p>
+      <div className="space-y-4">
+        <Skeleton className="h-7 w-48" />
+        <Skeleton className="h-10 w-full rounded-md" />
+        <Skeleton className="h-7 w-32" />
+        <Skeleton className="h-10 w-full rounded-md" />
+        <Skeleton className="h-7 w-40" />
+        <Skeleton className="h-10 w-full rounded-md" />
       </div>
     );
   }

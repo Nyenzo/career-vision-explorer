@@ -63,6 +63,7 @@ import {
   CompanyData,
 } from "@/types/api";
 import { useNavigate } from "react-router-dom";
+import { ProfilePageSkeleton } from "@/components/ui/skeleton-loaders";
 import whatsapp from "/src/assets/whatsapp.png";
 import stackoverflow from "/src/assets/stackoverflow.png";
 
@@ -1466,9 +1467,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
   if (loading) {
     return (
       <Layout>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
+        <ProfilePageSkeleton />
       </Layout>
     );
   }

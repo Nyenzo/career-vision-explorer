@@ -401,36 +401,37 @@ const Jobs = () => {
           {/* Load More Section */}
           {hasMore && (
             <div className="flex flex-col items-center py-8 space-y-4">
-              {/* Manual Load More Button */}
+              {/* Manual Load More Button — no spinner, use skeleton cards below */}
               <button
                 onClick={loadMoreJobs}
                 disabled={loadingMore}
                 className="px-6 py-3 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white rounded-lg transition-colors duration-200 flex items-center space-x-2"
               >
-                {loadingMore ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span>Loading...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Load More Jobs</span>
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </>
+                <span>{loadingMore ? "Loading More Jobs" : "Load More Jobs"}</span>
+                {!loadingMore && (
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
                 )}
               </button>
+
+              {/* Skeleton cards render while new jobs are being fetched */}
+              {loadingMore && (
+                <div className="w-full space-y-4">
+                  <JobCardSkeleton />
+                  <JobCardSkeleton />
+                </div>
+              )}
 
               {/* Infinite scroll trigger */}
               <div ref={loadMoreRef} className="text-gray-500 text-sm">
@@ -438,6 +439,7 @@ const Jobs = () => {
               </div>
             </div>
           )}
+
 
           {!hasMore && jobs.length > 0 && (
             <div className="text-center py-8 text-gray-500">

@@ -12,6 +12,7 @@ import { Target, ArrowRight, CheckCircle, AlertCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { ProfileCompletionCardSkeleton } from "@/components/ui/skeleton-loaders";
 
 export const ProfileCompletionCard = () => {
   const { profile, isLoading } = useAuth();
@@ -162,27 +163,7 @@ export const ProfileCompletionCard = () => {
   const completedCount = sections.filter((s) => s.completed).length;
 
   if (isLoading) {
-    return (
-      <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-gray-900">
-            <Target className="h-5 w-5 text-blue-600" />
-            Profile Completion
-          </CardTitle>
-          <CardDescription>Loading your profile progress...</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-            <div className="h-2 bg-gray-200 rounded"></div>
-            <div className="space-y-2">
-              <div className="h-3 bg-gray-200 rounded"></div>
-              <div className="h-3 bg-gray-200 rounded"></div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <ProfileCompletionCardSkeleton />;
   }
 
   const getProgressColor = (percentage: number) => {

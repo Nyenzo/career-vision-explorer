@@ -9,6 +9,7 @@ import { CompanyInfoCard } from "@/components/jobs/CompanyInfoCard";
 import { JobNotFound } from "@/components/jobs/JobNotFound";
 import { jobsService } from "@/services/jobs.service";
 import { Job } from "@/types/api";
+import { JobDetailsSkeleton } from "@/components/ui/skeleton-loaders";
 
 const EmployerEditJobPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -41,7 +42,7 @@ const EmployerEditJobPage = () => {
   }, [id]);
 
   if (loading) {
-    return <Layout><div>Loading...</div></Layout>;
+    return <Layout><JobDetailsSkeleton /></Layout>;
   }
 
   if (error || !job) {

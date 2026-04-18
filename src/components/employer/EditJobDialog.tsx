@@ -172,7 +172,7 @@ export function EditJobDialog({
           .map((item) => item.trim())
           .filter(Boolean),
         required_skills: (values.required_skills || "")
-          .split("\n")
+          .split(/\n|,/g)
           .map((item) => item.trim())
           .filter(Boolean),
         status: values.status,
@@ -406,7 +406,7 @@ export function EditJobDialog({
                   <FormLabel>Required Skills</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="One skill per line"
+                      placeholder="One skill per line or comma-separated"
                       {...field}
                       rows={3}
                     />

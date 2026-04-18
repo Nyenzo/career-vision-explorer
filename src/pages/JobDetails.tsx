@@ -13,6 +13,7 @@ import { CompanyInfoCard } from "@/components/jobs/CompanyInfoCard";
 import { JobNotFound } from "@/components/jobs/JobNotFound";
 import { jobsService } from "@/services/jobs.service";
 import { apiClient } from "@/lib/api-client";
+import { JobDetailsSkeleton } from "@/components/ui/skeleton-loaders";
 
 const normalizeJobDetails = (rawJob: any, matchScore: number) => ({
   ...rawJob,
@@ -96,7 +97,7 @@ const JobDetails = () => {
 
   // The gatekeeper: Show a loading state until BOTH the job details and the application status are ready.
   if (loading || applicationsLoading) {
-    return <Layout><div>Loading...</div></Layout>;
+    return <Layout><JobDetailsSkeleton /></Layout>;
   }
 
   // Handle the case where the job was not found or another error occurred.

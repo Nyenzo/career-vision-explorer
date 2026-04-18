@@ -236,3 +236,279 @@ export const CallbackSkeleton: React.FC = () => (
     </Card>
   </div>
 );
+
+// ─── Job Details Page Skeleton ──────────────────────────────────────────────
+// Mirrors: 12-col grid — 8-col main (header card + details card) + 4-col sidebar
+export const JobDetailsSkeleton: React.FC = () => (
+  <div className="min-h-screen bg-surface">
+    <div className="pt-12 pb-20 px-6 max-w-7xl mx-auto">
+      {/* Back button */}
+      <div className="mb-6">
+        <Skeleton className="h-9 w-28 rounded-md" />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Main content — 8 cols */}
+        <div className="lg:col-span-8 space-y-8">
+          {/* Job header card */}
+          <Card className="p-6">
+            <div className="flex items-start gap-4">
+              <Skeleton className="h-16 w-16 rounded-xl flex-shrink-0" />
+              <div className="flex-1 space-y-3">
+                <Skeleton className="h-8 w-3/4" />
+                <Skeleton className="h-5 w-1/2" />
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Skeleton className="h-6 w-24 rounded-full" />
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                  <Skeleton className="h-6 w-28 rounded-full" />
+                </div>
+              </div>
+            </div>
+          </Card>
+          {/* Job details card */}
+          <Card className="p-6 space-y-4">
+            <Skeleton className="h-6 w-40" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+              <Skeleton className="h-4 w-4/6" />
+            </div>
+            <Skeleton className="h-6 w-32 mt-4" />
+            <div className="flex flex-wrap gap-2">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-7 w-20 rounded-full" />
+              ))}
+            </div>
+          </Card>
+        </div>
+        {/* Sidebar — 4 cols */}
+        <aside className="lg:col-span-4 space-y-6">
+          {/* Action card */}
+          <Card className="p-6 space-y-4">
+            <Skeleton className="h-10 w-full rounded-full" />
+            <Skeleton className="h-10 w-full rounded-full" />
+            <Skeleton className="h-4 w-32 mx-auto" />
+          </Card>
+          {/* Company info card */}
+          <Card className="p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-12 w-12 rounded-lg" />
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-2/3" />
+            </div>
+          </Card>
+        </aside>
+      </div>
+    </div>
+  </div>
+);
+
+// ─── Profile Page Skeleton ───────────────────────────────────────────────────
+// Mirrors: employer 4-col layout (1-col sidebar + 3-col main cards)
+export const ProfilePageSkeleton: React.FC = () => (
+  <div className="min-h-screen bg-[#eef1f5]">
+    <div className="container py-8 max-w-6xl mx-auto px-4">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div className="space-y-2">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-5 w-80" />
+        </div>
+        <Skeleton className="h-11 w-32 rounded-2xl" />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        {/* Left sidebar */}
+        <div className="lg:col-span-1 space-y-6">
+          <Card className="rounded-3xl border border-slate-200 shadow-none">
+            <CardContent className="p-6">
+              <div className="text-center space-y-3">
+                <Skeleton className="h-32 w-32 rounded-full mx-auto" />
+                <Skeleton className="h-6 w-32 mx-auto" />
+                <Skeleton className="h-5 w-20 mx-auto rounded-full" />
+              </div>
+              <div className="mt-4 space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="rounded-3xl border border-slate-200 shadow-none">
+            <CardContent className="p-6">
+              <div className="grid grid-cols-2 gap-3">
+                <Skeleton className="h-16 rounded-xl" />
+                <Skeleton className="h-16 rounded-xl" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        {/* Right column — 3 cards */}
+        <div className="lg:col-span-3 space-y-6">
+          {[...Array(3)].map((_, i) => (
+            <Card key={i} className="rounded-3xl border border-slate-200 shadow-none">
+              <CardHeader>
+                <Skeleton className="h-6 w-48" />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-5 w-32" />
+                  </div>
+                  <div className="space-y-1">
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-5 w-28" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-5/6" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// ─── Profile Completion Card Skeleton ────────────────────────────────────────
+// Mirrors: Card with title, progress bar, next-step box, checklist items
+export const ProfileCompletionCardSkeleton: React.FC = () => (
+  <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+    <CardHeader>
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-5 w-5 rounded" />
+        <Skeleton className="h-5 w-36" />
+      </div>
+      <Skeleton className="h-4 w-64 mt-1" />
+    </CardHeader>
+    <CardContent className="space-y-4">
+      {/* Progress bar */}
+      <div className="space-y-2">
+        <div className="flex justify-between">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-4 w-10" />
+        </div>
+        <Skeleton className="h-3 w-full rounded-full" />
+        <Skeleton className="h-3 w-40" />
+      </div>
+      {/* Next step box */}
+      <div className="rounded-lg p-3 border space-y-2">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-4 w-48" />
+        <Skeleton className="h-8 w-full rounded-md" />
+      </div>
+      {/* Checklist */}
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-32" />
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="flex items-center justify-between p-2 rounded-lg">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-5 w-20 rounded-full" />
+          </div>
+        ))}
+      </div>
+    </CardContent>
+  </Card>
+);
+
+// ─── Recent Activity Card Skeleton ───────────────────────────────────────────
+// Mirrors: Card with 3–4 activity rows (icon dot + text + time)
+export const RecentActivityCardSkeleton: React.FC = () => (
+  <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+    <CardHeader>
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-5 w-5 rounded" />
+        <Skeleton className="h-5 w-32" />
+      </div>
+      <Skeleton className="h-4 w-48 mt-1" />
+    </CardHeader>
+    <CardContent className="space-y-3">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Skeleton className="h-2 w-2 rounded-full" />
+            <Skeleton className="h-4 w-4 rounded" />
+          </div>
+          <div className="flex-1 space-y-1">
+            <Skeleton className={`h-4 ${i % 2 === 0 ? 'w-3/4' : 'w-5/6'}`} />
+            <Skeleton className="h-3 w-16" />
+          </div>
+        </div>
+      ))}
+    </CardContent>
+  </Card>
+);
+
+// ─── Saved Job Card Skeleton ─────────────────────────────────────────────────
+// Mirrors: article row — avatar + title block + badges + action buttons
+export const SavedJobCardSkeleton: React.FC = () => (
+  <article className="rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="flex min-w-0 items-start gap-4">
+        <Skeleton className="h-14 w-14 rounded-full flex-shrink-0" />
+        <div className="min-w-0 space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Skeleton className="h-7 w-48" />
+            <Skeleton className="h-5 w-20 rounded-full" />
+          </div>
+          <Skeleton className="h-4 w-32" />
+          <div className="flex flex-wrap items-center gap-2">
+            <Skeleton className="h-6 w-24 rounded-full" />
+            <Skeleton className="h-6 w-16 rounded-full" />
+            <Skeleton className="h-6 w-20 rounded-full" />
+          </div>
+        </div>
+      </div>
+      <div className="flex shrink-0 gap-2">
+        <Skeleton className="h-10 w-28 rounded-full" />
+        <Skeleton className="h-10 w-24 rounded-full" />
+      </div>
+    </div>
+  </article>
+);
+
+// ─── Applicants Table Row Skeleton ───────────────────────────────────────────
+// Mirrors: AllApplicants <tr> with 6 <td> columns
+export const ApplicantsTableRowSkeleton: React.FC<{ rows?: number }> = ({ rows = 5 }) => (
+  <>
+    {[...Array(rows)].map((_, i) => (
+      <tr key={i} className="border-b">
+        <td className="p-4">
+          <div className="flex items-center space-x-3">
+            <Skeleton className="h-8 w-8 rounded-full flex-shrink-0" />
+            <div className="space-y-1">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-3 w-36" />
+            </div>
+          </div>
+        </td>
+        <td className="p-4">
+          <div className="space-y-1">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+        </td>
+        <td className="p-4"><Skeleton className="h-4 w-20" /></td>
+        <td className="p-4"><Skeleton className="h-6 w-20 rounded-full" /></td>
+        <td className="p-4"><Skeleton className="h-6 w-16 rounded-full" /></td>
+        <td className="p-4">
+          <div className="flex items-center justify-end gap-2">
+            <Skeleton className="h-8 w-8 rounded" />
+            <Skeleton className="h-8 w-16 rounded" />
+            <Skeleton className="h-8 w-16 rounded" />
+          </div>
+        </td>
+      </tr>
+    ))}
+  </>
+);

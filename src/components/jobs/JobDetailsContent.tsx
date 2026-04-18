@@ -267,7 +267,7 @@ export const JobDetailsContent = ({ job, onUpdate }: JobDetailsContentProps) => 
         </div>
 
         <div>
-          <label className="block font-semibold mb-1">Required Skills (one per line)</label>
+          <label className="block font-semibold mb-1">Required Skills (one per line or comma-separated)</label>
           <Textarea
             value={formData.required_skills}
             onChange={(e) => handleInputChange("required_skills", e.target.value)}

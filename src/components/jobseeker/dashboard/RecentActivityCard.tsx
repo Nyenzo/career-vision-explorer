@@ -1,43 +1,23 @@
 
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, Briefcase, User, Award, AlertCircle } from "lucide-react";
-import { applicationsService } from "@/services/applications.service";
+import { User, Award, AlertCircle, Clock, Briefcase } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useJobApplications } from "@/hooks/use-job-applications";
 import { Application } from "@/types/api";
-
 export const RecentActivityCard = () => {
-  const { isAuthenticated, profile } = useAuth();
+  const { profile } = useAuth();
+  const { applications, isLoading: loading, error } = useJobApplications();
   const [recentApplications, setRecentApplications] = useState<Application[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchRecentActivity = async () => {
-      if (!isAuthenticated) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const applications = await applicationsService.getMyApplications();
-        // Get the most recent 3 applications
-        const sortedApplications = applications
-          .sort((a, b) => new Date(b.applied_at).getTime() - new Date(a.applied_at).getTime())
-          .slice(0, 3);
-        setRecentApplications(sortedApplications);
-        setError(null);
-      } catch (err: any) {
-        console.error('Error fetching recent activity:', err);
-        setError(err.message || 'Failed to fetch recent activity');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRecentActivity();
-  }, [isAuthenticated]);
+    if (applications && applications.length > 0) {
+      const sorted = [...applications]
+        .sort((a, b) => new Date(b.applied_at).getTime() - new Date(a.applied_at).getTime())
+        .slice(0, 3);
+      setRecentApplications(sorted);
+    }
+  }, [applications]);
 
   const getActivityColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -123,10 +103,19 @@ export const RecentActivityCard = () => {
         )}
         
         {loading ? (
-          <div className="text-center py-4">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-2 text-sm text-gray-600">Loading recent activity...</p>
-          </div>
+          // Skeleton rows mirror the real activity items
+          [1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="h-2 w-2 rounded-full bg-gray-200 animate-pulse" />
+                <div className="h-4 w-4 rounded bg-gray-200 animate-pulse" />
+              </div>
+              <div className="flex-1 space-y-1">
+                <div className={`h-4 rounded bg-gray-200 animate-pulse ${i % 2 === 0 ? 'w-3/4' : 'w-5/6'}`} />
+                <div className="h-3 w-16 rounded bg-gray-200 animate-pulse" />
+              </div>
+            </div>
+          ))
         ) : (
           <div className="space-y-3">
             {activities.map((activity, index) => {

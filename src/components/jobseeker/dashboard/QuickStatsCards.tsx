@@ -2,6 +2,7 @@ import React from "react";
 import { Star } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const QuickStatsCards = () => {
   const { profile, isLoading: authLoading } = useAuth();
@@ -32,3 +33,4 @@ export const QuickStatsCards = () => {
     </div>
   );
 };
+

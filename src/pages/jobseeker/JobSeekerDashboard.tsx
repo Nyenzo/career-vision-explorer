@@ -7,6 +7,14 @@ import { QuickStatsCards } from "@/components/jobseeker/dashboard/QuickStatsCard
 
 import EditProfileDialog from "@/components/profile/EditProfileDialog";
 import { useAuth } from "@/hooks/use-auth";
+import { useJobApplications } from "@/hooks/use-job-applications";
+import {
+  PageHeaderSkeleton,
+  ProfileCardSkeleton,
+  RecentActivityCardSkeleton,
+  ProfileCompletionCardSkeleton,
+  DashboardStatsGridSkeleton
+} from "@/components/ui/skeleton-loaders";
 import {
   Bell,
   MessageSquare,
@@ -35,13 +43,34 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
 
-
 const JobSeekerDashboard = () => {
-  const { user, profile } = useAuth();
+  const { user, profile, isLoading: authLoading } = useAuth();
+  const { isLoading: applicationsLoading } = useJobApplications();
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const navigate = useNavigate();
 
-
+  // If critical dependencies are loading, show ONE unified page loader.
+  if (authLoading || applicationsLoading) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-[#f1f5f9]">
+          <main className="pt-12 pb-20 px-4 sm:px-8 max-w-7xl mx-auto">
+            <PageHeaderSkeleton />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              <div className="lg:col-span-4 flex flex-col gap-8">
+                <ProfileCardSkeleton />
+                <RecentActivityCardSkeleton />
+              </div>
+              <div className="lg:col-span-8 flex flex-col gap-8">
+                <ProfileCompletionCardSkeleton />
+                <DashboardStatsGridSkeleton />
+              </div>
+            </div>
+          </main>
+        </div>
+      </Layout>
+    );
+  }
 
   const handleSaveProfile = async (data: any) => {
     console.log("Saving profile:", data);

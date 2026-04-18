@@ -7,9 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Search, Loader2, Users, Eye, CheckCircle, XCircle, Clock } from "lucide-react";
+import { ArrowLeft, Search, Users, XCircle } from "lucide-react";
 import { useEmployerApplications } from "@/hooks/use-employer-applications";
 import { ApplicantProfileDialog } from "@/components/employer/ApplicantProfileDialog";
+import { ApplicantsTableRowSkeleton } from "@/components/ui/skeleton-loaders";
 
 const AllApplicants = () => {
   const navigate = useNavigate();
@@ -104,7 +105,7 @@ const AllApplicants = () => {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8"><Loader2 className="animate-spin h-8 w-8 mx-auto text-gray-600" /><p className="text-gray-500 mt-2">Loading applications...</p></TableCell></TableRow>
+                  <ApplicantsTableRowSkeleton rows={5} />
                 ) : error ? (
                   <TableRow><TableCell colSpan={6} className="text-center py-8 text-red-500"><XCircle className="h-8 w-8 mx-auto mb-2" /><p>Failed to load applications</p></TableCell></TableRow>
                 ) : filteredApplications.length === 0 ? (
