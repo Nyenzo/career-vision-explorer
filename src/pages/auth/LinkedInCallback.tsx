@@ -11,7 +11,10 @@ const LinkedInCallback: React.FC = () => {
   const { handleOAuthCallback } = useAuth();
 
   useEffect(() => {
-    if (oauthCallbackStatus === "processing" || oauthCallbackStatus === "done") {
+    if (
+      oauthCallbackStatus === "processing" ||
+      oauthCallbackStatus === "done"
+    ) {
       return;
     }
 
@@ -24,12 +27,11 @@ const LinkedInCallback: React.FC = () => {
         await handleOAuthCallback();
         oauthCallbackStatus = "done";
       } catch (error: any) {
-        oauthCallbackStatus = "idle";
+        oauthCallbackStatus = "done";
         console.error("Callback handling failed:", error);
         toast.error("Authentication failed", {
           description:
-            error.message ||
-            "Failed to complete sign in. Please try again.",
+            error.message || "Failed to complete sign in. Please try again.",
         });
         navigate("/login?error=auth_failed");
       }

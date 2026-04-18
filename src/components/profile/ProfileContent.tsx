@@ -75,6 +75,47 @@ const EMPLOYMENT_TYPE_OPTIONS = [
   "Freelance",
 ] as const;
 
+/** Maps DB snake_case preferred_job_type → display label */
+const PREFERRED_JOB_TYPE_DISPLAY: Record<string, string> = {
+  full_time: "Full-time",
+  part_time: "Part-time",
+  contract: "Contract",
+  internship: "Internship",
+  freelance: "Freelance",
+  hybrid: "Hybrid",
+  remote: "Remote",
+};
+
+/** All preferred_job_type options as { value (DB key), label (display) } */
+const PREFERRED_JOB_TYPE_OPTIONS = [
+  { value: "remote", label: "Remote", group: "Work Mode" },
+  { value: "hybrid", label: "Hybrid", group: "Work Mode" },
+  { value: "full_time", label: "Full-time", group: "Employment Type" },
+  { value: "part_time", label: "Part-time", group: "Employment Type" },
+  { value: "contract", label: "Contract", group: "Employment Type" },
+  { value: "internship", label: "Internship", group: "Employment Type" },
+  { value: "freelance", label: "Freelance", group: "Employment Type" },
+] as const;
+
+/** Maps DB snake_case availability → display label */
+const AVAILABILITY_DISPLAY: Record<string, string> = {
+  available: "Available",
+  not_available: "Not Available",
+  available_in_2_weeks: "Available in 2 weeks",
+  available_in_1_month: "Available in 1 month",
+};
+
+/** DB keys for availability options */
+const AVAILABILITY_OPTIONS = [
+  { value: "available", label: "Available" },
+  { value: "not_available", label: "Not Available" },
+  { value: "available_in_2_weeks", label: "Available in 2 weeks" },
+  { value: "available_in_1_month", label: "Available in 1 month" },
+] as const;
+
+const formatAvailability = (raw?: string | null) =>
+  (raw && AVAILABILITY_DISPLAY[raw]) || raw || "Status Unknown";
+
 const normalizeJobPreferences = (preferences?: unknown) => {
   if (
     !preferences ||
@@ -230,11 +271,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
   const locationInputRef = useRef<HTMLInputElement>(null);
   const jobInputRef = useRef<HTMLInputElement>(null);
   const experience_yearsInputRef = useRef<HTMLInputElement>(null);
-  const twitterInputRef = useRef<HTMLTextAreaElement>(null);
+  const twitterInputRef = useRef<HTMLInputElement>(null);
   const profileImageInputRef = useRef<HTMLInputElement>(null);
   const companyLogoInputRef = useRef<HTMLInputElement>(null);
-  const resumeInputRef = useRef<HTMLTextAreaElement>(null);
-  const stackoverflowInputRef = useRef<HTMLTextAreaElement>(null);
+  const resumeInputRef = useRef<HTMLInputElement>(null);
+  const stackoverflowInputRef = useRef<HTMLInputElement>(null);
   const projectsInputRef = useRef<HTMLDivElement>(null);
 
   const preferenceDisplayKeys = new Set(["work_mode", "employment_types"]);
@@ -328,6 +369,10 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
           profileData.company_website || companyProfile?.company_website,
         company_size: profileData.company_size || companyProfile?.company_size,
         preferences: normalizeJobPreferences(profileData.preferences),
+        // Remap backend field names to frontend field names
+        phone_number: (profileData as any).phone || profileData.phone_number,
+        avatar_url:
+          (profileData as any).profile_image_url || profileData.avatar_url,
       };
 
       setProfile(sanitizedProfileData);
@@ -447,9 +492,15 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
           name,
           ...restUserData
         } = cleanPayload;
+        // Remap frontend field names to backend field names
+        const { phone_number, avatar_url, ...remainingUserData } = restUserData;
         const userData = {
-          ...restUserData,
+          ...remainingUserData,
           ...(name !== undefined ? { full_name: name } : {}), // API expects full_name
+          ...(phone_number !== undefined ? { phone: phone_number } : {}),
+          ...(avatar_url !== undefined
+            ? { profile_image_url: avatar_url }
+            : {}),
         };
         console.log("👤 Sending user data:", userData);
         updatedProfile = await profileService.updateProfile(userData);
@@ -799,13 +850,19 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
   };
 
   const getAvailabilityColor = (status: string) => {
-    switch (status) {
-      case "Available":
+    const key =
+      status in AVAILABILITY_DISPLAY
+        ? status
+        : Object.keys(AVAILABILITY_DISPLAY).find(
+            (k) => AVAILABILITY_DISPLAY[k] === status,
+          );
+    switch (key) {
+      case "available":
         return "bg-green-300 text-green-800 border-green-500";
-      case "Not Available":
+      case "not_available":
         return "bg-red-100 text-red-800 border-red-200";
-      case "Available in 2 weeks":
-      case "Available in 1 month":
+      case "available_in_2_weeks":
+      case "available_in_1_month":
         return "bg-yellow-100 text-yellow-800 border-yellow-200";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
@@ -861,13 +918,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
     if (data.resume_url || data.resume_link)
       score += sectionWeights.resume_link;
 
-    let socialProfiles = 0;
-    if (data.linkedin_url) socialProfiles++;
-    if (data.github_url) socialProfiles++;
-    if (data.portfolio_url) socialProfiles++;
-    score += (socialProfiles / 3) * 15;
-
     if (data.avatar_url) score += sectionWeights.avatar_url;
+    if (data.linkedin_url) score += sectionWeights.linkedin_url;
     if (data.github_url) score += sectionWeights.github_url;
     if (data.portfolio_url) score += sectionWeights.portfolio_url;
 
@@ -1994,6 +2046,74 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                         placeholder="GitHub URL"
                       />
                     </div>
+                    <div className="relative">
+                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">
+                        alternate_email
+                      </span>
+                      <input
+                        type="url"
+                        value={editForm.twitter_url || ""}
+                        onChange={(e) =>
+                          setEditForm({
+                            ...editForm,
+                            twitter_url: e.target.value,
+                          })
+                        }
+                        className="w-full bg-surface-container-low border-0 outline-none rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all text-sm font-medium"
+                        placeholder="Twitter / X URL"
+                      />
+                    </div>
+                    <div className="relative">
+                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">
+                        photo_camera
+                      </span>
+                      <input
+                        type="url"
+                        value={editForm.instagram_url || ""}
+                        onChange={(e) =>
+                          setEditForm({
+                            ...editForm,
+                            instagram_url: e.target.value,
+                          })
+                        }
+                        className="w-full bg-surface-container-low border-0 outline-none rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all text-sm font-medium"
+                        placeholder="Instagram URL"
+                      />
+                    </div>
+                    <div className="relative">
+                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">
+                        chat
+                      </span>
+                      <input
+                        type="text"
+                        value={editForm.whatsapp_dm || ""}
+                        onChange={(e) =>
+                          setEditForm({
+                            ...editForm,
+                            whatsapp_dm: e.target.value,
+                          })
+                        }
+                        className="w-full bg-surface-container-low border-0 outline-none rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all text-sm font-medium"
+                        placeholder="WhatsApp number (e.g. +254712345678)"
+                      />
+                    </div>
+                    <div className="relative">
+                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">
+                        layers
+                      </span>
+                      <input
+                        type="url"
+                        value={editForm.stackoverflow_url || ""}
+                        onChange={(e) =>
+                          setEditForm({
+                            ...editForm,
+                            stackoverflow_url: e.target.value,
+                          })
+                        }
+                        className="w-full bg-surface-container-low border-0 outline-none rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all text-sm font-medium"
+                        placeholder="Stack Overflow URL"
+                      />
+                    </div>
                   </div>
                 ) : (
                   <>
@@ -2031,11 +2151,76 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                         </span>
                       </a>
                     )}
-                    {!profile?.linkedin_url && !profile?.github_url && (
-                      <p className="text-sm text-slate-400">
-                        No social links added.
-                      </p>
+                    {profile?.twitter_url && (
+                      <a
+                        href={profile.twitter_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-3 bg-surface-container-low hover:bg-surface-container-high rounded-xl transition-colors group"
+                      >
+                        <span className="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-black transition-colors">
+                          alternate_email
+                        </span>
+                        <span className="font-semibold text-slate-700 text-sm">
+                          Twitter / X
+                        </span>
+                      </a>
                     )}
+                    {profile?.instagram_url && (
+                      <a
+                        href={profile.instagram_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-3 bg-surface-container-low hover:bg-surface-container-high rounded-xl transition-colors group"
+                      >
+                        <span className="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-[#e1306c] transition-colors">
+                          photo_camera
+                        </span>
+                        <span className="font-semibold text-slate-700 text-sm">
+                          Instagram
+                        </span>
+                      </a>
+                    )}
+                    {profile?.whatsapp_dm && (
+                      <a
+                        href={`https://wa.me/${profile.whatsapp_dm.replace(/\D/g, "")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-3 bg-surface-container-low hover:bg-surface-container-high rounded-xl transition-colors group"
+                      >
+                        <span className="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-[#25d366] transition-colors">
+                          chat
+                        </span>
+                        <span className="font-semibold text-slate-700 text-sm">
+                          WhatsApp
+                        </span>
+                      </a>
+                    )}
+                    {profile?.stackoverflow_url && (
+                      <a
+                        href={profile.stackoverflow_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-3 bg-surface-container-low hover:bg-surface-container-high rounded-xl transition-colors group"
+                      >
+                        <span className="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-[#f48024] transition-colors">
+                          layers
+                        </span>
+                        <span className="font-semibold text-slate-700 text-sm">
+                          Stack Overflow
+                        </span>
+                      </a>
+                    )}
+                    {!profile?.linkedin_url &&
+                      !profile?.github_url &&
+                      !profile?.twitter_url &&
+                      !profile?.instagram_url &&
+                      !profile?.whatsapp_dm &&
+                      !profile?.stackoverflow_url && (
+                        <p className="text-sm text-slate-400">
+                          No social links added.
+                        </p>
+                      )}
                   </>
                 )}
               </div>
@@ -2053,95 +2238,66 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                       Work Mode
                     </h4>
                     <div className="flex flex-wrap gap-2 mb-2">
-                      {WORK_MODE_OPTIONS.map((mode) => (
+                      {PREFERRED_JOB_TYPE_OPTIONS.filter(
+                        (o) => o.group === "Work Mode",
+                      ).map((opt) => (
                         <button
-                          key={mode}
-                          onClick={() => {
+                          key={opt.value}
+                          onClick={() =>
                             setEditForm({
                               ...editForm,
-                              preferences: upsertJobPreferences(
-                                editForm.preferences,
-                                { work_mode: mode },
-                              ),
-                            });
-                          }}
+                              preferred_job_type: opt.value as any,
+                            })
+                          }
                           className={`px-4 py-1 rounded-full text-xs font-bold border-2 transition-all ${
-                            getWorkModeFromPreferences(editForm.preferences) ===
-                            mode
+                            editForm.preferred_job_type === opt.value
                               ? "border-primary bg-primary-fixed text-primary"
                               : "border-surface-container-high text-slate-500 hover:border-primary/50"
                           }`}
                         >
-                          {mode}
+                          {opt.label}
                         </button>
                       ))}
                     </div>
-
                     <h4 className="text-xs font-bold text-slate-500 uppercase mt-2">
                       Employment Type
                     </h4>
                     <div className="flex flex-wrap gap-2">
-                      {EMPLOYMENT_TYPE_OPTIONS.map((employmentType) => {
-                        const selected = getEmploymentTypesFromPreferences(
-                          editForm.preferences,
-                        );
-                        const isSelected = selected.includes(employmentType);
-                        return (
-                          <button
-                            key={employmentType}
-                            onClick={() => {
-                              const nextEmploymentTypes = isSelected
-                                ? selected.filter(
-                                    (value) => value !== employmentType,
-                                  )
-                                : [...selected, employmentType];
-
-                              setEditForm({
-                                ...editForm,
-                                preferences: upsertJobPreferences(
-                                  editForm.preferences,
-                                  {
-                                    employment_types: nextEmploymentTypes,
-                                  },
-                                ),
-                              });
-                            }}
-                            className={`px-4 py-1 rounded-full text-xs font-bold border-2 transition-all ${
-                              isSelected
-                                ? "border-primary bg-primary-fixed text-primary"
-                                : "border-surface-container-high text-slate-500 hover:border-primary/50"
-                            }`}
-                          >
-                            {employmentType}
-                          </button>
-                        );
-                      })}
+                      {PREFERRED_JOB_TYPE_OPTIONS.filter(
+                        (o) => o.group === "Employment Type",
+                      ).map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() =>
+                            setEditForm({
+                              ...editForm,
+                              preferred_job_type: opt.value as any,
+                            })
+                          }
+                          className={`px-4 py-1 rounded-full text-xs font-bold border-2 transition-all ${
+                            editForm.preferred_job_type === opt.value
+                              ? "border-primary bg-primary-fixed text-primary"
+                              : "border-surface-container-high text-slate-500 hover:border-primary/50"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
                     </div>
                   </>
                 ) : (
                   <>
-                    {getWorkModeFromPreferences(profile?.preferences) && (
+                    {profile?.preferred_job_type ? (
                       <div className="w-full px-6 py-2 rounded-full border-2 border-primary bg-primary-fixed text-primary font-bold text-sm text-center">
-                        {getWorkModeFromPreferences(profile?.preferences)}
+                        {PREFERRED_JOB_TYPE_DISPLAY[
+                          profile.preferred_job_type
+                        ] ?? profile.preferred_job_type}
                       </div>
+                    ) : (
+                      <p className="text-sm text-slate-400 text-center">
+                        No preference set.
+                      </p>
                     )}
-                    {getEmploymentTypesFromPreferences(
-                      profile?.preferences,
-                    ).map((type) => (
-                      <div
-                        key={type}
-                        className="w-full px-6 py-2 rounded-full border-2 border-surface-container-high text-slate-600 font-bold text-sm text-center"
-                      >
-                        {type}
-                      </div>
-                    ))}
-                    {!getWorkModeFromPreferences(profile?.preferences) &&
-                      getEmploymentTypesFromPreferences(profile?.preferences)
-                        .length === 0 && (
-                        <p className="text-sm text-slate-400 text-center">
-                          No preferences matched.
-                        </p>
-                      )}
                   </>
                 )}
               </div>
@@ -2154,34 +2310,26 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
               </h3>
               {editing ? (
                 <div className="flex flex-col gap-2">
-                  {[
-                    "Available",
-                    "Not Available",
-                    "Available in 2 weeks",
-                    "Available in 1 month",
-                  ].map((status) => (
+                  {AVAILABILITY_OPTIONS.map(({ value, label }) => (
                     <button
-                      key={status}
+                      key={value}
                       onClick={() =>
-                        setEditForm({
-                          ...editForm,
-                          availability: status as any,
-                        })
+                        setEditForm({ ...editForm, availability: value as any })
                       }
                       className={`px-4 py-2 rounded-full font-bold text-sm transition-all ${
-                        editForm.availability === status
+                        editForm.availability === value
                           ? "bg-white text-primary shadow-sm border border-slate-100"
                           : "text-slate-500 bg-surface-container-low hover:bg-slate-200/50"
                       }`}
                     >
-                      {status}
+                      {label}
                     </button>
                   ))}
                 </div>
               ) : (
                 <div className="p-1 bg-surface-container-low rounded-full truncate flex justify-center">
                   <div className="px-6 py-2 rounded-full bg-white text-primary font-bold shadow-sm text-sm">
-                    {profile?.availability || "Status Unknown"}
+                    {formatAvailability(profile?.availability)}
                   </div>
                 </div>
               )}
@@ -2497,6 +2645,76 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                       ) : (
                         "-"
                       )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-1">
+                    Years of Experience
+                  </label>
+                  {editing ? (
+                    <input
+                      ref={experience_yearsInputRef}
+                      type="number"
+                      min={0}
+                      max={50}
+                      value={editForm.experience_years ?? ""}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          experience_years:
+                            e.target.value === ""
+                              ? undefined
+                              : Number(e.target.value),
+                        })
+                      }
+                      className="w-full bg-surface-container-low border-0 outline-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all text-sm font-medium text-slate-800"
+                      placeholder="e.g. 3"
+                    />
+                  ) : (
+                    <div className="w-full bg-slate-50 border border-slate-100 rounded-lg px-4 py-3 text-sm font-semibold text-slate-700">
+                      {profile?.experience_years != null
+                        ? `${profile.experience_years} year${profile.experience_years === 1 ? "" : "s"}`
+                        : "-"}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-1">
+                    Work Authorization
+                  </label>
+                  {editing ? (
+                    <select
+                      value={editForm.work_authorization || ""}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          work_authorization: e.target.value || undefined,
+                        })
+                      }
+                      className="w-full bg-surface-container-low border-0 outline-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all text-sm font-medium text-slate-800"
+                    >
+                      <option value="">Select status</option>
+                      <option value="citizen">Citizen</option>
+                      <option value="permanent_resident">
+                        Permanent Resident
+                      </option>
+                      <option value="work_visa">Work Visa</option>
+                      <option value="student_visa">Student Visa</option>
+                      <option value="require_sponsorship">
+                        Require Sponsorship
+                      </option>
+                      <option value="not_authorized">Not Authorized</option>
+                    </select>
+                  ) : (
+                    <div className="w-full bg-slate-50 border border-slate-100 rounded-lg px-4 py-3 text-sm font-semibold text-slate-700">
+                      {profile?.work_authorization
+                        ? profile.work_authorization
+                            .replace(/_/g, " ")
+                            .replace(/\b\w/g, (c) => c.toUpperCase())
+                        : "-"}
                     </div>
                   )}
                 </div>
