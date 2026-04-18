@@ -4,7 +4,15 @@ import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { PageLoaderSkeleton } from "@/components/ui/skeleton-loaders";
+import { PageLoaderSkeleton, JobSeekerDashboardSkeleton } from "@/components/ui/skeleton-loaders";
+import Layout from "@/components/layout/Layout";
+
+// Wrapper to prevent navbar jumping during fallback
+const JobSeekerDashboardFallback = () => (
+  <Layout>
+    <JobSeekerDashboardSkeleton />
+  </Layout>
+);
 
 // Lazy load pages
 const Index = lazy(() => import("@/pages/Index"));
@@ -225,7 +233,7 @@ export const AppRoutes = () => {
             path="dashboard"
             element={
               <ProtectedRoute requiredRole="job_seeker">
-                <Suspense fallback={<PageLoader />}>
+                <Suspense fallback={<JobSeekerDashboardFallback />}>
                   <JobSeekerDashboard />
                 </Suspense>
               </ProtectedRoute>

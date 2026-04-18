@@ -4,7 +4,7 @@ import { ProfileUpdate } from "@/types/api";
 import { apiClient } from "../lib/api-client";
 
 export async function submitOnboardingData(
-  data: OnboardingData, 
+  data: OnboardingData,
   signupData?: any,
   userRole?: string
 ) {
@@ -28,9 +28,10 @@ export async function submitOnboardingData(
         culture: data.culture,
         benefits: data.benefits,
         work_arrangement: data.workArrangement,
-        logo: data.companyLogo,
+        // company_logo_url is already set on employer_profile by the /profile/company-logo
+        // upload that runs during the onboarding logo step — no need to re-send it here
       };
-      
+
       try {
         await profileService.updateCompanyProfile(companyData);
       } catch (companyError) {
@@ -41,7 +42,7 @@ export async function submitOnboardingData(
 
     // Update the user profile with the onboarding data
     const response = await profileService.updateProfile(profileData);
-    
+
     // If there's a video introduction, handle it separately
     if (data.videoIntroduction) {
       try {
@@ -84,14 +85,14 @@ function mapWorkPreference(preference: string): string {
 async function uploadVideoIntro(videoFile: File): Promise<void> {
   const formData = new FormData();
   formData.append('video', videoFile);
-  
+
   try {
     const response = await apiClient.post('/profile/upload-video-intro', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    
+
     if (response.data.status === 'success') {
       console.log('Video uploaded successfully:', response.data.video_url);
     } else {

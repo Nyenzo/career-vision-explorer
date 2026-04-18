@@ -9,11 +9,7 @@ import EditProfileDialog from "@/components/profile/EditProfileDialog";
 import { useAuth } from "@/hooks/use-auth";
 import { useJobApplications } from "@/hooks/use-job-applications";
 import {
-  PageHeaderSkeleton,
-  ProfileCardSkeleton,
-  RecentActivityCardSkeleton,
-  ProfileCompletionCardSkeleton,
-  DashboardStatsGridSkeleton
+  JobSeekerDashboardSkeleton,
 } from "@/components/ui/skeleton-loaders";
 import {
   Bell,
@@ -53,21 +49,7 @@ const JobSeekerDashboard = () => {
   if (authLoading || applicationsLoading) {
     return (
       <Layout>
-        <div className="min-h-screen bg-[#f1f5f9]">
-          <main className="pt-12 pb-20 px-4 sm:px-8 max-w-7xl mx-auto">
-            <PageHeaderSkeleton />
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              <div className="lg:col-span-4 flex flex-col gap-8">
-                <ProfileCardSkeleton />
-                <RecentActivityCardSkeleton />
-              </div>
-              <div className="lg:col-span-8 flex flex-col gap-8">
-                <ProfileCompletionCardSkeleton />
-                <DashboardStatsGridSkeleton />
-              </div>
-            </div>
-          </main>
-        </div>
+        <JobSeekerDashboardSkeleton />
       </Layout>
     );
   }

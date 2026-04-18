@@ -76,8 +76,8 @@ const SavedJobsPage = () => {
                                 type="button"
                                 onClick={() => setActiveTab("saved")}
                                 className={`flex w-full items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition-colors ${activeTab === "saved"
-                                        ? "bg-white text-primary"
-                                        : "text-slate-500 hover:bg-white/50"
+                                    ? "bg-white text-primary"
+                                    : "text-slate-500 hover:bg-white/50"
                                     }`}
                             >
                                 <Bookmark className="h-4 w-4" />
@@ -87,8 +87,8 @@ const SavedJobsPage = () => {
                                 type="button"
                                 onClick={() => setActiveTab("applied")}
                                 className={`flex w-full items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition-colors ${activeTab === "applied"
-                                        ? "bg-white text-primary"
-                                        : "text-slate-500 hover:bg-white/50"
+                                    ? "bg-white text-primary"
+                                    : "text-slate-500 hover:bg-white/50"
                                     }`}
                             >
                                 <Briefcase className="h-4 w-4" />

@@ -9,6 +9,7 @@ import {
   DialogTitle
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { profileService } from "@/services/profile.service";
 import { VideoRecordingModal } from "./VideoRecordingModal";
 const AIAssistant = lazy(() => import("./AIAssistant").then(module => ({ default: module.AIAssistant })));
 import { submitOnboardingData } from "@/services/onboarding.service";
@@ -39,6 +40,7 @@ const OnboardingWizard = ({ onComplete, userRole = 'jobseeker', signupData }: On
   const [videoRecordingOpen, setVideoRecordingOpen] = useState(false);
   const [videoAnalyzing, setVideoAnalyzing] = useState(false);
   const [videoAnalysisResult, setVideoAnalysisResult] = useState<string | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
   const [aiResponses, setAiResponses] = useState<string[]>([
     userRole === 'employer'
       ? "Welcome to Visiondrill! I'm here to help you set up your company profile and find the best talent for your team. Let's start by gathering information about your company."
@@ -182,6 +184,22 @@ const OnboardingWizard = ({ onComplete, userRole = 'jobseeker', signupData }: On
     }, 2000);
   };
 
+  const handleLogoUpload = async (file: File) => {
+    setLogoUploading(true);
+    try {
+      const result = await profileService.uploadCompanyLogo(file);
+      updateField("companyLogo", result.image_url);
+    } catch (error) {
+      toast({
+        title: "Logo upload failed",
+        description: "Could not upload company logo. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
   const handleLinkedInImport = (data: any) => {
     toast({
       title: "LinkedIn Profile Imported",
@@ -218,7 +236,8 @@ const OnboardingWizard = ({ onComplete, userRole = 'jobseeker', signupData }: On
                 data={data}
                 updateField={updateField}
                 handleNext={handleNext}
-                handleLogoUpload={(file) => updateField("companyLogo", file)}
+                handleLogoUpload={handleLogoUpload}
+                logoUploading={logoUploading}
               />
             ) : (
               <StepRenderer

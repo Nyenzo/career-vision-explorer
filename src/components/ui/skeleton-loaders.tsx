@@ -77,6 +77,47 @@ export const DashboardStatsGridSkeleton: React.FC = () => (
   </div>
 );
 
+// Job Seeker Dashboard Skeleton
+export const JobSeekerDashboardSkeleton: React.FC = () => (
+  <div className="min-h-screen bg-[#f1f5f9]">
+    <div className="pt-12 pb-20 px-4 sm:px-8 max-w-7xl mx-auto">
+      <PageHeaderSkeleton />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="lg:col-span-4 flex flex-col gap-8">
+          <ProfileCardSkeleton />
+          <RecentActivityCardSkeleton />
+        </div>
+        <div className="lg:col-span-8 flex flex-col gap-8">
+          <ProfileCompletionCardSkeleton />
+          <DashboardStatsGridSkeleton />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// Employer Dashboard Skeleton
+export const EmployerDashboardSkeleton: React.FC = () => (
+  <div className="min-h-screen bg-slate-50 px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-6 w-64" />
+      </CardHeader>
+      <CardContent>
+        <DashboardStatsGridSkeleton />
+      </CardContent>
+    </Card>
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-6 w-64" />
+      </CardHeader>
+      <CardContent>
+        <RecentApplicationsTableSkeleton />
+      </CardContent>
+    </Card>
+  </div>
+);
+
 // Job Listings Table Skeleton
 export const JobListingsTableSkeleton: React.FC = () => (
   <div className="space-y-4">

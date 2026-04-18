@@ -44,11 +44,13 @@ export const JobCard = ({ job, isApplied, isSaved, onApply, onSave }: JobCardPro
       <div className="flex flex-col md:flex-row gap-8">
         {/* Company Logo + Name */}
         <div className="flex-shrink-0 w-28">
-          <div className="w-20 h-20 rounded-md bg-surface-container-low flex items-center justify-center overflow-hidden border border-surface-container">
+          <div className="w-20 h-20 rounded-md bg-surface-container-low overflow-hidden border border-surface-container">
             {job.companyInfo?.logoUrl ? (
-              <img alt={`${job.company} logo`} className="w-12 h-12 object-contain" src={job.companyInfo.logoUrl} />
+              <img alt={`${job.company} logo`} className="w-full h-full object-cover" src={job.companyInfo.logoUrl} />
             ) : (
-              <span className="material-symbols-outlined text-outline text-3xl">domain</span>
+              <div className="flex h-full w-full items-center justify-center">
+                <span className="material-symbols-outlined text-outline text-3xl">domain</span>
+              </div>
             )}
           </div>
           <p className="mt-2 text-sm font-semibold text-on-surface-variant leading-tight line-clamp-2">

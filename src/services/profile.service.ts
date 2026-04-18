@@ -73,6 +73,11 @@ class ProfileService {
     return await apiClient.uploadFile<any>("/profile/image", file, "image");
   }
 
+  async uploadCompanyLogo(file: File): Promise<any> {
+    // Dedicated endpoint — always routes to the company-logos bucket
+    return await apiClient.uploadFile<any>("/profile/company-logo", file, "image");
+  }
+
   async uploadResume(file: File): Promise<{ resume_url: string; message: string }> {
     return await apiClient.uploadFile<{ resume_url: string; message: string }>(
       "/profile/resume",

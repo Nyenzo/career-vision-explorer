@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent } from "@/components/ui/card";
-import { Briefcase, Globe, Users, Smile, Building, Image, Upload } from "lucide-react";
+import { Briefcase, Globe, Users, Smile, Building, Image, Upload, Loader2 } from "lucide-react";
 import { TypingQuestion } from "./steps/TypingQuestion";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -14,6 +14,7 @@ interface EmployerStepRendererProps {
   updateField: (field: string, value: any) => void;
   handleNext: () => void;
   handleLogoUpload: (file: File) => void;
+  logoUploading?: boolean;
 }
 
 export const EmployerStepRenderer = ({
@@ -22,11 +23,12 @@ export const EmployerStepRenderer = ({
   updateField,
   handleNext,
   handleLogoUpload,
+  logoUploading = false,
 }: EmployerStepRendererProps) => {
   const steps = [
     // Step 0: Company Information
     () => (
-      <TypingQuestion 
+      <TypingQuestion
         question="Tell us about your company"
         icon={<Building className="w-8 h-8 text-blue-500" />}
         typingSpeed={30}
@@ -62,7 +64,7 @@ export const EmployerStepRenderer = ({
     ),
     // Step 1: Hiring Needs
     () => (
-      <TypingQuestion 
+      <TypingQuestion
         question="What are your hiring needs?"
         icon={<Users className="w-8 h-8 text-green-500" />}
         typingSpeed={30}
@@ -92,7 +94,7 @@ export const EmployerStepRenderer = ({
     ),
     // Step 2: Company Culture and Values
     () => (
-      <TypingQuestion 
+      <TypingQuestion
         question="What's your company culture like?"
         icon={<Smile className="w-8 h-8 text-yellow-500" />}
         typingSpeed={30}
@@ -110,7 +112,7 @@ export const EmployerStepRenderer = ({
     ),
     // Step 3: Work Arrangements
     () => (
-      <TypingQuestion 
+      <TypingQuestion
         question="What work arrangements do you offer?"
         icon={<Globe className="w-8 h-8 text-purple-500" />}
         typingSpeed={30}
@@ -136,7 +138,7 @@ export const EmployerStepRenderer = ({
     ),
     // Step 4: Benefits and Perks Offered
     () => (
-      <TypingQuestion 
+      <TypingQuestion
         question="What benefits and perks do you offer?"
         icon={<Smile className="w-8 h-8 text-pink-500" />}
         typingSpeed={30}
@@ -154,7 +156,7 @@ export const EmployerStepRenderer = ({
     ),
     // Step 5: Company Logo Upload
     () => (
-      <TypingQuestion 
+      <TypingQuestion
         question="Would you like to upload your company logo?"
         icon={<Image className="w-8 h-8 text-indigo-500" />}
         typingSpeed={30}
@@ -166,14 +168,17 @@ export const EmployerStepRenderer = ({
 
           {!data.companyLogo && (
             <div className="flex justify-center">
-              <Button variant="outline" asChild>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <Upload className="w-4 h-4" />
-                  Upload Logo
+              <Button variant="outline" asChild disabled={logoUploading}>
+                <label className={`flex items-center gap-2 cursor-pointer ${logoUploading ? 'pointer-events-none' : ''}`}>
+                  {logoUploading
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : <Upload className="w-4 h-4" />}
+                  {logoUploading ? "Uploading..." : "Upload Logo"}
                   <input
                     type="file"
                     accept="image/*"
                     className="hidden"
+                    disabled={logoUploading}
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) handleLogoUpload(file);
@@ -190,8 +195,8 @@ export const EmployerStepRenderer = ({
                 <div className="text-center space-y-2">
                   <img src={data.companyLogo} alt="Company Logo" className="h-20 mx-auto rounded" />
                   <p className="text-blue-800 font-medium">Logo uploaded successfully!</p>
-                  <Button 
-                    variant="link" 
+                  <Button
+                    variant="link"
                     onClick={() => updateField("companyLogo", null)}
                     className="text-blue-600 hover:text-blue-800"
                   >
