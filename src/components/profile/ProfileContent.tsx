@@ -53,10 +53,15 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { PhoneInput, isValidPhoneNumber } from "@/components/shared/PhoneInput";
 import { profileService } from "@/services/profile.service";
 import { jobsService } from "@/services/jobs.service";
 import { toast } from "sonner";
-import { Profile as ProfileType, ProfileUpdate, CompanyData } from "@/types/api";
+import {
+  Profile as ProfileType,
+  ProfileUpdate,
+  CompanyData,
+} from "@/types/api";
 import { useNavigate } from "react-router-dom";
 import whatsapp from "/src/assets/whatsapp.png";
 import stackoverflow from "/src/assets/stackoverflow.png";
@@ -71,7 +76,11 @@ const EMPLOYMENT_TYPE_OPTIONS = [
 ] as const;
 
 const normalizeJobPreferences = (preferences?: unknown) => {
-  if (!preferences || typeof preferences !== "object" || Array.isArray(preferences)) {
+  if (
+    !preferences ||
+    typeof preferences !== "object" ||
+    Array.isArray(preferences)
+  ) {
     return {} as Record<string, unknown>;
   }
 
@@ -79,7 +88,8 @@ const normalizeJobPreferences = (preferences?: unknown) => {
   const normalized: Record<string, unknown> = {};
 
   const rawWorkMode = source.work_mode;
-  const mode = typeof rawWorkMode === "string" ? rawWorkMode.trim().toLowerCase() : "";
+  const mode =
+    typeof rawWorkMode === "string" ? rawWorkMode.trim().toLowerCase() : "";
   if (mode === "remote") {
     normalized.work_mode = "Remote";
   } else if (mode === "onsite" || mode === "on-site" || mode === "on site") {
@@ -95,7 +105,9 @@ const normalizeJobPreferences = (preferences?: unknown) => {
     const validTypes = rawEmploymentTypes
       .map((value) => (typeof value === "string" ? value.trim() : ""))
       .filter((value): value is string =>
-        EMPLOYMENT_TYPE_OPTIONS.includes(value as (typeof EMPLOYMENT_TYPE_OPTIONS)[number])
+        EMPLOYMENT_TYPE_OPTIONS.includes(
+          value as (typeof EMPLOYMENT_TYPE_OPTIONS)[number],
+        ),
       );
 
     if (validTypes.length > 0) {
@@ -120,7 +132,7 @@ const getEmploymentTypesFromPreferences = (preferences?: unknown) => {
 
 const upsertJobPreferences = (
   currentPreferences: unknown,
-  updates: Record<string, unknown>
+  updates: Record<string, unknown>,
 ) => {
   const merged = {
     ...normalizeJobPreferences(currentPreferences),
@@ -131,7 +143,9 @@ const upsertJobPreferences = (
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 };
 
-const benefitsToEditableText = (benefits?: Array<{ name?: string; description?: string }>) => {
+const benefitsToEditableText = (
+  benefits?: Array<{ name?: string; description?: string }>,
+) => {
   if (!Array.isArray(benefits) || benefits.length === 0) {
     return "";
   }
@@ -197,7 +211,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
     width: number;
     height: number;
   } | null>(null);
-  const [profileImageRefreshKey, setProfileImageRefreshKey] = useState<number>(Date.now());
+  const [profileImageRefreshKey, setProfileImageRefreshKey] = useState<number>(
+    Date.now(),
+  );
   const [activeRolesCount, setActiveRolesCount] = useState<number>(0);
 
   // Input refs for scrolling to sections
@@ -221,10 +237,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
   const stackoverflowInputRef = useRef<HTMLTextAreaElement>(null);
   const projectsInputRef = useRef<HTMLDivElement>(null);
 
-  const preferenceDisplayKeys = new Set([
-    "work_mode",
-    "employment_types",
-  ]);
+  const preferenceDisplayKeys = new Set(["work_mode", "employment_types"]);
 
   const getDisplayablePreferences = (preferences?: Record<string, unknown>) => {
     if (!preferences) {
@@ -251,7 +264,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
         setEditForm(sanitizedAuthProfile);
         setLocalCompletionPercentage(
           sanitizedAuthProfile.profile_completion_percentage ||
-          calculateProfileCompletion(sanitizedAuthProfile)
+            calculateProfileCompletion(sanitizedAuthProfile),
         );
       }
       loadProfile();
@@ -287,13 +300,20 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
             if (status === "open" || status === "active") {
               return true;
             }
-            if (status === "draft" || status === "closed" || status === "expired") {
+            if (
+              status === "draft" ||
+              status === "closed" ||
+              status === "expired"
+            ) {
               return false;
             }
             return job.is_active === true;
           }).length;
         } catch (jobsError) {
-          console.warn("Failed to load employer jobs for active role stats", jobsError);
+          console.warn(
+            "Failed to load employer jobs for active role stats",
+            jobsError,
+          );
         }
       }
 
@@ -317,7 +337,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
       // Use backend value if available, otherwise calculate locally
       setLocalCompletionPercentage(
         sanitizedProfileData.profile_completion_percentage ||
-        calculateProfileCompletion(sanitizedProfileData)
+          calculateProfileCompletion(sanitizedProfileData),
       );
     } catch (error) {
       console.error("Error loading profile:", error);
@@ -335,7 +355,10 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
       preferences: normalizedPreferences,
     };
 
-    if (!payloadWithSanitizedPreferences || Object.keys(payloadWithSanitizedPreferences).length === 0) {
+    if (
+      !payloadWithSanitizedPreferences ||
+      Object.keys(payloadWithSanitizedPreferences).length === 0
+    ) {
       toast.info("No changes to save.");
       setEditing(false);
       return;
@@ -351,8 +374,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
       // Clean the payload - remove undefined values
       const cleanPayload: ProfileUpdate = Object.fromEntries(
         Object.entries(payloadWithSanitizedPreferences).filter(
-          ([_, value]) => value !== undefined && value !== null
-        )
+          ([_, value]) => value !== undefined && value !== null,
+        ),
       ) as ProfileUpdate;
 
       console.log("🔄 Profile update starting...", {
@@ -365,13 +388,16 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
       if (activeAccountType === "employer") {
         const employerCompanyPayload = {
           company_name:
-            cleanPayload.company_name || cleanPayload.company_data?.company_name,
+            cleanPayload.company_name ||
+            cleanPayload.company_data?.company_name,
           industry:
             cleanPayload.industry || cleanPayload.company_data?.industry,
           company_website:
-            cleanPayload.company_website || cleanPayload.company_data?.company_website,
+            cleanPayload.company_website ||
+            cleanPayload.company_data?.company_website,
           company_size:
-            cleanPayload.company_size || cleanPayload.company_data?.company_size,
+            cleanPayload.company_size ||
+            cleanPayload.company_data?.company_size,
           founded_year: cleanPayload.company_data?.founded_year,
           company_description: cleanPayload.company_data?.company_description,
           company_culture: cleanPayload.company_data?.company_culture,
@@ -388,15 +414,22 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
 
         const cleanEmployerUserPayload = Object.fromEntries(
           Object.entries(employerUserPayload).filter(
-            ([_, value]) => value !== undefined && value !== null && value !== ""
-          )
+            ([_, value]) =>
+              value !== undefined && value !== null && value !== "",
+          ),
         );
 
-        console.log("🏢 Sending employer company data:", employerCompanyPayload);
+        console.log(
+          "🏢 Sending employer company data:",
+          employerCompanyPayload,
+        );
         await profileService.updateCompanyProfile(employerCompanyPayload);
 
         if (Object.keys(cleanEmployerUserPayload).length > 0) {
-          console.log("👤 Sending employer user profile data:", cleanEmployerUserPayload);
+          console.log(
+            "👤 Sending employer user profile data:",
+            cleanEmployerUserPayload,
+          );
           await profileService.updateProfile(cleanEmployerUserPayload);
         }
         await loadProfile();
@@ -432,7 +465,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
       // Use backend value if available, otherwise calculate locally
       setLocalCompletionPercentage(
         sanitizedUpdatedProfile.profile_completion_percentage ||
-        calculateProfileCompletion(sanitizedUpdatedProfile)
+          calculateProfileCompletion(sanitizedUpdatedProfile),
       );
       setEditing(false);
       toast.success("Profile updated successfully!");
@@ -458,7 +491,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
 
     const reader = new FileReader();
     reader.onload = () => {
-      const imageDataUrl = typeof reader.result === "string" ? reader.result : null;
+      const imageDataUrl =
+        typeof reader.result === "string" ? reader.result : null;
       if (!imageDataUrl) {
         toast.error("Failed to read image. Please try another file.");
         return;
@@ -484,7 +518,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
   const isGoogleHostedAvatar = (src: string) =>
     /^https?:\/\/lh3\.googleusercontent\.com\//i.test(src);
 
-  const handlePhotoEditorDialogWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+  const handlePhotoEditorDialogWheel = (
+    event: React.WheelEvent<HTMLDivElement>,
+  ) => {
     const container = event.currentTarget;
     if (container.scrollHeight <= container.clientHeight) {
       return;
@@ -492,7 +528,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
 
     const atTop = container.scrollTop <= 0;
     const atBottom =
-      container.scrollTop + container.clientHeight >= container.scrollHeight - 1;
+      container.scrollTop + container.clientHeight >=
+      container.scrollHeight - 1;
 
     if ((event.deltaY < 0 && atTop) || (event.deltaY > 0 && atBottom)) {
       event.preventDefault();
@@ -503,7 +540,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
 
   const openPhotoEditorWithSource = (src: string) => {
     if (isGoogleHostedAvatar(src)) {
-      toast.info("Google profile photos cannot be edited directly. Upload a local image to edit.");
+      toast.info(
+        "Google profile photos cannot be edited directly. Upload a local image to edit.",
+      );
       setPhotoEditorSrc(null);
       setPhotoEditorImageSize(null);
       setPhotoEditorZoom(1.2);
@@ -543,9 +582,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
     viewportSize: number,
     zoom: number,
     xOffsetPercent: number,
-    yOffsetPercent: number
+    yOffsetPercent: number,
   ) => {
-    const baseCoverScale = Math.max(viewportSize / imageWidth, viewportSize / imageHeight);
+    const baseCoverScale = Math.max(
+      viewportSize / imageWidth,
+      viewportSize / imageHeight,
+    );
     const renderScale = baseCoverScale * zoom;
 
     const drawWidth = imageWidth * renderScale;
@@ -554,8 +596,10 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
     const maxOffsetX = Math.max(0, (drawWidth - viewportSize) / 2);
     const maxOffsetY = Math.max(0, (drawHeight - viewportSize) / 2);
 
-    const drawX = (viewportSize - drawWidth) / 2 + (xOffsetPercent / 100) * maxOffsetX;
-    const drawY = (viewportSize - drawHeight) / 2 + (yOffsetPercent / 100) * maxOffsetY;
+    const drawX =
+      (viewportSize - drawWidth) / 2 + (xOffsetPercent / 100) * maxOffsetX;
+    const drawY =
+      (viewportSize - drawHeight) / 2 + (yOffsetPercent / 100) * maxOffsetY;
 
     return { drawX, drawY, drawWidth, drawHeight };
   };
@@ -582,7 +626,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
     imageSrc: string,
     zoom: number,
     xPercent: number,
-    yPercent: number
+    yPercent: number,
   ): Promise<File> => {
     const image = new Image();
     if (imageSrc.startsWith("http://") || imageSrc.startsWith("https://")) {
@@ -612,15 +656,21 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
       canvasSize,
       safeZoom,
       xPercent,
-      yPercent
+      yPercent,
     );
 
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(image, frame.drawX, frame.drawY, frame.drawWidth, frame.drawHeight);
+    ctx.drawImage(
+      image,
+      frame.drawX,
+      frame.drawY,
+      frame.drawWidth,
+      frame.drawHeight,
+    );
 
     const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/jpeg", 0.9)
+      canvas.toBlob(resolve, "image/jpeg", 0.9),
     );
 
     if (!blob) {
@@ -639,7 +689,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
         photoEditorSrc,
         photoEditorZoom,
         photoEditorX,
-        photoEditorY
+        photoEditorY,
       );
 
       const uploadResult = await profileService.uploadProfileImage(croppedFile);
@@ -647,17 +697,19 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
         // The upload endpoint already persists the image and returns the URL, so we can directly update the profile state without refetching.
         if (isEmployer) {
           setProfile((prev) =>
-            prev ? {
-              ...prev,
-              company_data: {
-                ...(prev.company_data || {}),
-                company_logo_url: uploadResult.image_url,
-              } as CompanyData,
-            } : prev
+            prev
+              ? {
+                  ...prev,
+                  company_data: {
+                    ...(prev.company_data || {}),
+                    company_logo_url: uploadResult.image_url,
+                  } as CompanyData,
+                }
+              : prev,
           );
         } else {
           setProfile((prev) =>
-            prev ? { ...prev, avatar_url: uploadResult.image_url } : prev
+            prev ? { ...prev, avatar_url: uploadResult.image_url } : prev,
           );
           setEditForm((prev) => ({
             ...prev,
@@ -665,7 +717,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
           }));
         }
         setProfileImageRefreshKey(Date.now());
-        toast.success(isEmployer ? "Company logo updated successfully" : "Profile image updated successfully");
+        toast.success(
+          isEmployer
+            ? "Company logo updated successfully"
+            : "Profile image updated successfully",
+        );
         closePhotoEditor();
       } else {
         toast.error("Upload succeeded but no image URL was returned.");
@@ -686,13 +742,13 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
     : undefined;
   const previewFrame = photoEditorImageSize
     ? getCropFrame(
-      photoEditorImageSize.width,
-      photoEditorImageSize.height,
-      PHOTO_PREVIEW_SIZE,
-      Math.max(1.05, Math.min(3, photoEditorZoom)),
-      photoEditorX,
-      photoEditorY
-    )
+        photoEditorImageSize.width,
+        photoEditorImageSize.height,
+        PHOTO_PREVIEW_SIZE,
+        Math.max(1.05, Math.min(3, photoEditorZoom)),
+        photoEditorX,
+        photoEditorY,
+      )
     : null;
 
   const handleCancel = () => {
@@ -703,7 +759,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
     // Use backend value if available, otherwise calculate locally
     setLocalCompletionPercentage(
       profile?.profile_completion_percentage ||
-      calculateProfileCompletion(profile)
+        calculateProfileCompletion(profile),
     );
     setEditing(false);
   };
@@ -714,17 +770,26 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
     }
   };
 
-  const handleResumeUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleResumeUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
     setResumeFile(file);
     try {
       const result = await profileService.uploadResume(file);
       toast.success("Resume uploaded successfully!");
-      setProfile(prev => {
+      setProfile((prev) => {
         if (!prev) return prev;
-        const updated = { ...prev, resume_link: result.resume_url, resume_url: result.resume_url };
-        return { ...updated, profile_completion_percentage: calculateProfileCompletion(updated) };
+        const updated = {
+          ...prev,
+          resume_link: result.resume_url,
+          resume_url: result.resume_url,
+        };
+        return {
+          ...updated,
+          profile_completion_percentage: calculateProfileCompletion(updated),
+        };
       });
     } catch {
       toast.error("Failed to upload resume. Please try again.");
@@ -748,7 +813,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
   };
 
   const calculateProfileCompletion = (
-    profileData: ProfileType | Partial<ProfileUpdate> | null
+    profileData: ProfileType | Partial<ProfileUpdate> | null,
   ): number => {
     if (!profileData) return 0;
 
@@ -793,7 +858,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
       score += sectionWeights.work_experience;
     }
 
-    if (data.resume_url || data.resume_link) score += sectionWeights.resume_link;
+    if (data.resume_url || data.resume_link)
+      score += sectionWeights.resume_link;
 
     let socialProfiles = 0;
     if (data.linkedin_url) socialProfiles++;
@@ -872,12 +938,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
         ...profile,
         // Safely spread personal_info if it exists
         ...(parsedData.personal_info &&
-          typeof parsedData.personal_info === "object"
+        typeof parsedData.personal_info === "object"
           ? parsedData.personal_info
           : {}),
         // Safely spread professional_summary if it exists
         ...(parsedData.professional_summary &&
-          typeof parsedData.professional_summary === "object"
+        typeof parsedData.professional_summary === "object"
           ? parsedData.professional_summary
           : {}),
         // Update arrays with fallbacks
@@ -891,7 +957,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
         languages: parsedData.languages || profile?.languages || [],
         // Safely spread additional_info if it exists
         ...(parsedData.additional_info &&
-          typeof parsedData.additional_info === "object"
+        typeof parsedData.additional_info === "object"
           ? parsedData.additional_info
           : {}),
         resume_link: response.cv_file_url || profile?.resume_link,
@@ -914,11 +980,19 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
   // Get company data with fallbacks from both company_data and top-level profile fields
   const getCompanyData = () => {
     return {
-      company_name: profile?.company_name || profile?.company_data?.company_name || "",
+      company_name:
+        profile?.company_name || profile?.company_data?.company_name || "",
       industry: profile?.industry || profile?.company_data?.industry || "",
-      company_website: profile?.company_website || profile?.company_data?.company_website || "",
-      company_size: profile?.company_size || profile?.company_data?.company_size || "",
-      founded_year: profile?.founded_year || profile?.company_data?.founded_year || undefined,
+      company_website:
+        profile?.company_website ||
+        profile?.company_data?.company_website ||
+        "",
+      company_size:
+        profile?.company_size || profile?.company_data?.company_size || "",
+      founded_year:
+        profile?.founded_year ||
+        profile?.company_data?.founded_year ||
+        undefined,
       company_description: profile?.company_data?.company_description || "",
       company_culture: profile?.company_data?.company_culture || "",
       contact_email: profile?.company_data?.contact_email || user?.email || "",
@@ -1108,13 +1182,17 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <h4 className="text-[10px] tracking-[0.16em] uppercase text-slate-500 font-bold">Company Name</h4>
+                    <h4 className="text-[10px] tracking-[0.16em] uppercase text-slate-500 font-bold">
+                      Company Name
+                    </h4>
                     <p className="text-slate-900 font-semibold mt-1">
                       {companyData.company_name || "Not provided"}
                     </p>
                   </div>
                   <div>
-                    <h4 className="text-[10px] tracking-[0.16em] uppercase text-slate-500 font-bold">Industry</h4>
+                    <h4 className="text-[10px] tracking-[0.16em] uppercase text-slate-500 font-bold">
+                      Industry
+                    </h4>
                     <p className="text-slate-900 font-semibold mt-1">
                       {companyData.industry || "Not provided"}
                     </p>
@@ -1123,13 +1201,17 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <h4 className="text-[10px] tracking-[0.16em] uppercase text-slate-500 font-bold">Company Size</h4>
+                    <h4 className="text-[10px] tracking-[0.16em] uppercase text-slate-500 font-bold">
+                      Company Size
+                    </h4>
                     <p className="text-slate-900 font-semibold mt-1">
                       {companyData.company_size || "Not provided"}
                     </p>
                   </div>
                   <div>
-                    <h4 className="text-[10px] tracking-[0.16em] uppercase text-slate-500 font-bold">Founded Year</h4>
+                    <h4 className="text-[10px] tracking-[0.16em] uppercase text-slate-500 font-bold">
+                      Founded Year
+                    </h4>
                     <p className="text-slate-900 font-semibold mt-1">
                       {companyData.founded_year || "Not provided"}
                     </p>
@@ -1152,7 +1234,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
 
                 {companyData.company_description && (
                   <div>
-                    <h4 className="text-[10px] tracking-[0.16em] uppercase text-slate-500 font-bold mb-2">About Us</h4>
+                    <h4 className="text-[10px] tracking-[0.16em] uppercase text-slate-500 font-bold mb-2">
+                      About Us
+                    </h4>
                     <p className="text-slate-700 leading-8">
                       {companyData.company_description}
                     </p>
@@ -1161,7 +1245,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
 
                 {companyData.company_culture && (
                   <div>
-                    <h4 className="text-[10px] tracking-[0.16em] uppercase text-slate-500 font-bold mb-2">Our Culture</h4>
+                    <h4 className="text-[10px] tracking-[0.16em] uppercase text-slate-500 font-bold mb-2">
+                      Our Culture
+                    </h4>
                     <p className="text-slate-700 leading-8">
                       {companyData.company_culture}
                     </p>
@@ -1250,7 +1336,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
               <div className="space-y-4">
                 <Textarea
                   value={benefitsToEditableText(
-                    editForm.company_data?.benefits || companyData.benefits
+                    editForm.company_data?.benefits || companyData.benefits,
                   )}
                   onChange={(e) => {
                     const benefits = parseBenefitsInput(e.target.value);
@@ -1266,14 +1352,18 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                   rows={6}
                 />
                 <p className="text-sm text-muted-foreground">
-                  Add one benefit per line. Optionally include a description using " - ".
+                  Add one benefit per line. Optionally include a description
+                  using " - ".
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
                 {companyData.benefits?.length ? (
                   companyData.benefits.map((benefit, index) => (
-                    <div key={index} className="flex items-center gap-3 p-4 border border-slate-200 rounded-xl bg-slate-50">
+                    <div
+                      key={index}
+                      className="flex items-center gap-3 p-4 border border-slate-200 rounded-xl bg-slate-50"
+                    >
                       <Award className="h-5 w-5 text-blue-500" />
                       <div>
                         <h4 className="font-medium">{benefit.name}</h4>
@@ -1295,7 +1385,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
             )}
           </CardContent>
         </Card>
-
       </div>
     );
   };
@@ -1344,7 +1433,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
             {/* Header */}
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h1 className="text-4xl font-black tracking-tight text-slate-900">Company Profile</h1>
+                <h1 className="text-4xl font-black tracking-tight text-slate-900">
+                  Company Profile
+                </h1>
                 <p className="text-slate-600 mt-2 text-lg">
                   Manage your company information and hiring preferences
                 </p>
@@ -1353,9 +1444,15 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                 <Button
                   onClick={() => {
                     // Pre-seed name from user or email prefix if profile.name is empty
-                    const nameFromEmail = profile?.email?.split('@')[0] || user?.email?.split('@')[0] || '';
+                    const nameFromEmail =
+                      profile?.email?.split("@")[0] ||
+                      user?.email?.split("@")[0] ||
+                      "";
                     if (!editForm.name && (user?.name || nameFromEmail)) {
-                      setEditForm(prev => ({ ...prev, name: user?.name || nameFromEmail }));
+                      setEditForm((prev) => ({
+                        ...prev,
+                        name: user?.name || nameFromEmail,
+                      }));
                     }
                     setEditing(true);
                   }}
@@ -1405,7 +1502,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                           className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                           onClick={() => companyLogoInputRef.current?.click()}
                         >
-                          <span className="material-symbols-outlined text-white text-base">photo_camera</span>
+                          <span className="material-symbols-outlined text-white text-base">
+                            photo_camera
+                          </span>
                         </div>
                         <input
                           ref={companyLogoInputRef}
@@ -1501,10 +1600,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                       <>
                         <Separator className="my-4" />
                         <div
-                          className={`flex items-center gap-3 p-3 rounded-lg ${companyData.is_verified
-                            ? "bg-green-50 border border-green-200"
-                            : "bg-yellow-50 border border-yellow-200"
-                            }`}
+                          className={`flex items-center gap-3 p-3 rounded-lg ${
+                            companyData.is_verified
+                              ? "bg-green-50 border border-green-200"
+                              : "bg-yellow-50 border border-yellow-200"
+                          }`}
                         >
                           {companyData.is_verified ? (
                             <>
@@ -1516,8 +1616,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                                 <p className="text-xs text-green-600">
                                   {companyData.verification_date
                                     ? `Verified on ${new Date(
-                                      companyData.verification_date
-                                    ).toLocaleDateString()}`
+                                        companyData.verification_date,
+                                      ).toLocaleDateString()}`
                                     : "Verified company"}
                                 </p>
                               </div>
@@ -1543,16 +1643,24 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
 
                 <Card className="rounded-3xl border border-slate-200 shadow-none">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-xs uppercase tracking-[0.2em] text-slate-500">Quick Stats</CardTitle>
+                    <CardTitle className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                      Quick Stats
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="grid grid-cols-2 gap-3 pt-1">
                     <div className="rounded-xl bg-slate-50 p-3 border border-slate-200">
-                      <p className="text-[10px] uppercase tracking-[0.12em] text-slate-500">Response Rate</p>
+                      <p className="text-[10px] uppercase tracking-[0.12em] text-slate-500">
+                        Response Rate
+                      </p>
                       <p className="text-2xl font-bold text-emerald-700">98%</p>
                     </div>
                     <div className="rounded-xl bg-slate-50 p-3 border border-slate-200">
-                      <p className="text-[10px] uppercase tracking-[0.12em] text-slate-500">Open Roles</p>
-                      <p className="text-2xl font-bold text-blue-700">{activeRolesCount}</p>
+                      <p className="text-[10px] uppercase tracking-[0.12em] text-slate-500">
+                        Open Roles
+                      </p>
+                      <p className="text-2xl font-bold text-blue-700">
+                        {activeRolesCount}
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -1567,9 +1675,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
         </div>
 
         {/* Photo / Logo editor modal */}
-        <Dialog open={isPhotoEditorOpen} onOpenChange={(open) => {
-          if (!open) closePhotoEditor();
-        }}>
+        <Dialog
+          open={isPhotoEditorOpen}
+          onOpenChange={(open) => {
+            if (!open) closePhotoEditor();
+          }}
+        >
           <DialogContent
             className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-xl max-h-[90vh] overflow-y-auto overscroll-contain p-4 sm:p-6"
             onWheel={handlePhotoEditorDialogWheel}
@@ -1607,7 +1718,10 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
               </div>
 
               <div className="flex justify-center">
-                <Button variant="outline" onClick={() => companyLogoInputRef.current?.click()}>
+                <Button
+                  variant="outline"
+                  onClick={() => companyLogoInputRef.current?.click()}
+                >
                   Change Image
                 </Button>
               </div>
@@ -1626,7 +1740,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium">Horizontal Position</label>
+                  <label className="text-sm font-medium">
+                    Horizontal Position
+                  </label>
                   <Input
                     type="range"
                     min={-100}
@@ -1638,7 +1754,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium">Vertical Position</label>
+                  <label className="text-sm font-medium">
+                    Vertical Position
+                  </label>
                   <Input
                     type="range"
                     min={-100}
@@ -1655,7 +1773,10 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
               <Button variant="outline" onClick={closePhotoEditor}>
                 Cancel
               </Button>
-              <Button onClick={handlePhotoEditorSave} disabled={loading || !photoEditorSrc}>
+              <Button
+                onClick={handlePhotoEditorSave}
+                disabled={loading || !photoEditorSrc}
+              >
                 {loading ? "Saving..." : "Save Logo"}
               </Button>
             </DialogFooter>
@@ -1669,21 +1790,29 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
   return (
     <Layout>
       <main className="pt-2 pb-20 px-4 md:px-8 max-w-screen-2xl mx-auto font-body bg-[#f1f5f9] text-on-surface antialiased">
-
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Left Sidebar (Column 4/12) */}
           <aside className="lg:col-span-4 space-y-8">
             {/* Resume Management Section */}
             <section className="bg-surface-container-lowest rounded-lg p-8 shadow-[0_20px_40px_rgba(25,28,30,0.04)]">
-              <h3 className="font-headline text-lg font-bold mb-6 text-slate-900">Resume Management</h3>
+              <h3 className="font-headline text-lg font-bold mb-6 text-slate-900">
+                Resume Management
+              </h3>
               <div className="flex flex-col gap-4">
                 {(profile?.resume_url || profile?.resume_link) && !editing ? (
                   <div className="p-4 bg-surface-container-low rounded-lg border border-outline-variant flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <FileText className="h-5 w-5 text-primary" />
-                      <span className="text-sm font-semibold text-slate-700">Current Resume</span>
+                      <span className="text-sm font-semibold text-slate-700">
+                        Current Resume
+                      </span>
                     </div>
-                    <a href={profile.resume_url || profile.resume_link} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 transition-colors">
+                    <a
+                      href={profile.resume_url || profile.resume_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:text-primary/80 transition-colors"
+                    >
                       <Download className="h-4 w-4" />
                     </a>
                   </div>
@@ -1691,10 +1820,21 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
 
                 {editing && (
                   <label className="group cursor-pointer border-2 border-dashed border-outline-variant hover:border-primary rounded-lg p-6 transition-all bg-surface-container-low/50 text-center flex flex-col items-center">
-                    <input className="hidden" type="file" onChange={handleFileChange} accept=".pdf,.docx" />
-                    <span className="material-symbols-outlined text-4xl text-slate-400 group-hover:text-primary mb-2 transition-colors">upload_file</span>
-                    <p className="text-sm font-semibold text-slate-700">Choose File</p>
-                    <p className="text-xs text-slate-400 mt-1">{resumeFile ? resumeFile.name : "PDF, DOCX up to 10MB"}</p>
+                    <input
+                      className="hidden"
+                      type="file"
+                      onChange={handleFileChange}
+                      accept=".pdf,.docx"
+                    />
+                    <span className="material-symbols-outlined text-4xl text-slate-400 group-hover:text-primary mb-2 transition-colors">
+                      upload_file
+                    </span>
+                    <p className="text-sm font-semibold text-slate-700">
+                      Choose File
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {resumeFile ? resumeFile.name : "PDF, DOCX up to 10MB"}
+                    </p>
                   </label>
                 )}
 
@@ -1706,18 +1846,27 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                     disabled={isParsing}
                     className="flex items-center justify-center gap-2 w-full py-4 px-6 bg-surface-container-highest text-on-surface font-semibold rounded-full hover:bg-slate-200 transition-all active:scale-95 disabled:opacity-50"
                   >
-                    <span className="material-symbols-outlined text-[20px]">psychology</span>
+                    <span className="material-symbols-outlined text-[20px]">
+                      psychology
+                    </span>
                     {isParsing ? "Extracting..." : "Extract from CV"}
                   </button>
                 )}
 
                 {editing && (
                   <div className="mt-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Or Resume URL</label>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">
+                      Or Resume URL
+                    </label>
                     <Input
                       ref={resumeInputRef}
                       value={editForm.resume_link || ""}
-                      onChange={(e) => setEditForm({ ...editForm, resume_link: e.target.value })}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          resume_link: e.target.value,
+                        })
+                      }
                       className="w-full bg-surface-container-low border-0 outline-none rounded-xl px-4 py-3 text-slate-800 font-medium"
                       placeholder="https://..."
                     />
@@ -1729,39 +1878,68 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
             {/* Quick Stats Section */}
             <section className="bg-surface-container-lowest rounded-lg p-8 shadow-[0_20px_40px_rgba(25,28,30,0.04)]">
               <div className="flex items-center justify-between mb-8">
-                <h3 className="font-headline text-lg font-bold text-slate-900">Quick Stats</h3>
-                <span className="text-xs font-bold font-label tracking-widest text-primary px-3 py-1 bg-primary-fixed rounded-full">LIVE</span>
+                <h3 className="font-headline text-lg font-bold text-slate-900">
+                  Quick Stats
+                </h3>
+                <span className="text-xs font-bold font-label tracking-widest text-primary px-3 py-1 bg-primary-fixed rounded-full">
+                  LIVE
+                </span>
               </div>
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-slate-400">history_edu</span>
-                    <span className="text-sm font-medium text-slate-600">Experience</span>
+                    <span className="material-symbols-outlined text-slate-400">
+                      history_edu
+                    </span>
+                    <span className="text-sm font-medium text-slate-600">
+                      Experience
+                    </span>
                   </div>
-                  <span className="text-sm font-bold text-slate-900">{profile?.experience_years || 0} Years</span>
+                  <span className="text-sm font-bold text-slate-900">
+                    {profile?.experience_years || 0} Years
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-slate-400">psychology</span>
-                    <span className="text-sm font-medium text-slate-600">Skills</span>
+                    <span className="material-symbols-outlined text-slate-400">
+                      psychology
+                    </span>
+                    <span className="text-sm font-medium text-slate-600">
+                      Skills
+                    </span>
                   </div>
-                  <span className="text-sm font-bold text-slate-900">{profile?.skills?.length || 0} Verified</span>
+                  <span className="text-sm font-bold text-slate-900">
+                    {profile?.skills?.length || 0} Verified
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-slate-400">rocket_launch</span>
-                    <span className="text-sm font-medium text-slate-600">Projects</span>
+                    <span className="material-symbols-outlined text-slate-400">
+                      rocket_launch
+                    </span>
+                    <span className="text-sm font-medium text-slate-600">
+                      Projects
+                    </span>
                   </div>
-                  <span className="text-sm font-bold text-slate-900">{profile?.projects?.length || 0} Active</span>
+                  <span className="text-sm font-bold text-slate-900">
+                    {profile?.projects?.length || 0} Active
+                  </span>
                 </div>
 
                 <div className="pt-6 border-t border-surface-container-low">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-bold text-slate-900">Profile Complete</span>
-                    <span className="text-sm font-bold text-primary">{localCompletionPercentage}%</span>
+                    <span className="text-sm font-bold text-slate-900">
+                      Profile Complete
+                    </span>
+                    <span className="text-sm font-bold text-primary">
+                      {localCompletionPercentage}%
+                    </span>
                   </div>
                   <div className="w-full h-2 bg-surface-container-high rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-primary to-primary-container" style={{ width: `${localCompletionPercentage}%` }}></div>
+                    <div
+                      className="h-full bg-gradient-to-r from-primary to-primary-container"
+                      style={{ width: `${localCompletionPercentage}%` }}
+                    ></div>
                   </div>
                 </div>
               </div>
@@ -1769,29 +1947,49 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
 
             {/* Social Links Section */}
             <section className="bg-surface-container-lowest rounded-lg p-8 shadow-[0_20px_40px_rgba(25,28,30,0.04)]">
-              <h3 className="font-headline text-lg font-bold mb-6 text-slate-900">Social Links</h3>
+              <h3 className="font-headline text-lg font-bold mb-6 text-slate-900">
+                Social Links
+              </h3>
               <div className="space-y-4">
                 {editing ? (
                   <div className="space-y-3">
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                        <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"></path></svg>
+                        <svg
+                          className="w-4 h-4 fill-current"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"></path>
+                        </svg>
                       </span>
                       <input
                         ref={linkedinInputRef}
                         type="url"
                         value={editForm.linkedin_url || ""}
-                        onChange={(e) => setEditForm({ ...editForm, linkedin_url: e.target.value })}
+                        onChange={(e) =>
+                          setEditForm({
+                            ...editForm,
+                            linkedin_url: e.target.value,
+                          })
+                        }
                         className="w-full bg-surface-container-low border-0 outline-none rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all text-sm font-medium"
                         placeholder="LinkedIn Profile"
                       />
                     </div>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">terminal</span>
+                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">
+                        terminal
+                      </span>
                       <input
                         type="url"
                         value={editForm.github_url || ""}
-                        onChange={(e) => setEditForm({ ...editForm, github_url: e.target.value })}
+                        onChange={(e) =>
+                          setEditForm({
+                            ...editForm,
+                            github_url: e.target.value,
+                          })
+                        }
                         className="w-full bg-surface-container-low border-0 outline-none rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all text-sm font-medium"
                         placeholder="GitHub URL"
                       />
@@ -1800,19 +1998,43 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                 ) : (
                   <>
                     {profile?.linkedin_url && (
-                      <a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-surface-container-low hover:bg-surface-container-high rounded-xl transition-colors group">
-                        <svg className="w-5 h-5 fill-slate-400 group-hover:fill-[#0077b5] transition-colors" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"></path></svg>
-                        <span className="font-semibold text-slate-700 text-sm">LinkedIn</span>
+                      <a
+                        href={profile.linkedin_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-3 bg-surface-container-low hover:bg-surface-container-high rounded-xl transition-colors group"
+                      >
+                        <svg
+                          className="w-5 h-5 fill-slate-400 group-hover:fill-[#0077b5] transition-colors"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"></path>
+                        </svg>
+                        <span className="font-semibold text-slate-700 text-sm">
+                          LinkedIn
+                        </span>
                       </a>
                     )}
                     {profile?.github_url && (
-                      <a href={profile.github_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-surface-container-low hover:bg-surface-container-high rounded-xl transition-colors group">
-                        <span className="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-800 transition-colors">terminal</span>
-                        <span className="font-semibold text-slate-700 text-sm">GitHub</span>
+                      <a
+                        href={profile.github_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-3 bg-surface-container-low hover:bg-surface-container-high rounded-xl transition-colors group"
+                      >
+                        <span className="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-800 transition-colors">
+                          terminal
+                        </span>
+                        <span className="font-semibold text-slate-700 text-sm">
+                          GitHub
+                        </span>
                       </a>
                     )}
                     {!profile?.linkedin_url && !profile?.github_url && (
-                      <p className="text-sm text-slate-400">No social links added.</p>
+                      <p className="text-sm text-slate-400">
+                        No social links added.
+                      </p>
                     )}
                   </>
                 )}
@@ -1821,11 +2043,15 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
 
             {/* Job Preferences Block */}
             <section className="bg-surface-container-lowest rounded-lg p-8 shadow-[0_20px_40px_rgba(25,28,30,0.04)]">
-              <h3 className="font-headline text-lg font-bold mb-6 text-slate-900">Preferred Work Type</h3>
+              <h3 className="font-headline text-lg font-bold mb-6 text-slate-900">
+                Preferred Work Type
+              </h3>
               <div className="flex flex-col gap-3">
                 {editing ? (
                   <>
-                    <h4 className="text-xs font-bold text-slate-500 uppercase">Work Mode</h4>
+                    <h4 className="text-xs font-bold text-slate-500 uppercase">
+                      Work Mode
+                    </h4>
                     <div className="flex flex-wrap gap-2 mb-2">
                       {WORK_MODE_OPTIONS.map((mode) => (
                         <button
@@ -1833,43 +2059,58 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                           onClick={() => {
                             setEditForm({
                               ...editForm,
-                              preferences: upsertJobPreferences(editForm.preferences, { work_mode: mode }),
+                              preferences: upsertJobPreferences(
+                                editForm.preferences,
+                                { work_mode: mode },
+                              ),
                             });
                           }}
-                          className={`px-4 py-1 rounded-full text-xs font-bold border-2 transition-all ${getWorkModeFromPreferences(editForm.preferences) === mode
-                            ? "border-primary bg-primary-fixed text-primary"
-                            : "border-surface-container-high text-slate-500 hover:border-primary/50"
-                            }`}
+                          className={`px-4 py-1 rounded-full text-xs font-bold border-2 transition-all ${
+                            getWorkModeFromPreferences(editForm.preferences) ===
+                            mode
+                              ? "border-primary bg-primary-fixed text-primary"
+                              : "border-surface-container-high text-slate-500 hover:border-primary/50"
+                          }`}
                         >
                           {mode}
                         </button>
                       ))}
                     </div>
 
-                    <h4 className="text-xs font-bold text-slate-500 uppercase mt-2">Employment Type</h4>
+                    <h4 className="text-xs font-bold text-slate-500 uppercase mt-2">
+                      Employment Type
+                    </h4>
                     <div className="flex flex-wrap gap-2">
                       {EMPLOYMENT_TYPE_OPTIONS.map((employmentType) => {
-                        const selected = getEmploymentTypesFromPreferences(editForm.preferences);
+                        const selected = getEmploymentTypesFromPreferences(
+                          editForm.preferences,
+                        );
                         const isSelected = selected.includes(employmentType);
                         return (
                           <button
                             key={employmentType}
                             onClick={() => {
                               const nextEmploymentTypes = isSelected
-                                ? selected.filter((value) => value !== employmentType)
+                                ? selected.filter(
+                                    (value) => value !== employmentType,
+                                  )
                                 : [...selected, employmentType];
 
                               setEditForm({
                                 ...editForm,
-                                preferences: upsertJobPreferences(editForm.preferences, {
-                                  employment_types: nextEmploymentTypes,
-                                }),
+                                preferences: upsertJobPreferences(
+                                  editForm.preferences,
+                                  {
+                                    employment_types: nextEmploymentTypes,
+                                  },
+                                ),
                               });
                             }}
-                            className={`px-4 py-1 rounded-full text-xs font-bold border-2 transition-all ${isSelected
-                              ? "border-primary bg-primary-fixed text-primary"
-                              : "border-surface-container-high text-slate-500 hover:border-primary/50"
-                              }`}
+                            className={`px-4 py-1 rounded-full text-xs font-bold border-2 transition-all ${
+                              isSelected
+                                ? "border-primary bg-primary-fixed text-primary"
+                                : "border-surface-container-high text-slate-500 hover:border-primary/50"
+                            }`}
                           >
                             {employmentType}
                           </button>
@@ -1884,14 +2125,23 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                         {getWorkModeFromPreferences(profile?.preferences)}
                       </div>
                     )}
-                    {getEmploymentTypesFromPreferences(profile?.preferences).map(type => (
-                      <div key={type} className="w-full px-6 py-2 rounded-full border-2 border-surface-container-high text-slate-600 font-bold text-sm text-center">
+                    {getEmploymentTypesFromPreferences(
+                      profile?.preferences,
+                    ).map((type) => (
+                      <div
+                        key={type}
+                        className="w-full px-6 py-2 rounded-full border-2 border-surface-container-high text-slate-600 font-bold text-sm text-center"
+                      >
                         {type}
                       </div>
                     ))}
-                    {!getWorkModeFromPreferences(profile?.preferences) && getEmploymentTypesFromPreferences(profile?.preferences).length === 0 && (
-                      <p className="text-sm text-slate-400 text-center">No preferences matched.</p>
-                    )}
+                    {!getWorkModeFromPreferences(profile?.preferences) &&
+                      getEmploymentTypesFromPreferences(profile?.preferences)
+                        .length === 0 && (
+                        <p className="text-sm text-slate-400 text-center">
+                          No preferences matched.
+                        </p>
+                      )}
                   </>
                 )}
               </div>
@@ -1899,17 +2149,30 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
 
             {/* Availability Status Block */}
             <section className="bg-surface-container-lowest rounded-lg p-8 shadow-[0_20px_40px_rgba(25,28,30,0.04)]">
-              <h3 className="font-headline text-lg font-bold mb-6 text-slate-900">Availability Status</h3>
+              <h3 className="font-headline text-lg font-bold mb-6 text-slate-900">
+                Availability Status
+              </h3>
               {editing ? (
                 <div className="flex flex-col gap-2">
-                  {["Available", "Not Available", "Available in 2 weeks", "Available in 1 month"].map(status => (
+                  {[
+                    "Available",
+                    "Not Available",
+                    "Available in 2 weeks",
+                    "Available in 1 month",
+                  ].map((status) => (
                     <button
                       key={status}
-                      onClick={() => setEditForm({ ...editForm, availability: status as any })}
-                      className={`px-4 py-2 rounded-full font-bold text-sm transition-all ${editForm.availability === status
-                        ? "bg-white text-primary shadow-sm border border-slate-100"
-                        : "text-slate-500 bg-surface-container-low hover:bg-slate-200/50"
-                        }`}
+                      onClick={() =>
+                        setEditForm({
+                          ...editForm,
+                          availability: status as any,
+                        })
+                      }
+                      className={`px-4 py-2 rounded-full font-bold text-sm transition-all ${
+                        editForm.availability === status
+                          ? "bg-white text-primary shadow-sm border border-slate-100"
+                          : "text-slate-500 bg-surface-container-low hover:bg-slate-200/50"
+                      }`}
                     >
                       {status}
                     </button>
@@ -1931,7 +2194,10 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
             <header className="bg-surface-container-lowest rounded-lg p-8 shadow-[0_20px_40px_rgba(25,28,30,0.04)] relative overflow-hidden flex flex-col md:flex-row items-center md:items-start justify-between gap-6">
               <div className="flex flex-col md:flex-row items-center md:items-start gap-6 relative z-10 flex-1">
                 <div className="relative group flex-shrink-0">
-                  <div className="w-24 h-24 rounded-[20px] overflow-hidden border-2 border-white shadow-sm bg-surface-container-high relative cursor-pointer" onClick={openPhotoEditorPanel}>
+                  <div
+                    className="w-24 h-24 rounded-[20px] overflow-hidden border-2 border-white shadow-sm bg-surface-container-high relative cursor-pointer"
+                    onClick={openPhotoEditorPanel}
+                  >
                     {profileAvatarSrc ? (
                       <img
                         src={profileAvatarSrc}
@@ -1945,7 +2211,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                       </div>
                     )}
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="material-symbols-outlined text-white text-sm">edit</span>
+                      <span className="material-symbols-outlined text-white text-sm">
+                        edit
+                      </span>
                     </div>
                   </div>
                   <input
@@ -1955,15 +2223,24 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                     accept="image/*"
                     onChange={handleImageUpload}
                   />
-                  <button onClick={openPhotoEditorPanel} className="absolute -bottom-2 -right-2 p-1.5 bg-primary text-white rounded-full shadow-md hover:scale-105 transition-transform border-2 border-white flex items-center justify-center">
-                    <span className="material-symbols-outlined text-[14px]">edit</span>
+                  <button
+                    onClick={openPhotoEditorPanel}
+                    className="absolute -bottom-2 -right-2 p-1.5 bg-primary text-white rounded-full shadow-md hover:scale-105 transition-transform border-2 border-white flex items-center justify-center"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">
+                      edit
+                    </span>
                   </button>
                 </div>
 
                 <div className="flex-1 text-center md:text-left pt-1">
                   <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-3">
                     <h1 className="font-headline text-2xl font-bold text-slate-900">
-                      {profile?.name || user?.name || (profile?.email ? profile.email.split('@')[0] : 'Profile')}
+                      {profile?.name ||
+                        user?.name ||
+                        (profile?.email
+                          ? profile.email.split("@")[0]
+                          : "Profile")}
                     </h1>
                     <span className="px-3 py-1 bg-[#E8F5E9] text-[#2E7D32] font-label text-[10px] font-bold tracking-widest uppercase rounded-full">
                       {profile?.account_type?.replace("_", " ") || "Job Seeker"}
@@ -1973,39 +2250,64 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                   <div className="flex flex-col gap-2 text-sm text-slate-500 font-medium">
                     <div className="flex flex-wrap justify-center md:justify-start gap-x-6 gap-y-2">
                       <div className="flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-[16px] text-slate-400">mail</span>
+                        <span className="material-symbols-outlined text-[16px] text-slate-400">
+                          mail
+                        </span>
                         {profile?.email}
                       </div>
                       {(editing || editForm.location) && (
                         <div className="flex items-center gap-1.5">
-                          <span className="material-symbols-outlined text-[16px] text-slate-400">location_on</span>
+                          <span className="material-symbols-outlined text-[16px] text-slate-400">
+                            location_on
+                          </span>
                           {editing ? (
                             <input
                               ref={locationInputRef}
                               type="text"
                               value={editForm.location || ""}
-                              onChange={e => setEditForm({ ...editForm, location: e.target.value })}
+                              onChange={(e) =>
+                                setEditForm({
+                                  ...editForm,
+                                  location: e.target.value,
+                                })
+                              }
                               placeholder="City, Country"
                               className="bg-surface-container-low border border-outline-variant outline-none rounded-md px-2 py-0.5 w-32 focus:border-primary transition-colors text-slate-700"
                             />
-                          ) : profile?.location}
+                          ) : (
+                            profile?.location
+                          )}
                         </div>
                       )}
                     </div>
                     {(editing || editForm.linkedin_url) && (
                       <div className="flex items-center gap-1.5 justify-center md:justify-start mt-1">
-                        <span className="material-symbols-outlined text-[16px] text-slate-400">link</span>
+                        <span className="material-symbols-outlined text-[16px] text-slate-400">
+                          link
+                        </span>
                         {editing ? (
                           <input
                             type="url"
                             value={editForm.linkedin_url || ""}
-                            onChange={e => setEditForm({ ...editForm, linkedin_url: e.target.value })}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                linkedin_url: e.target.value,
+                              })
+                            }
                             placeholder="LinkedIn URL"
                             className="bg-surface-container-low border border-outline-variant outline-none rounded-md px-2 py-0.5 w-48 focus:border-primary transition-colors text-slate-700"
                           />
                         ) : (
-                          <a href={profile?.linkedin_url} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors truncate max-w-[250px] text-slate-600">
-                            {profile?.linkedin_url?.replace("https://www.", "").replace("https://", "")}
+                          <a
+                            href={profile?.linkedin_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-primary transition-colors truncate max-w-[250px] text-slate-600"
+                          >
+                            {profile?.linkedin_url
+                              ?.replace("https://www.", "")
+                              .replace("https://", "")}
                           </a>
                         )}
                       </div>
@@ -2017,15 +2319,25 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
               {/* Action Buttons */}
               <div className="flex-shrink-0 relative z-10 pt-2 md:pt-0">
                 {!editing ? (
-                  <Button onClick={() => setEditing(true)} className="rounded-full shadow-none hover:shadow-md transition-all font-semibold px-6 bg-primary text-white">
+                  <Button
+                    onClick={() => setEditing(true)}
+                    className="rounded-full shadow-none hover:shadow-md transition-all font-semibold px-6 bg-primary text-white"
+                  >
                     Edit Profile
                   </Button>
                 ) : (
                   <div className="flex gap-2">
-                    <Button onClick={() => handleSave()} className="rounded-full shadow-none hover:shadow-md transition-all font-semibold font-label min-w-[120px] bg-primary text-white">
+                    <Button
+                      onClick={() => handleSave()}
+                      className="rounded-full shadow-none hover:shadow-md transition-all font-semibold font-label min-w-[120px] bg-primary text-white"
+                    >
                       Save Changes
                     </Button>
-                    <Button variant="outline" onClick={handleCancel} className="rounded-full border-surface-container-high font-semibold shadow-sm hover:surface-container-low">
+                    <Button
+                      variant="outline"
+                      onClick={handleCancel}
+                      className="rounded-full border-surface-container-high font-semibold shadow-sm hover:surface-container-low"
+                    >
                       Cancel
                     </Button>
                   </div>
@@ -2035,72 +2347,120 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
 
             {/* Bio Section */}
             <section className="bg-surface-container-lowest rounded-lg pt-6 pb-6 px-8 shadow-[0_20px_40px_rgba(25,28,30,0.04)]">
-              <h3 className="font-headline text-lg font-bold mb-4 text-slate-900 border-b border-surface-container-low pb-4">Bio</h3>
+              <h3 className="font-headline text-lg font-bold mb-4 text-slate-900 border-b border-surface-container-low pb-4">
+                Bio
+              </h3>
               {editing ? (
                 <textarea
                   ref={bioInputRef}
                   value={editForm.bio || ""}
-                  onChange={e => setEditForm({ ...editForm, bio: e.target.value })}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, bio: e.target.value })
+                  }
                   placeholder="Write a short professional summary about yourself..."
                   rows={4}
                   className="w-full bg-surface-container-low border-0 outline-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all text-sm font-medium text-slate-800 resize-none"
                 />
               ) : (
                 <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
-                  {profile?.bio || <span className="text-slate-400 italic">No bio yet. Click Edit Profile to add one.</span>}
+                  {profile?.bio || (
+                    <span className="text-slate-400 italic">
+                      No bio yet. Click Edit Profile to add one.
+                    </span>
+                  )}
                 </p>
               )}
             </section>
 
             {/* Personal Details Form */}
             <section className="bg-surface-container-lowest rounded-lg pt-6 pb-8 px-8 shadow-[0_20px_40px_rgba(25,28,30,0.04)]">
-              <h3 className="font-headline text-lg font-bold mb-6 text-slate-900 border-b border-surface-container-low pb-4">Personal details</h3>
+              <h3 className="font-headline text-lg font-bold mb-6 text-slate-900 border-b border-surface-container-low pb-4">
+                Personal details
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-1">Full Name</label>
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-1">
+                    Full Name
+                  </label>
                   {editing ? (
                     <input
                       ref={nameInputRef}
                       type="text"
-                      value={editForm.name || user?.name || (profile?.email ? profile.email.split('@')[0] : (user?.email ? user.email.split('@')[0] : ''))}
-                      onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                      value={
+                        editForm.name ||
+                        user?.name ||
+                        (profile?.email
+                          ? profile.email.split("@")[0]
+                          : user?.email
+                            ? user.email.split("@")[0]
+                            : "")
+                      }
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, name: e.target.value })
+                      }
                       className="w-full bg-surface-container-low border-0 outline-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all text-sm font-medium text-slate-800"
                       placeholder="Your Name"
                     />
                   ) : (
                     <div className="w-full bg-slate-50 border border-slate-100 rounded-lg px-4 py-3 text-sm font-semibold text-slate-700">
-                      {profile?.name || user?.name || (profile?.email ? profile.email.split('@')[0] : (user?.email ? user.email.split('@')[0] : '-'))}
+                      {profile?.name ||
+                        user?.name ||
+                        (profile?.email
+                          ? profile.email.split("@")[0]
+                          : user?.email
+                            ? user.email.split("@")[0]
+                            : "-")}
                     </div>
                   )}
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-1">Professional Title</label>
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-1">
+                    Professional Title
+                  </label>
                   {editing ? (
                     <input
                       type="text"
                       value={editForm.professional_title || ""}
-                      onChange={e => setEditForm({ ...editForm, professional_title: e.target.value })}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          professional_title: e.target.value,
+                        })
+                      }
                       className="w-full bg-surface-container-low border-0 outline-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all text-sm font-medium text-slate-800"
                       placeholder="e.g., Full Stack Developer"
                     />
                   ) : (
                     <div className="w-full bg-slate-50 border border-slate-100 rounded-lg px-4 py-3 text-sm font-semibold text-slate-700">
-                      {profile?.professional_title || profile?.active_role || "-"}
+                      {profile?.professional_title ||
+                        profile?.active_role ||
+                        "-"}
                     </div>
                   )}
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-1">Phone Number</label>
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-1">
+                    Phone Number
+                  </label>
                   {editing ? (
-                    <input
-                      ref={phoneInputRef}
-                      type="tel"
-                      value={editForm.phone_number || ""}
-                      onChange={e => setEditForm({ ...editForm, phone_number: e.target.value })}
-                      className="w-full bg-surface-container-low border-0 outline-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all text-sm font-medium text-slate-800"
-                    />
+                    <>
+                      <PhoneInput
+                        value={editForm.phone_number ?? ""}
+                        onChange={(v) =>
+                          setEditForm({ ...editForm, phone_number: v })
+                        }
+                        showValidation
+                      />
+                      {editForm.phone_number &&
+                        !isValidPhoneNumber(editForm.phone_number) && (
+                          <p className="text-xs text-red-500 mt-1 px-1">
+                            Enter a valid number with country code (e.g.
+                            +254712345678)
+                          </p>
+                        )}
+                    </>
                   ) : (
                     <div className="w-full bg-slate-50 border border-slate-100 rounded-lg px-4 py-3 text-sm font-semibold text-slate-700">
                       {profile?.phone_number || "-"}
@@ -2109,37 +2469,67 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-1">Portfolio URL</label>
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-1">
+                    Portfolio URL
+                  </label>
                   {editing ? (
                     <input
                       type="url"
                       value={editForm.portfolio_url || ""}
-                      onChange={e => setEditForm({ ...editForm, portfolio_url: e.target.value })}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          portfolio_url: e.target.value,
+                        })
+                      }
                       className="w-full bg-surface-container-low border-0 outline-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all text-sm font-medium text-slate-800"
                     />
                   ) : (
                     <div className="w-full bg-slate-50 border border-slate-100 rounded-lg px-4 py-3 text-sm font-semibold text-slate-700 truncate">
                       {profile?.portfolio_url ? (
-                        <a href={profile.portfolio_url} target="_blank" className="hover:text-primary transition-colors">{profile.portfolio_url}</a>
-                      ) : "-"}
+                        <a
+                          href={profile.portfolio_url}
+                          target="_blank"
+                          className="hover:text-primary transition-colors"
+                        >
+                          {profile.portfolio_url}
+                        </a>
+                      ) : (
+                        "-"
+                      )}
                     </div>
                   )}
                 </div>
 
                 <div className="space-y-1 md:col-span-2">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-1">LinkedIn Profile</label>
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-1">
+                    LinkedIn Profile
+                  </label>
                   {editing ? (
                     <input
                       type="url"
                       value={editForm.linkedin_url || ""}
-                      onChange={e => setEditForm({ ...editForm, linkedin_url: e.target.value })}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          linkedin_url: e.target.value,
+                        })
+                      }
                       className="w-full bg-surface-container-low border-0 outline-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all text-sm font-medium text-slate-800"
                     />
                   ) : (
                     <div className="w-full bg-slate-50 border border-slate-100 rounded-lg px-4 py-3 text-sm font-semibold text-slate-700 truncate">
                       {profile?.linkedin_url ? (
-                        <a href={profile.linkedin_url} target="_blank" className="hover:text-primary transition-colors">{profile.linkedin_url}</a>
-                      ) : "-"}
+                        <a
+                          href={profile.linkedin_url}
+                          target="_blank"
+                          className="hover:text-primary transition-colors"
+                        >
+                          {profile.linkedin_url}
+                        </a>
+                      ) : (
+                        "-"
+                      )}
                     </div>
                   )}
                 </div>
@@ -2149,15 +2539,23 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
             {/* Technical Skills Section */}
             <section className="bg-surface-container-lowest rounded-lg pt-6 pb-8 px-8 shadow-[0_20px_40px_rgba(25,28,30,0.04)]">
               <div className="flex items-center justify-between mb-6 border-b border-surface-container-low pb-4">
-                <h3 className="font-headline text-lg font-bold text-slate-900">Technical Skills</h3>
+                <h3 className="font-headline text-lg font-bold text-slate-900">
+                  Technical Skills
+                </h3>
                 {editing && (
                   <button
                     onClick={() => {
-                      setEditForm({ ...editForm, skills: [...(editForm.skills || []), ""] })
+                      setEditForm({
+                        ...editForm,
+                        skills: [...(editForm.skills || []), ""],
+                      });
                     }}
                     className="text-primary font-bold text-sm flex items-center gap-1 hover:underline"
                   >
-                    <span className="material-symbols-outlined text-[18px]">add</span> Add Skill
+                    <span className="material-symbols-outlined text-[18px]">
+                      add
+                    </span>{" "}
+                    Add Skill
                   </button>
                 )}
               </div>
@@ -2185,18 +2583,25 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                         }}
                         className="p-2 text-red-400 hover:bg-red-50 rounded-full transition-colors"
                       >
-                        <span className="material-symbols-outlined text-[20px]">close</span>
+                        <span className="material-symbols-outlined text-[20px]">
+                          close
+                        </span>
                       </button>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2.5">
-                  {profile?.skills && profile.skills.length > 0 ? profile.skills.map((skill, idx) => (
-                    <span key={idx} className="px-4 py-1.5 bg-[#F0F4FF] text-[#1a56db] text-sm font-semibold rounded-full border border-[#dce8ff] hover:bg-[#e0eaff] transition-colors cursor-default">
-                      {skill}
-                    </span>
-                  )) : (
+                  {profile?.skills && profile.skills.length > 0 ? (
+                    profile.skills.map((skill, idx) => (
+                      <span
+                        key={idx}
+                        className="px-4 py-1.5 bg-[#F0F4FF] text-[#1a56db] text-sm font-semibold rounded-full border border-[#dce8ff] hover:bg-[#e0eaff] transition-colors cursor-default"
+                      >
+                        {skill}
+                      </span>
+                    ))
+                  ) : (
                     <p className="text-sm text-slate-400">No skills added.</p>
                   )}
                 </div>
@@ -2206,16 +2611,34 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
             {/* Work Experience Section */}
             <section className="bg-surface-container-lowest rounded-lg pt-6 pb-8 px-8 shadow-[0_20px_40px_rgba(25,28,30,0.04)]">
               <div className="flex items-center justify-between mb-6 border-b border-surface-container-low pb-4">
-                <h3 className="font-headline text-lg font-bold text-slate-900">Work Experience</h3>
+                <h3 className="font-headline text-lg font-bold text-slate-900">
+                  Work Experience
+                </h3>
                 {editing && (
                   <button
                     onClick={() => {
-                      const emptyExp = { company: "", position: "", description: "", start_date: "", end_date: "", currently_working: false };
-                      setEditForm({ ...editForm, work_experience: [...(editForm.work_experience || []), emptyExp] });
+                      const emptyExp = {
+                        company: "",
+                        position: "",
+                        description: "",
+                        start_date: "",
+                        end_date: "",
+                        currently_working: false,
+                      };
+                      setEditForm({
+                        ...editForm,
+                        work_experience: [
+                          ...(editForm.work_experience || []),
+                          emptyExp,
+                        ],
+                      });
                     }}
                     className="text-primary font-bold text-sm flex items-center gap-1 hover:underline"
                   >
-                    <span className="material-symbols-outlined text-[18px]">add</span> Add Experience
+                    <span className="material-symbols-outlined text-[18px]">
+                      add
+                    </span>{" "}
+                    Add Experience
                   </button>
                 )}
               </div>
@@ -2223,90 +2646,171 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
               <div className="space-y-0">
                 {editing ? (
                   (editForm.work_experience || []).map((exp, index) => (
-                    <div key={index} className="p-5 mb-4 bg-surface-container-low/30 rounded-xl border border-surface-container-high space-y-4">
+                    <div
+                      key={index}
+                      className="p-5 mb-4 bg-surface-container-low/30 rounded-xl border border-surface-container-high space-y-4"
+                    >
                       <div className="flex justify-between items-start">
-                        <h4 className="text-sm font-semibold text-slate-700">Experience #{index + 1}</h4>
-                        <button onClick={() => {
-                          const nx = [...(editForm.work_experience || [])];
-                          nx.splice(index, 1);
-                          setEditForm({ ...editForm, work_experience: nx });
-                        }} className="p-1 hover:bg-red-100 rounded text-red-400 transition-colors">
-                          <span className="material-symbols-outlined text-[20px]">delete</span>
+                        <h4 className="text-sm font-semibold text-slate-700">
+                          Experience #{index + 1}
+                        </h4>
+                        <button
+                          onClick={() => {
+                            const nx = [...(editForm.work_experience || [])];
+                            nx.splice(index, 1);
+                            setEditForm({ ...editForm, work_experience: nx });
+                          }}
+                          className="p-1 hover:bg-red-100 rounded text-red-400 transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-[20px]">
+                            delete
+                          </span>
                         </button>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="text-xs font-bold text-slate-500">Position</label>
-                          <input type="text" value={exp.position || ""} onChange={e => {
-                            const nx = [...(editForm.work_experience || [])];
-                            nx[index] = { ...nx[index], position: e.target.value };
-                            setEditForm({ ...editForm, work_experience: nx });
-                          }} className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1" />
+                          <label className="text-xs font-bold text-slate-500">
+                            Position
+                          </label>
+                          <input
+                            type="text"
+                            value={exp.position || ""}
+                            onChange={(e) => {
+                              const nx = [...(editForm.work_experience || [])];
+                              nx[index] = {
+                                ...nx[index],
+                                position: e.target.value,
+                              };
+                              setEditForm({ ...editForm, work_experience: nx });
+                            }}
+                            className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1"
+                          />
                         </div>
                         <div>
-                          <label className="text-xs font-bold text-slate-500">Company</label>
-                          <input type="text" value={exp.company || ""} onChange={e => {
-                            const nx = [...(editForm.work_experience || [])];
-                            nx[index] = { ...nx[index], company: e.target.value };
-                            setEditForm({ ...editForm, work_experience: nx });
-                          }} className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1" />
+                          <label className="text-xs font-bold text-slate-500">
+                            Company
+                          </label>
+                          <input
+                            type="text"
+                            value={exp.company || ""}
+                            onChange={(e) => {
+                              const nx = [...(editForm.work_experience || [])];
+                              nx[index] = {
+                                ...nx[index],
+                                company: e.target.value,
+                              };
+                              setEditForm({ ...editForm, work_experience: nx });
+                            }}
+                            className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1"
+                          />
                         </div>
                         <div>
-                          <label className="text-xs font-bold text-slate-500">Start Date</label>
-                          <input type="month" value={exp.start_date || ""} onChange={e => {
-                            const nx = [...(editForm.work_experience || [])];
-                            nx[index] = { ...nx[index], start_date: e.target.value };
-                            setEditForm({ ...editForm, work_experience: nx });
-                          }} className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1" />
+                          <label className="text-xs font-bold text-slate-500">
+                            Start Date
+                          </label>
+                          <input
+                            type="month"
+                            value={exp.start_date || ""}
+                            onChange={(e) => {
+                              const nx = [...(editForm.work_experience || [])];
+                              nx[index] = {
+                                ...nx[index],
+                                start_date: e.target.value,
+                              };
+                              setEditForm({ ...editForm, work_experience: nx });
+                            }}
+                            className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1"
+                          />
                         </div>
                         <div>
-                          <label className="text-xs font-bold text-slate-500">End Date</label>
-                          <input type="month" value={exp.end_date || ""} disabled={!!exp.currently_working} onChange={e => {
-                            const nx = [...(editForm.work_experience || [])];
-                            nx[index] = { ...nx[index], end_date: e.target.value };
-                            setEditForm({ ...editForm, work_experience: nx });
-                          }} className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1 disabled:opacity-40 disabled:cursor-not-allowed" />
+                          <label className="text-xs font-bold text-slate-500">
+                            End Date
+                          </label>
+                          <input
+                            type="month"
+                            value={exp.end_date || ""}
+                            disabled={!!exp.currently_working}
+                            onChange={(e) => {
+                              const nx = [...(editForm.work_experience || [])];
+                              nx[index] = {
+                                ...nx[index],
+                                end_date: e.target.value,
+                              };
+                              setEditForm({ ...editForm, work_experience: nx });
+                            }}
+                            className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1 disabled:opacity-40 disabled:cursor-not-allowed"
+                          />
                         </div>
                       </div>
                       <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
-                        <input type="checkbox" checked={!!exp.currently_working} onChange={e => {
-                          const nx = [...(editForm.work_experience || [])];
-                          nx[index] = { ...nx[index], currently_working: e.target.checked, end_date: e.target.checked ? "" : nx[index].end_date };
-                          setEditForm({ ...editForm, work_experience: nx });
-                        }} className="rounded" />
+                        <input
+                          type="checkbox"
+                          checked={!!exp.currently_working}
+                          onChange={(e) => {
+                            const nx = [...(editForm.work_experience || [])];
+                            nx[index] = {
+                              ...nx[index],
+                              currently_working: e.target.checked,
+                              end_date: e.target.checked
+                                ? ""
+                                : nx[index].end_date,
+                            };
+                            setEditForm({ ...editForm, work_experience: nx });
+                          }}
+                          className="rounded"
+                        />
                         <span>I currently work here</span>
                       </label>
                       <div>
-                        <label className="text-xs font-bold text-slate-500">Description</label>
-                        <textarea value={exp.description || ""} onChange={e => {
-                          const nx = [...(editForm.work_experience || [])];
-                          nx[index] = { ...nx[index], description: e.target.value };
-                          setEditForm({ ...editForm, work_experience: nx });
-                        }} className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1" rows={2} />
+                        <label className="text-xs font-bold text-slate-500">
+                          Description
+                        </label>
+                        <textarea
+                          value={exp.description || ""}
+                          onChange={(e) => {
+                            const nx = [...(editForm.work_experience || [])];
+                            nx[index] = {
+                              ...nx[index],
+                              description: e.target.value,
+                            };
+                            setEditForm({ ...editForm, work_experience: nx });
+                          }}
+                          className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1"
+                          rows={2}
+                        />
                       </div>
                     </div>
                   ))
-                ) : (
-                  profile?.work_experience && profile.work_experience.length > 0 ? profile.work_experience.map((exp, idx) => (
+                ) : profile?.work_experience &&
+                  profile.work_experience.length > 0 ? (
+                  profile.work_experience.map((exp, idx) => (
                     <div key={idx}>
                       <div className="flex gap-5 items-start py-5">
                         <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <span className="material-symbols-outlined text-slate-500 text-2xl">corporate_fare</span>
+                          <span className="material-symbols-outlined text-slate-500 text-2xl">
+                            corporate_fare
+                          </span>
                         </div>
                         <div className="flex-1">
                           <div className="flex items-start justify-between">
                             <div>
-                              <h4 className="text-base font-bold text-slate-900 leading-tight">{exp.position}</h4>
-                              <p className="text-[#1a56db] font-semibold text-sm mt-0.5">{exp.company}</p>
+                              <h4 className="text-base font-bold text-slate-900 leading-tight">
+                                {exp.position}
+                              </h4>
+                              <p className="text-[#1a56db] font-semibold text-sm mt-0.5">
+                                {exp.company}
+                              </p>
                             </div>
                             <span className="text-xs text-slate-400 font-medium bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100 flex-shrink-0 ml-4">
                               {exp.start_date
-                                ? `${exp.start_date} – ${exp.currently_working ? "Present" : (exp.end_date || "")}`
-                                : (exp.duration || "")}
+                                ? `${exp.start_date} – ${exp.currently_working ? "Present" : exp.end_date || ""}`
+                                : exp.duration || ""}
                             </span>
                           </div>
                           {exp.description && (
-                            <p className="text-slate-500 text-sm leading-relaxed mt-2">{exp.description}</p>
+                            <p className="text-slate-500 text-sm leading-relaxed mt-2">
+                              {exp.description}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -2314,225 +2818,480 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                         <div className="border-b border-surface-container-low" />
                       )}
                     </div>
-                  )) : (
-                    <p className="text-sm text-slate-400 py-2">No work experience added.</p>
-                  )
+                  ))
+                ) : (
+                  <p className="text-sm text-slate-400 py-2">
+                    No work experience added.
+                  </p>
                 )}
               </div>
             </section>
             {/* Education Section */}
             <section className="bg-surface-container-lowest rounded-lg pt-6 pb-8 px-8 shadow-[0_20px_40px_rgba(25,28,30,0.04)]">
               <div className="flex items-center justify-between mb-6 border-b border-surface-container-low pb-4">
-                <h3 className="font-headline text-lg font-bold text-slate-900">Education</h3>
+                <h3 className="font-headline text-lg font-bold text-slate-900">
+                  Education
+                </h3>
                 {editing && (
                   <button
                     onClick={() => {
-                      const emptyEdu = { degree: "", institution: "", field_of_study: "", start_year: "", end_year: "", gpa: "" };
-                      const currentEdu = Array.isArray(editForm.education) ? editForm.education : [];
-                      setEditForm({ ...editForm, education: [...currentEdu, emptyEdu] as any });
+                      const emptyEdu = {
+                        degree: "",
+                        institution: "",
+                        field_of_study: "",
+                        start_year: "",
+                        end_year: "",
+                        gpa: "",
+                      };
+                      const currentEdu = Array.isArray(editForm.education)
+                        ? editForm.education
+                        : [];
+                      setEditForm({
+                        ...editForm,
+                        education: [...currentEdu, emptyEdu] as any,
+                      });
                     }}
                     className="text-primary font-bold text-sm flex items-center gap-1 hover:underline"
                   >
-                    <span className="material-symbols-outlined text-[18px]">add</span> Add Education
+                    <span className="material-symbols-outlined text-[18px]">
+                      add
+                    </span>{" "}
+                    Add Education
                   </button>
                 )}
               </div>
               <div className="space-y-0">
-                {editing ? (
-                  (() => {
-                    const eduList = Array.isArray(editForm.education) ? (editForm.education as any[]) : [];
-                    if (eduList.length === 0) {
+                {editing
+                  ? (() => {
+                      const eduList = Array.isArray(editForm.education)
+                        ? (editForm.education as any[])
+                        : [];
+                      if (eduList.length === 0) {
+                        return (
+                          <div className="text-center py-8">
+                            <span className="material-symbols-outlined text-slate-300 text-4xl">
+                              school
+                            </span>
+                            <p className="text-sm text-slate-400 mt-2">
+                              No education entries yet. Click "+ Add Education"
+                              to begin.
+                            </p>
+                          </div>
+                        );
+                      }
                       return (
-                        <div className="text-center py-8">
-                          <span className="material-symbols-outlined text-slate-300 text-4xl">school</span>
-                          <p className="text-sm text-slate-400 mt-2">No education entries yet. Click "+ Add Education" to begin.</p>
-                        </div>
-                      );
-                    }
-                    return <>{eduList.map((edu: any, index: number) => (
-                      <div key={index} className="p-5 mb-4 bg-surface-container-low/30 rounded-xl border border-surface-container-high space-y-4">
-                        <div className="flex justify-between items-start">
-                          <h4 className="text-sm font-semibold text-slate-700">Education #{index + 1}</h4>
-                          <button onClick={() => {
-                            const nx = [...(Array.isArray(editForm.education) ? (editForm.education as any[]) : [])];
-                            nx.splice(index, 1);
-                            setEditForm({ ...editForm, education: nx as any });
-                          }} className="p-1 hover:bg-red-100 rounded text-red-400 transition-colors">
-                            <span className="material-symbols-outlined text-[20px]">delete</span>
-                          </button>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="text-xs font-bold text-slate-500">Degree / Qualification</label>
-                            <input type="text" value={edu.degree || ""} placeholder="e.g. Bachelor of Science" onChange={e => {
-                              const nx = [...(Array.isArray(editForm.education) ? (editForm.education as any[]) : [])];
-                              nx[index] = { ...nx[index], degree: e.target.value };
-                              setEditForm({ ...editForm, education: nx as any });
-                            }} className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1" />
-                          </div>
-                          <div>
-                            <label className="text-xs font-bold text-slate-500">Institution</label>
-                            <input type="text" value={edu.institution || ""} placeholder="e.g. University of Nairobi" onChange={e => {
-                              const nx = [...(Array.isArray(editForm.education) ? (editForm.education as any[]) : [])];
-                              nx[index] = { ...nx[index], institution: e.target.value };
-                              setEditForm({ ...editForm, education: nx as any });
-                            }} className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1" />
-                          </div>
-                          <div>
-                            <label className="text-xs font-bold text-slate-500">Field of Study</label>
-                            <input type="text" value={edu.field_of_study || ""} placeholder="e.g. Computer Science" onChange={e => {
-                              const nx = [...(Array.isArray(editForm.education) ? (editForm.education as any[]) : [])];
-                              nx[index] = { ...nx[index], field_of_study: e.target.value };
-                              setEditForm({ ...editForm, education: nx as any });
-                            }} className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1" />
-                          </div>
-                          <div>
-                            <label className="text-xs font-bold text-slate-500">GPA (optional)</label>
-                            <input type="text" value={edu.gpa || ""} placeholder="e.g. 3.8" onChange={e => {
-                              const nx = [...(Array.isArray(editForm.education) ? (editForm.education as any[]) : [])];
-                              nx[index] = { ...nx[index], gpa: e.target.value };
-                              setEditForm({ ...editForm, education: nx as any });
-                            }} className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1" />
-                          </div>
-                          <div>
-                            <label className="text-xs font-bold text-slate-500">Start Year</label>
-                            <input type="text" value={edu.start_year || ""} placeholder="e.g. 2018" onChange={e => {
-                              const nx = [...(Array.isArray(editForm.education) ? (editForm.education as any[]) : [])];
-                              nx[index] = { ...nx[index], start_year: e.target.value };
-                              setEditForm({ ...editForm, education: nx as any });
-                            }} className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1" />
-                          </div>
-                          <div>
-                            <label className="text-xs font-bold text-slate-500">End Year</label>
-                            <input type="text" value={edu.end_year || ""} placeholder="e.g. 2022" onChange={e => {
-                              const nx = [...(Array.isArray(editForm.education) ? (editForm.education as any[]) : [])];
-                              nx[index] = { ...nx[index], end_year: e.target.value };
-                              setEditForm({ ...editForm, education: nx as any });
-                            }} className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1" />
-                          </div>
-                        </div>
-                      </div>
-                    ))}</>;
-                  })()
-                ) : (
-                  (() => {
-                    const rawEdu = profile?.education;
-                    if (!rawEdu) return <p className="text-sm text-slate-400 py-2">No education details added.</p>;
-                    if (typeof rawEdu === 'string') return <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line py-2">{rawEdu}</p>;
-                    if (!Array.isArray(rawEdu)) return <p className="text-sm text-slate-400 py-2">No education details added.</p>;
-                    const validEntries = (rawEdu as any[]).filter(
-                      (edu: any) => edu && typeof edu === 'object' && (edu.degree || edu.institution || edu.field_of_study)
-                    );
-                    if (validEntries.length === 0) {
-                      return <p className="text-sm text-slate-400 py-2">No education details added yet. Click "Edit Profile" to add your background.</p>;
-                    }
-                    return (
-                      <div className="space-y-0">
-                        {validEntries.map((edu: any, idx: number) => (
-                          <div key={idx}>
-                            <div className="flex gap-5 items-start py-5">
-                              <div className="w-12 h-12 rounded-xl bg-[#EEF2FF] flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <span className="material-symbols-outlined text-[#6366f1] text-[22px]">school</span>
+                        <>
+                          {eduList.map((edu: any, index: number) => (
+                            <div
+                              key={index}
+                              className="p-5 mb-4 bg-surface-container-low/30 rounded-xl border border-surface-container-high space-y-4"
+                            >
+                              <div className="flex justify-between items-start">
+                                <h4 className="text-sm font-semibold text-slate-700">
+                                  Education #{index + 1}
+                                </h4>
+                                <button
+                                  onClick={() => {
+                                    const nx = [
+                                      ...(Array.isArray(editForm.education)
+                                        ? (editForm.education as any[])
+                                        : []),
+                                    ];
+                                    nx.splice(index, 1);
+                                    setEditForm({
+                                      ...editForm,
+                                      education: nx as any,
+                                    });
+                                  }}
+                                  className="p-1 hover:bg-red-100 rounded text-red-400 transition-colors"
+                                >
+                                  <span className="material-symbols-outlined text-[20px]">
+                                    delete
+                                  </span>
+                                </button>
                               </div>
-                              <div className="flex-1">
-                                <div className="flex items-start justify-between">
-                                  <div>
-                                    <h5 className="font-bold text-slate-900 text-base leading-tight">
-                                      {edu.degree || "Degree"}{edu.field_of_study ? ` in ${edu.field_of_study}` : ''}
-                                    </h5>
-                                    <p className="text-[#1a56db] font-semibold text-sm mt-0.5">{edu.institution || "Institution"}</p>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="text-xs font-bold text-slate-500">
+                                    Degree / Qualification
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={edu.degree || ""}
+                                    placeholder="e.g. Bachelor of Science"
+                                    onChange={(e) => {
+                                      const nx = [
+                                        ...(Array.isArray(editForm.education)
+                                          ? (editForm.education as any[])
+                                          : []),
+                                      ];
+                                      nx[index] = {
+                                        ...nx[index],
+                                        degree: e.target.value,
+                                      };
+                                      setEditForm({
+                                        ...editForm,
+                                        education: nx as any,
+                                      });
+                                    }}
+                                    className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-xs font-bold text-slate-500">
+                                    Institution
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={edu.institution || ""}
+                                    placeholder="e.g. University of Nairobi"
+                                    onChange={(e) => {
+                                      const nx = [
+                                        ...(Array.isArray(editForm.education)
+                                          ? (editForm.education as any[])
+                                          : []),
+                                      ];
+                                      nx[index] = {
+                                        ...nx[index],
+                                        institution: e.target.value,
+                                      };
+                                      setEditForm({
+                                        ...editForm,
+                                        education: nx as any,
+                                      });
+                                    }}
+                                    className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-xs font-bold text-slate-500">
+                                    Field of Study
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={edu.field_of_study || ""}
+                                    placeholder="e.g. Computer Science"
+                                    onChange={(e) => {
+                                      const nx = [
+                                        ...(Array.isArray(editForm.education)
+                                          ? (editForm.education as any[])
+                                          : []),
+                                      ];
+                                      nx[index] = {
+                                        ...nx[index],
+                                        field_of_study: e.target.value,
+                                      };
+                                      setEditForm({
+                                        ...editForm,
+                                        education: nx as any,
+                                      });
+                                    }}
+                                    className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-xs font-bold text-slate-500">
+                                    GPA (optional)
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={edu.gpa || ""}
+                                    placeholder="e.g. 3.8"
+                                    onChange={(e) => {
+                                      const nx = [
+                                        ...(Array.isArray(editForm.education)
+                                          ? (editForm.education as any[])
+                                          : []),
+                                      ];
+                                      nx[index] = {
+                                        ...nx[index],
+                                        gpa: e.target.value,
+                                      };
+                                      setEditForm({
+                                        ...editForm,
+                                        education: nx as any,
+                                      });
+                                    }}
+                                    className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-xs font-bold text-slate-500">
+                                    Start Year
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={edu.start_year || ""}
+                                    placeholder="e.g. 2018"
+                                    onChange={(e) => {
+                                      const nx = [
+                                        ...(Array.isArray(editForm.education)
+                                          ? (editForm.education as any[])
+                                          : []),
+                                      ];
+                                      nx[index] = {
+                                        ...nx[index],
+                                        start_year: e.target.value,
+                                      };
+                                      setEditForm({
+                                        ...editForm,
+                                        education: nx as any,
+                                      });
+                                    }}
+                                    className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-xs font-bold text-slate-500">
+                                    End Year
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={edu.end_year || ""}
+                                    placeholder="e.g. 2022"
+                                    onChange={(e) => {
+                                      const nx = [
+                                        ...(Array.isArray(editForm.education)
+                                          ? (editForm.education as any[])
+                                          : []),
+                                      ];
+                                      nx[index] = {
+                                        ...nx[index],
+                                        end_year: e.target.value,
+                                      };
+                                      setEditForm({
+                                        ...editForm,
+                                        education: nx as any,
+                                      });
+                                    }}
+                                    className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      );
+                    })()
+                  : (() => {
+                      const rawEdu = profile?.education;
+                      if (!rawEdu)
+                        return (
+                          <p className="text-sm text-slate-400 py-2">
+                            No education details added.
+                          </p>
+                        );
+                      if (typeof rawEdu === "string")
+                        return (
+                          <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line py-2">
+                            {rawEdu}
+                          </p>
+                        );
+                      if (!Array.isArray(rawEdu))
+                        return (
+                          <p className="text-sm text-slate-400 py-2">
+                            No education details added.
+                          </p>
+                        );
+                      const validEntries = (rawEdu as any[]).filter(
+                        (edu: any) =>
+                          edu &&
+                          typeof edu === "object" &&
+                          (edu.degree || edu.institution || edu.field_of_study),
+                      );
+                      if (validEntries.length === 0) {
+                        return (
+                          <p className="text-sm text-slate-400 py-2">
+                            No education details added yet. Click "Edit Profile"
+                            to add your background.
+                          </p>
+                        );
+                      }
+                      return (
+                        <div className="space-y-0">
+                          {validEntries.map((edu: any, idx: number) => (
+                            <div key={idx}>
+                              <div className="flex gap-5 items-start py-5">
+                                <div className="w-12 h-12 rounded-xl bg-[#EEF2FF] flex items-center justify-center flex-shrink-0 mt-0.5">
+                                  <span className="material-symbols-outlined text-[#6366f1] text-[22px]">
+                                    school
+                                  </span>
+                                </div>
+                                <div className="flex-1">
+                                  <div className="flex items-start justify-between">
+                                    <div>
+                                      <h5 className="font-bold text-slate-900 text-base leading-tight">
+                                        {edu.degree || "Degree"}
+                                        {edu.field_of_study
+                                          ? ` in ${edu.field_of_study}`
+                                          : ""}
+                                      </h5>
+                                      <p className="text-[#1a56db] font-semibold text-sm mt-0.5">
+                                        {edu.institution || "Institution"}
+                                      </p>
+                                    </div>
+                                    {(edu.start_year || edu.end_year) && (
+                                      <span className="text-xs text-slate-400 font-medium bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100 flex-shrink-0 ml-4">
+                                        {edu.start_year || "—"} –{" "}
+                                        {edu.end_year || "Present"}
+                                      </span>
+                                    )}
                                   </div>
-                                  {(edu.start_year || edu.end_year) && (
-                                    <span className="text-xs text-slate-400 font-medium bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100 flex-shrink-0 ml-4">
-                                      {edu.start_year || "—"} – {edu.end_year || "Present"}
+                                  {edu.gpa && (
+                                    <span className="inline-block mt-2 text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                                      GPA: {edu.gpa}
                                     </span>
                                   )}
                                 </div>
-                                {edu.gpa && (
-                                  <span className="inline-block mt-2 text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">GPA: {edu.gpa}</span>
-                                )}
                               </div>
+                              {idx < validEntries.length - 1 && (
+                                <div className="border-b border-surface-container-low" />
+                              )}
                             </div>
-                            {idx < validEntries.length - 1 && (
-                              <div className="border-b border-surface-container-low" />
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })()
-                )}
+                          ))}
+                        </div>
+                      );
+                    })()}
               </div>
             </section>
 
             {/* Projects Section */}
             <section className="bg-surface-container-lowest rounded-lg pt-6 pb-8 px-8 shadow-[0_20px_40px_rgba(25,28,30,0.04)]">
               <div className="flex items-center justify-between mb-6 border-b border-surface-container-low pb-4">
-                <h3 className="font-headline text-lg font-bold text-slate-900">Projects</h3>
+                <h3 className="font-headline text-lg font-bold text-slate-900">
+                  Projects
+                </h3>
                 {editing && (
-                  <button onClick={() => {
-                    const emptyProj = { title: "", description: "", link: "" };
-                    setEditForm({ ...editForm, projects: [...(editForm.projects || []), emptyProj] });
-                  }} className="text-primary font-bold text-sm flex items-center gap-1 hover:underline">
-                    <span className="material-symbols-outlined text-[18px]">add</span> Add Project
+                  <button
+                    onClick={() => {
+                      const emptyProj = {
+                        title: "",
+                        description: "",
+                        link: "",
+                      };
+                      setEditForm({
+                        ...editForm,
+                        projects: [...(editForm.projects || []), emptyProj],
+                      });
+                    }}
+                    className="text-primary font-bold text-sm flex items-center gap-1 hover:underline"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      add
+                    </span>{" "}
+                    Add Project
                   </button>
                 )}
               </div>
               <div className="space-y-0">
                 {editing ? (
                   (editForm.projects || []).map((proj, index) => (
-                    <div key={index} className="p-5 mb-4 bg-surface-container-low/30 rounded-xl border border-surface-container-high space-y-4">
+                    <div
+                      key={index}
+                      className="p-5 mb-4 bg-surface-container-low/30 rounded-xl border border-surface-container-high space-y-4"
+                    >
                       <div className="flex justify-between items-start">
-                        <h4 className="text-sm font-semibold text-slate-700">Project #{index + 1}</h4>
-                        <button onClick={() => {
-                          const nx = [...(editForm.projects || [])];
-                          nx.splice(index, 1);
-                          setEditForm({ ...editForm, projects: nx });
-                        }} className="p-1 hover:bg-red-100 rounded text-red-400 transition-colors">
-                          <span className="material-symbols-outlined text-[20px]">delete</span>
+                        <h4 className="text-sm font-semibold text-slate-700">
+                          Project #{index + 1}
+                        </h4>
+                        <button
+                          onClick={() => {
+                            const nx = [...(editForm.projects || [])];
+                            nx.splice(index, 1);
+                            setEditForm({ ...editForm, projects: nx });
+                          }}
+                          className="p-1 hover:bg-red-100 rounded text-red-400 transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-[20px]">
+                            delete
+                          </span>
                         </button>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="text-xs font-bold text-slate-500">Project Title</label>
-                          <input type="text" value={proj.title || ""} onChange={e => {
-                            const nx = [...(editForm.projects || [])];
-                            nx[index] = { ...nx[index], title: e.target.value };
-                            setEditForm({ ...editForm, projects: nx });
-                          }} className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1" />
+                          <label className="text-xs font-bold text-slate-500">
+                            Project Title
+                          </label>
+                          <input
+                            type="text"
+                            value={proj.title || ""}
+                            onChange={(e) => {
+                              const nx = [...(editForm.projects || [])];
+                              nx[index] = {
+                                ...nx[index],
+                                title: e.target.value,
+                              };
+                              setEditForm({ ...editForm, projects: nx });
+                            }}
+                            className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1"
+                          />
                         </div>
                         <div>
-                          <label className="text-xs font-bold text-slate-500">Project Link</label>
-                          <input type="url" value={proj.link || ""} onChange={e => {
-                            const nx = [...(editForm.projects || [])];
-                            nx[index] = { ...nx[index], link: e.target.value };
-                            setEditForm({ ...editForm, projects: nx });
-                          }} className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1" />
+                          <label className="text-xs font-bold text-slate-500">
+                            Project Link
+                          </label>
+                          <input
+                            type="url"
+                            value={proj.link || ""}
+                            onChange={(e) => {
+                              const nx = [...(editForm.projects || [])];
+                              nx[index] = {
+                                ...nx[index],
+                                link: e.target.value,
+                              };
+                              setEditForm({ ...editForm, projects: nx });
+                            }}
+                            className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1"
+                          />
                         </div>
                       </div>
                       <div>
-                        <label className="text-xs font-bold text-slate-500">Description</label>
-                        <textarea value={proj.description || ""} onChange={e => {
-                          const nx = [...(editForm.projects || [])];
-                          nx[index] = { ...nx[index], description: e.target.value };
-                          setEditForm({ ...editForm, projects: nx });
-                        }} className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1" rows={2} />
+                        <label className="text-xs font-bold text-slate-500">
+                          Description
+                        </label>
+                        <textarea
+                          value={proj.description || ""}
+                          onChange={(e) => {
+                            const nx = [...(editForm.projects || [])];
+                            nx[index] = {
+                              ...nx[index],
+                              description: e.target.value,
+                            };
+                            setEditForm({ ...editForm, projects: nx });
+                          }}
+                          className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1"
+                          rows={2}
+                        />
                       </div>
                     </div>
                   ))
-                ) : (
-                  profile?.projects && profile.projects.length > 0 ? profile.projects.map((proj, idx) => (
+                ) : profile?.projects && profile.projects.length > 0 ? (
+                  profile.projects.map((proj, idx) => (
                     <div key={idx}>
                       <div className="flex gap-5 items-start py-5">
                         <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <span className="material-symbols-outlined text-amber-500 text-2xl">rocket_launch</span>
+                          <span className="material-symbols-outlined text-amber-500 text-2xl">
+                            rocket_launch
+                          </span>
                         </div>
                         <div className="flex-1">
-                          <h4 className="text-base font-bold text-slate-900">{proj.title}</h4>
-                          <p className="text-slate-500 text-sm leading-relaxed mb-2 mt-1">{proj.description}</p>
+                          <h4 className="text-base font-bold text-slate-900">
+                            {proj.title}
+                          </h4>
+                          <p className="text-slate-500 text-sm leading-relaxed mb-2 mt-1">
+                            {proj.description}
+                          </p>
                           {proj.link && (
-                            <a href={proj.link} target="_blank" rel="noopener noreferrer" className="text-[#1a56db] text-xs font-bold hover:underline inline-flex items-center gap-1">
-                              <span className="material-symbols-outlined text-[14px]">open_in_new</span> View Project
+                            <a
+                              href={proj.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#1a56db] text-xs font-bold hover:underline inline-flex items-center gap-1"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">
+                                open_in_new
+                              </span>{" "}
+                              View Project
                             </a>
                           )}
                         </div>
@@ -2541,9 +3300,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                         <div className="border-b border-surface-container-low" />
                       )}
                     </div>
-                  )) : (
-                    <p className="text-sm text-slate-400 py-2">No projects added.</p>
-                  )
+                  ))
+                ) : (
+                  <p className="text-sm text-slate-400 py-2">
+                    No projects added.
+                  </p>
                 )}
               </div>
             </section>
@@ -2553,38 +3314,61 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
               <section className="bg-gradient-to-br from-[#1a56db] to-[#2563eb] rounded-2xl p-8 shadow-lg">
                 <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
                   <div className="w-14 h-14 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0">
-                    <span className="material-symbols-outlined text-white text-3xl">description</span>
+                    <span className="material-symbols-outlined text-white text-3xl">
+                      description
+                    </span>
                   </div>
                   <div className="flex-1">
                     <div className="flex flex-wrap gap-3 mb-3">
                       <label className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 bg-white text-[#1a56db] font-bold rounded-full hover:bg-blue-50 transition-colors text-sm shadow">
-                        <span className="material-symbols-outlined text-[18px]">upload_file</span>
+                        <span className="material-symbols-outlined text-[18px]">
+                          upload_file
+                        </span>
                         Upload New Resume
-                        <input type="file" className="hidden" accept=".pdf,.docx,.txt" onChange={handleResumeUpload} />
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept=".pdf,.docx,.txt"
+                          onChange={handleResumeUpload}
+                        />
                       </label>
                       {(profile?.resume_url || profile?.resume_link) && (
-                        <a href={profile.resume_url || profile.resume_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 text-white font-bold rounded-full hover:bg-white/20 transition-colors text-sm border border-white/30">
-                          <span className="material-symbols-outlined text-[18px]">visibility</span>
+                        <a
+                          href={profile.resume_url || profile.resume_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 text-white font-bold rounded-full hover:bg-white/20 transition-colors text-sm border border-white/30"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">
+                            visibility
+                          </span>
                           Preview Current
                         </a>
                       )}
                     </div>
-                    <h3 className="font-headline text-lg font-bold text-white mb-1">Ready to apply for new roles?</h3>
-                    <p className="text-blue-200 text-sm">Keep your resume up to date to increase your chances of landing the right opportunity.</p>
+                    <h3 className="font-headline text-lg font-bold text-white mb-1">
+                      Ready to apply for new roles?
+                    </h3>
+                    <p className="text-blue-200 text-sm">
+                      Keep your resume up to date to increase your chances of
+                      landing the right opportunity.
+                    </p>
                   </div>
                 </div>
               </section>
             )}
-
           </div>
         </div>
       </main>
 
-      <Dialog open={isPhotoEditorOpen} onOpenChange={(open) => {
-        if (!open) {
-          closePhotoEditor();
-        }
-      }}>
+      <Dialog
+        open={isPhotoEditorOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            closePhotoEditor();
+          }
+        }}
+      >
         <DialogContent
           className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-xl max-h-[90vh] overflow-y-auto overscroll-contain p-4 sm:p-6"
           onWheel={handlePhotoEditorDialogWheel}
@@ -2649,7 +3433,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
               </div>
 
               <div>
-                <label className="text-sm font-medium">Horizontal Position</label>
+                <label className="text-sm font-medium">
+                  Horizontal Position
+                </label>
                 <Input
                   type="range"
                   min={-100}
@@ -2678,7 +3464,10 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
             <Button variant="outline" onClick={closePhotoEditor}>
               Cancel
             </Button>
-            <Button onClick={handlePhotoEditorSave} disabled={loading || !photoEditorSrc}>
+            <Button
+              onClick={handlePhotoEditorSave}
+              disabled={loading || !photoEditorSrc}
+            >
               {loading ? "Saving..." : "Save Photo"}
             </Button>
           </DialogFooter>
