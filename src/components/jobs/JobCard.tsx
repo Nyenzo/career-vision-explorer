@@ -33,14 +33,22 @@ interface JobCardProps {
   onSave: (jobId: string) => void;
 }
 
-export const JobCard = ({ job, isApplied, isSaved, onApply, onSave }: JobCardProps) => {
+export const JobCard = ({
+  job,
+  isApplied,
+  isSaved,
+  onApply,
+  onSave,
+}: JobCardProps) => {
   const { isJobSeeker, isAuthenticated } = useAuth();
   const isAuthenticatedJobSeeker = isAuthenticated && isJobSeeker();
 
   const getMatchColorClassname = (score: number) => {
-    if (score >= 90) return 'bg-tertiary-container text-on-tertiary-container match-glow';
-    if (score >= 70) return 'bg-surface-container-highest text-on-surface-variant';
-    return 'bg-surface-container-highest text-on-surface-variant';
+    if (score >= 90)
+      return "bg-tertiary-container text-on-tertiary-container match-glow";
+    if (score >= 70)
+      return "bg-surface-container-highest text-on-surface-variant";
+    return "bg-surface-container-highest text-on-surface-variant";
   };
 
   const renderMatchBadge = () => {
@@ -50,9 +58,18 @@ export const JobCard = ({ job, isApplied, isSaved, onApply, onSave }: JobCardPro
     // Authenticated jobseeker with a real score: show percentage badge
     if (job.matchScore != null) {
       return (
-        <div className={`${getMatchColorClassname(job.matchScore)} px-4 py-2 rounded-full flex items-center gap-2`}>
-          <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
-          <span className="font-label text-xs font-bold tracking-wider">{job.matchScore}% MATCH</span>
+        <div
+          className={`${getMatchColorClassname(job.matchScore)} px-4 py-2 rounded-full flex items-center gap-2`}
+        >
+          <span
+            className="material-symbols-outlined text-sm"
+            style={{ fontVariationSettings: "'FILL' 1" }}
+          >
+            bolt
+          </span>
+          <span className="font-label text-xs font-bold tracking-wider">
+            {job.matchScore}% MATCH
+          </span>
         </div>
       );
     }
@@ -63,8 +80,12 @@ export const JobCard = ({ job, isApplied, isSaved, onApply, onSave }: JobCardPro
         to="/profile"
         className="bg-surface-container border border-outline/20 px-4 py-2 rounded-full flex items-center gap-2 hover:bg-surface-container-high transition-colors"
       >
-        <span className="material-symbols-outlined text-sm text-primary">person_add</span>
-        <span className="font-label text-xs font-semibold tracking-wider text-on-surface-variant">Complete profile</span>
+        <span className="material-symbols-outlined text-sm text-primary">
+          person_add
+        </span>
+        <span className="font-label text-xs font-semibold tracking-wider text-on-surface-variant">
+          Complete profile
+        </span>
       </Link>
     );
   };
@@ -76,10 +97,16 @@ export const JobCard = ({ job, isApplied, isSaved, onApply, onSave }: JobCardPro
         <div className="flex-shrink-0 w-28">
           <div className="w-20 h-20 rounded-md bg-surface-container-low overflow-hidden border border-surface-container">
             {job.companyInfo?.logoUrl ? (
-              <img alt={`${job.company} logo`} className="w-full h-full object-cover" src={job.companyInfo.logoUrl} />
+              <img
+                alt={`${job.company} logo`}
+                className="w-full h-full object-cover"
+                src={job.companyInfo.logoUrl}
+              />
             ) : (
               <div className="flex h-full w-full items-center justify-center">
-                <span className="material-symbols-outlined text-outline text-3xl">domain</span>
+                <span className="material-symbols-outlined text-outline text-3xl">
+                  domain
+                </span>
               </div>
             )}
           </div>
@@ -99,10 +126,20 @@ export const JobCard = ({ job, isApplied, isSaved, onApply, onSave }: JobCardPro
             <div className="flex items-center gap-3">
               {renderMatchBadge()}
               <button
-                onClick={(e) => { e.preventDefault(); onSave(job.job_id); }}
-                className={`p-2 transition-colors ${isSaved ? 'text-primary' : 'text-outline hover:text-primary'}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onSave(job.job_id);
+                }}
+                className={`p-2 transition-colors ${isSaved ? "text-primary" : "text-outline hover:text-primary"}`}
               >
-                <span className="material-symbols-outlined" style={{ fontVariationSettings: isSaved ? "'FILL' 1" : "'FILL' 0" }}>favorite</span>
+                <span
+                  className="material-symbols-outlined"
+                  style={{
+                    fontVariationSettings: isSaved ? "'FILL' 1" : "'FILL' 0",
+                  }}
+                >
+                  favorite
+                </span>
               </button>
               <button className="p-2 text-outline hover:text-primary transition-colors">
                 <span className="material-symbols-outlined">bar_chart</span>
@@ -113,19 +150,29 @@ export const JobCard = ({ job, isApplied, isSaved, onApply, onSave }: JobCardPro
           {/* Metadata Chips */}
           <div className="flex flex-wrap gap-4 text-on-surface-variant font-body">
             <div className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-lg">location_on</span>
-              <span className="text-sm">{job.location} {job.remoteFriendly ? "(Remote)" : ""}</span>
+              <span className="material-symbols-outlined text-lg">
+                location_on
+              </span>
+              <span className="text-sm">
+                {job.location} {job.remoteFriendly ? "(Remote)" : ""}
+              </span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-lg">schedule</span>
+              <span className="material-symbols-outlined text-lg">
+                schedule
+              </span>
               <span className="text-sm">{job.type}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-lg">payments</span>
+              <span className="material-symbols-outlined text-lg">
+                payments
+              </span>
               <span className="text-sm">{job.salary}</span>
             </div>
             <div className="flex items-center gap-1.5 ml-auto">
-              <span className="text-xs font-medium text-outline">Posted {job.posted}</span>
+              <span className="text-xs font-medium text-outline">
+                Posted {job.posted}
+              </span>
             </div>
           </div>
 
@@ -137,17 +184,23 @@ export const JobCard = ({ job, isApplied, isSaved, onApply, onSave }: JobCardPro
               state={{ matchScore: job.matchScore, jobData: job }}
             >
               View Details
-              <span className="material-symbols-outlined text-sm">arrow_forward</span>
+              <span className="material-symbols-outlined text-sm">
+                arrow_forward
+              </span>
             </Link>
             <button
-              onClick={(e) => { e.preventDefault(); onApply(job); }}
+              onClick={(e) => {
+                e.preventDefault();
+                onApply(job);
+              }}
               disabled={isApplied}
-              className={`px-10 py-3 font-bold rounded-full transition-transform active:scale-95 ${isApplied
-                ? 'bg-secondary-fixed text-on-secondary-fixed shadow-none cursor-default'
-                : 'gradient-btn text-on-primary hover:scale-[1.02] shadow-md shadow-primary/20'
-                }`}
+              className={`px-10 py-3 font-bold rounded-full transition-transform active:scale-95 ${
+                isApplied
+                  ? "bg-secondary-fixed text-on-secondary-fixed shadow-none cursor-default"
+                  : "gradient-btn text-on-primary hover:scale-[1.02] shadow-md shadow-primary/20"
+              }`}
             >
-              {isApplied ? 'Applied ✓' : 'Apply Now'}
+              {isApplied ? "Applied ✓" : "Apply Now"}
             </button>
           </div>
         </div>

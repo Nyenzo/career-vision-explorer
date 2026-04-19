@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 
 interface Job {
@@ -62,7 +61,7 @@ export const useJobsFilter = (jobs: Job[]) => {
     entryLevel: false,
     midLevel: false,
     senior: false,
-    executive: false
+    executive: false,
   });
   const [salaryRange, setSalaryRange] = useState<string>("all");
   const [selectedSkills, setSelectedSkills] = useState<SelectedSkills>({
@@ -90,7 +89,9 @@ export const useJobsFilter = (jobs: Job[]) => {
 
   const isRemoteLocation = (location: string) => {
     const normalized = normalize(location);
-    return normalized.includes("remote") || normalized.includes("work from home");
+    return (
+      normalized.includes("remote") || normalized.includes("work from home")
+    );
   };
 
   const isHybridLocation = (location: string) => {
@@ -103,7 +104,8 @@ export const useJobsFilter = (jobs: Job[]) => {
     return !isRemoteLocation(normalized) && !isHybridLocation(normalized);
   };
 
-  const normalizeJobType = (type: string) => normalize(type).replace(/\s+/g, "");
+  const normalizeJobType = (type: string) =>
+    normalize(type).replace(/\s+/g, "");
 
   const resetFilters = () => {
     setFilter({
@@ -116,7 +118,7 @@ export const useJobsFilter = (jobs: Job[]) => {
       entryLevel: false,
       midLevel: false,
       senior: false,
-      executive: false
+      executive: false,
     });
     setSalaryRange("all");
     setSelectedSkills({
@@ -141,7 +143,7 @@ export const useJobsFilter = (jobs: Job[]) => {
   };
 
   const filteredJobs = useMemo(() => {
-    return jobs.filter(job => {
+    return jobs.filter((job) => {
       const normalizedTitle = normalize(job.title);
       const normalizedCompany = normalize(job.company);
       const normalizedLocation = normalize(job.location);
@@ -154,7 +156,7 @@ export const useJobsFilter = (jobs: Job[]) => {
         normalizedSearch &&
         !normalizedTitle.includes(normalizedSearch) &&
         !normalizedCompany.includes(normalizedSearch) &&
-        !job.skills.some(skill => normalize(skill).includes(normalizedSearch))
+        !job.skills.some((skill) => normalize(skill).includes(normalizedSearch))
       ) {
         return false;
       }
@@ -182,11 +184,16 @@ export const useJobsFilter = (jobs: Job[]) => {
         .map(([key]) => key);
       if (selectedJobTypes.length > 0) {
         const jobTypeMatch = selectedJobTypes.some((typeKey) => {
-          if (typeKey === "fullTime") return normalizedType.includes("fulltime");
-          if (typeKey === "partTime") return normalizedType.includes("parttime");
-          if (typeKey === "contract") return normalizedType.includes("contract");
-          if (typeKey === "internship") return normalizedType.includes("internship");
-          if (typeKey === "freelance") return normalizedType.includes("freelance");
+          if (typeKey === "fullTime")
+            return normalizedType.includes("fulltime");
+          if (typeKey === "partTime")
+            return normalizedType.includes("parttime");
+          if (typeKey === "contract")
+            return normalizedType.includes("contract");
+          if (typeKey === "internship")
+            return normalizedType.includes("internship");
+          if (typeKey === "freelance")
+            return normalizedType.includes("freelance");
           return false;
         });
 
@@ -252,9 +259,15 @@ export const useJobsFilter = (jobs: Job[]) => {
 
         if (salaryRange === "0-50" && minSalary > 50) {
           return false;
-        } else if (salaryRange === "50-100" && (minSalary > 100 || maxSalary < 50)) {
+        } else if (
+          salaryRange === "50-100" &&
+          (minSalary > 100 || maxSalary < 50)
+        ) {
           return false;
-        } else if (salaryRange === "100-150" && (minSalary > 150 || maxSalary < 100)) {
+        } else if (
+          salaryRange === "100-150" &&
+          (minSalary > 150 || maxSalary < 100)
+        ) {
           return false;
         } else if (salaryRange === "150+" && maxSalary < 150) {
           return false;
@@ -262,19 +275,34 @@ export const useJobsFilter = (jobs: Job[]) => {
       }
 
       // Skills filters
-      if (selectedSkills.javascript && !job.skills.some(skill => skill.toLowerCase() === "javascript")) {
+      if (
+        selectedSkills.javascript &&
+        !job.skills.some((skill) => skill.toLowerCase() === "javascript")
+      ) {
         return false;
       }
 
-      if (selectedSkills.react && !job.skills.some(skill => skill.toLowerCase() === "react")) {
+      if (
+        selectedSkills.react &&
+        !job.skills.some((skill) => skill.toLowerCase() === "react")
+      ) {
         return false;
       }
 
       return true;
     });
-  }, [jobs, searchTerm, filter, salaryRange, selectedSkills, locationFilters, jobTypeFilters]);
+  }, [
+    jobs,
+    searchTerm,
+    filter,
+    salaryRange,
+    selectedSkills,
+    locationFilters,
+    jobTypeFilters,
+  ]);
 
-  const activeFiltersCount = Object.values(filter).filter(Boolean).length +
+  const activeFiltersCount =
+    Object.values(filter).filter(Boolean).length +
     (salaryRange !== "all" ? 1 : 0) +
     Object.values(selectedSkills).filter(Boolean).length +
     Object.values(locationFilters).filter(Boolean).length +
@@ -297,6 +325,6 @@ export const useJobsFilter = (jobs: Job[]) => {
     setFiltersVisible,
     filteredJobs,
     activeFiltersCount,
-    resetFilters
+    resetFilters,
   };
 };

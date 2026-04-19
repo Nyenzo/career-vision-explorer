@@ -1,10 +1,23 @@
-
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MapPin, Building, Briefcase, Clock, Trash2, ExternalLink } from "lucide-react";
+import {
+  Heart,
+  MapPin,
+  Building,
+  Briefcase,
+  Clock,
+  Trash2,
+  ExternalLink,
+} from "lucide-react";
 import { useWishlist, WishlistJob } from "@/hooks/use-wishlist";
 import { Link } from "react-router-dom";
 
@@ -19,9 +32,7 @@ export const WishlistDialog = ({ children }: WishlistDialogProps) => {
   if (wishlistJobs.length === 0) {
     return (
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          {children}
-        </DialogTrigger>
+        <DialogTrigger asChild>{children}</DialogTrigger>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -31,8 +42,12 @@ export const WishlistDialog = ({ children }: WishlistDialogProps) => {
           </DialogHeader>
           <div className="text-center py-12">
             <Heart className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Your wishlist is empty</h3>
-            <p className="text-gray-500">Start saving jobs you're interested in!</p>
+            <h3 className="text-xl font-semibold mb-2">
+              Your wishlist is empty
+            </h3>
+            <p className="text-gray-500">
+              Start saving jobs you're interested in!
+            </p>
           </div>
         </DialogContent>
       </Dialog>
@@ -41,9 +56,7 @@ export const WishlistDialog = ({ children }: WishlistDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
+      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
@@ -91,13 +104,19 @@ const WishlistJobCard = ({ job, onRemove }: WishlistJobCardProps) => {
             <CardTitle className="text-lg flex items-center gap-2">
               {job.title}
               {job.matchScore != null && (
-              <Badge className={`text-xs ${job.matchScore >= 90 ? 'bg-green-500' :
-                  job.matchScore >= 80 ? 'bg-blue-500' :
-                    job.matchScore >= 70 ? 'bg-yellow-500' :
-                      'bg-orange-500'
-                } text-white`}>
-                {job.matchScore}% Match
-              </Badge>
+                <Badge
+                  className={`text-xs ${
+                    job.matchScore >= 90
+                      ? "bg-green-500"
+                      : job.matchScore >= 80
+                        ? "bg-blue-500"
+                        : job.matchScore >= 70
+                          ? "bg-yellow-500"
+                          : "bg-orange-500"
+                  } text-white`}
+                >
+                  {job.matchScore}% Match
+                </Badge>
               )}
             </CardTitle>
             <p className="text-sm text-gray-600">{job.company}</p>
@@ -141,10 +160,12 @@ const WishlistJobCard = ({ job, onRemove }: WishlistJobCardProps) => {
           </div>
         </div>
 
-        <p className="text-sm text-gray-700 mb-3 line-clamp-2">{job.description}</p>
+        <p className="text-sm text-gray-700 mb-3 line-clamp-2">
+          {job.description}
+        </p>
 
         <div className="flex flex-wrap gap-1 mb-2">
-          {job.skills.slice(0, 4).map(skill => (
+          {job.skills.slice(0, 4).map((skill) => (
             <Badge key={skill} variant="secondary" className="text-xs">
               {skill}
             </Badge>

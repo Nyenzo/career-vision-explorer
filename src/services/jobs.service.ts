@@ -361,6 +361,12 @@ class JobsService {
     });
   }
 
+  async getRecommendedJobs(params: { page?: number; limit?: number } = {}) {
+    const { page = 1, limit = 20 } = params;
+    const queryParams = new URLSearchParams({ page: String(page), limit: String(limit) });
+    return await apiClient.get<PaginatedResponse<Job>>(`/jobs/recommendations?${queryParams.toString()}`);
+  }
+
   async getJobById(jobId: string): Promise<Job> {
     return await apiClient.get<Job>(`/jobs/${jobId}`);
   }

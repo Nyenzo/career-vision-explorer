@@ -46,7 +46,9 @@ export const JobApplicationDialog = ({
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cvUploaded, setCvUploaded] = useState(false);
-  const [existingResumeUrl, setExistingResumeUrl] = useState<string | null>(null);
+  const [existingResumeUrl, setExistingResumeUrl] = useState<string | null>(
+    null,
+  );
   const [resumeError, setResumeError] = useState(false);
 
   const { isJobSeeker, isAuthenticated, user } = useAuth();
@@ -56,7 +58,7 @@ export const JobApplicationDialog = ({
 
   // Always call hooks unconditionally (Rules of Hooks)
   const { refetch: refetchFn } = useJobApplications();
-  const refetchApplications = canApplyForJobs ? refetchFn : () => { };
+  const refetchApplications = canApplyForJobs ? refetchFn : () => {};
 
   useEffect(() => {
     async function loadCVStatus() {
@@ -120,7 +122,7 @@ export const JobApplicationDialog = ({
     } catch (error: any) {
       console.error("Application submission error:", error);
       toast.error(
-        error.message || "Failed to submit application. Please try again."
+        error.message || "Failed to submit application. Please try again.",
       );
     } finally {
       setIsSubmitting(false);
@@ -137,7 +139,8 @@ export const JobApplicationDialog = ({
             Apply for Position
           </DialogTitle>
           <DialogDescription className="text-base text-on-surface-variant max-w-[90%]">
-            Transform your career architecture. Submit your application and take the next step.
+            Transform your career architecture. Submit your application and take
+            the next step.
           </DialogDescription>
         </DialogHeader>
 
@@ -166,4 +169,3 @@ export const JobApplicationDialog = ({
     </Dialog>
   );
 };
-
