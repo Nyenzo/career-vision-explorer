@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
+import { NotificationDropdown } from "@/components/layout/NotificationDropdown";
 
 import {
   DropdownMenu,
@@ -132,6 +133,8 @@ const Navbar = () => {
                   Dashboard
                 </Link>
 
+                <NotificationDropdown />
+
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm">
@@ -238,6 +241,14 @@ const Navbar = () => {
                   className="block px-3 py-2 rounded-md text-sm font-medium hover:bg-accent"
                 >
                   Account Settings
+                </Link>
+
+                <Link
+                  to="/notifications"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block px-3 py-2 rounded-md text-sm font-medium hover:bg-accent"
+                >
+                  Notifications
                 </Link>
 
                 <button

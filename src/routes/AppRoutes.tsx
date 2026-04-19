@@ -21,7 +21,8 @@ const Signup = lazy(() => import("@/pages/Signup"));
 const ForgotPassword = lazy(() => import("@/pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
 const LinkedInCallback = lazy(() => import("@/pages/auth/LinkedInCallback"));
-// const Notifications = lazy(() => import("@/pages/Notifications"));
+const JobSeekerNotifications = lazy(() => import("@/pages/jobseeker/Notifications"));
+const EmployerNotifications = lazy(() => import("@/pages/employer/Notifications"));
 const Jobs = lazy(() => import("@/pages/Jobs"));
 const JobDetails = lazy(() => import("@/pages/JobDetails"));
 const EmployerJobDetails = lazy(() => import("@/pages/employer/EmployerJobDetails"));
@@ -292,7 +293,21 @@ export const AppRoutes = () => {
         </Route>
 
         {/* General Protected Routes */}
-        {/* /notifications route disabled — Notifications page not yet imported */}
+        <Route
+          path="/notifications"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout
+                title="Notifications"
+                role={user?.account_type === "employer" ? "employer" : "job_seeker"}
+              >
+                <Suspense fallback={<PageLoader />}>
+                  {user?.account_type === "employer" ? <EmployerNotifications /> : <JobSeekerNotifications />}
+                </Suspense>
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/profile"
           element={

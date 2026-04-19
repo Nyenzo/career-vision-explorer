@@ -1,14 +1,18 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "@/services/auth.service";
 import { useAuth } from "@/hooks/use-auth";
+import { useNotificationPreferences } from "@/hooks/use-notification-preferences";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 import Layout from "@/components/layout/Layout";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, Bell, Loader2, Mail, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
@@ -16,6 +20,8 @@ const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 export default function AccountManagement() {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
+    const { preferences, isLoading: prefsLoading, isSaving: prefsSaving, updatePreferences } =
+        useNotificationPreferences();
 
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -84,106 +90,228 @@ export default function AccountManagement() {
         }
     };
 
+    const handlePrefToggle = async (key: keyof typeof preferences, value: boolean) => {
+        if (!preferences) return;
+        try {
+            await updatePreferences({ [key]: value });
+        } catch {
+            toast.error("Failed to save preference.");
+        }
+    };
+
     return (
         <Layout>
-            <div className="min-h-screen bg-background py-8 px-4">
-                <div className="max-w-3xl mx-auto space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Account Management</CardTitle>
-                            <CardDescription>
-                                Manage your password and account lifecycle settings for {user?.email || "your account"}.
-                            </CardDescription>
-                        </CardHeader>
-                    </Card>
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50/20 py-10 px-4">
+                <div className="max-w-6xl mx-auto">
+                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                        {/* ── Left Column ── */}
+                        <div className="lg:col-span-2 space-y-6">
+                            <div>
+                                <h1 className="text-3xl font-bold text-gray-900">Account Management</h1>
+                                <p className="mt-2 text-sm text-gray-500">
+                                    Configure your security preferences, manage notifications, and control your digital footprint at Atelier.
+                                </p>
+                            </div>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Change Password</CardTitle>
-                            <CardDescription>Update your password to keep your account secure.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="current-password">Current Password</Label>
-                                <Input
-                                    id="current-password"
-                                    type="password"
-                                    value={currentPassword}
-                                    onChange={(e) => setCurrentPassword(e.target.value)}
-                                    placeholder="Enter current password"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="new-password">New Password</Label>
-                                <Input
-                                    id="new-password"
-                                    type="password"
-                                    value={newPassword}
-                                    onChange={(e) => setNewPassword(e.target.value)}
-                                    placeholder="Enter new password"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="confirm-password">Confirm New Password</Label>
-                                <Input
-                                    id="confirm-password"
-                                    type="password"
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    placeholder="Confirm new password"
-                                />
-                            </div>
-                            <Button onClick={handleChangePassword} disabled={isUpdatingPassword}>
-                                {isUpdatingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Update Password
-                            </Button>
-                        </CardContent>
-                    </Card>
+                            {/* Primary Email card */}
+                            <Card className="border-gray-200 shadow-sm">
+                                <CardContent className="pt-5 pb-5">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100">
+                                            <Mail className="h-5 w-5 text-indigo-600" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                                Primary Email
+                                            </p>
+                                            <p className="text-sm font-semibold text-gray-900 truncate">
+                                                {user?.email || "—"}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
 
-                    <Card className="border-red-200">
-                        <CardHeader>
-                            <CardTitle className="text-red-600">Delete Account</CardTitle>
-                            <CardDescription>
-                                Permanently delete your account and associated data.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <Alert variant="destructive">
-                                <AlertTriangle className="h-4 w-4" />
-                                <AlertTitle>Danger Zone</AlertTitle>
-                                <AlertDescription>
-                                    This action cannot be undone. You will lose access to your profile and history.
-                                </AlertDescription>
-                            </Alert>
-                            <div className="space-y-2">
-                                <Label htmlFor="delete-password">Current Password</Label>
-                                <Input
-                                    id="delete-password"
-                                    type="password"
-                                    value={deletePassword}
-                                    onChange={(e) => setDeletePassword(e.target.value)}
-                                    placeholder="Enter current password"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="delete-confirmation">Type DELETE to confirm</Label>
-                                <Input
-                                    id="delete-confirmation"
-                                    value={deleteConfirmation}
-                                    onChange={(e) => setDeleteConfirmation(e.target.value)}
-                                    placeholder="DELETE"
-                                />
-                            </div>
-                            <Button
-                                variant="destructive"
-                                onClick={handleDeleteAccount}
-                                disabled={isDeletingAccount}
-                            >
-                                {isDeletingAccount && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Delete Account Permanently
-                            </Button>
-                        </CardContent>
-                    </Card>
+                        {/* ── Right Column ── */}
+                        <div className="lg:col-span-3 space-y-6">
+                            {/* Notification Preferences */}
+                            <Card className="shadow-sm border-gray-200">
+                                <CardHeader className="pb-3">
+                                    <div className="flex items-center gap-2">
+                                        <Bell className="h-4 w-4 text-indigo-600" />
+                                        <CardTitle className="text-base">Notification Preferences</CardTitle>
+                                    </div>
+                                    <CardDescription>Choose what you'd like to be notified about.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-5">
+                                    {prefsLoading ? (
+                                        <div className="flex items-center gap-2 text-sm text-gray-400">
+                                            <Loader2 className="h-4 w-4 animate-spin" /> Loading preferences…
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {/* Email notifications section */}
+                                            <div>
+                                                <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">
+                                                    Email Notifications
+                                                </p>
+                                                <div className="space-y-4">
+                                                    {[
+                                                        {
+                                                            key: "job_alerts" as const,
+                                                            label: "Job Matches",
+                                                            description: "Get notified when new roles match your profile",
+                                                        },
+                                                        {
+                                                            key: "application_updates" as const,
+                                                            label: "Application Updates",
+                                                            description: "Real-time status changes for your active applications",
+                                                        },
+                                                        {
+                                                            key: "system_notifications" as const,
+                                                            label: "System Messages",
+                                                            description: "Important updates regarding platform features",
+                                                        },
+                                                    ].map(({ key, label, description }) => (
+                                                        <div key={key} className="flex items-center justify-between gap-4">
+                                                            <div>
+                                                                <Label htmlFor={key} className="text-sm font-medium cursor-pointer">
+                                                                    {label}
+                                                                </Label>
+                                                                <p className="text-xs text-gray-400 mt-0.5">{description}</p>
+                                                            </div>
+                                                            <Checkbox
+                                                                id={key}
+                                                                checked={preferences?.[key] ?? true}
+                                                                disabled={prefsSaving}
+                                                                onCheckedChange={(checked) =>
+                                                                    handlePrefToggle(key, checked === true)
+                                                                }
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <Separator />
+
+                                            {/* Push notifications section */}
+                                            <div>
+                                                <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">
+                                                    Push Notifications
+                                                </p>
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <p className="text-sm font-medium text-gray-900">
+                                                            Enable push notifications
+                                                        </p>
+                                                        <p className="text-xs text-gray-400 mt-0.5">
+                                                            Enable instant mobile and browser alerts
+                                                        </p>
+                                                    </div>
+                                                    <Switch
+                                                        checked={preferences?.email_notifications ?? true}
+                                                        disabled={prefsSaving}
+                                                        onCheckedChange={(checked) =>
+                                                            handlePrefToggle("email_notifications", checked)
+                                                        }
+                                                    />
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            {/* Security */}
+                            <Card className="shadow-sm border-gray-200">
+                                <CardHeader className="pb-3">
+                                    <div className="flex items-center gap-2">
+                                        <Shield className="h-4 w-4 text-indigo-600" />
+                                        <CardTitle className="text-base">Security</CardTitle>
+                                    </div>
+                                    <CardDescription>Update your password to keep your account secure.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="current-password">Current Password</Label>
+                                        <Input
+                                            id="current-password"
+                                            type="password"
+                                            value={currentPassword}
+                                            onChange={(e) => setCurrentPassword(e.target.value)}
+                                            placeholder="Enter current password"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="new-password">New Password</Label>
+                                            <Input
+                                                id="new-password"
+                                                type="password"
+                                                value={newPassword}
+                                                onChange={(e) => setNewPassword(e.target.value)}
+                                                placeholder="New password"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="confirm-password">Confirm New Password</Label>
+                                            <Input
+                                                id="confirm-password"
+                                                type="password"
+                                                value={confirmPassword}
+                                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                                placeholder="Confirm new password"
+                                            />
+                                        </div>
+                                    </div>
+                                    <Button onClick={handleChangePassword} disabled={isUpdatingPassword}>
+                                        {isUpdatingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Update Password
+                                    </Button>
+                                </CardContent>
+                            </Card>
+
+                            {/* Danger Zone */}
+                            <Card className="shadow-sm border border-dashed border-red-300">
+                                <CardHeader className="pb-3">
+                                    <CardTitle className="text-base text-red-600 flex items-center gap-2">
+                                        <AlertTriangle className="h-4 w-4" /> Danger Zone
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <p className="text-sm text-gray-600">
+                                        Permanently deleting your account will remove all your data, including job matches, chat
+                                        history, and portfolio links. This action cannot be undone.
+                                    </p>
+                                    <div className="space-y-3">
+                                        <div>
+                                            <p className="text-xs font-semibold uppercase tracking-widest text-red-500 mb-1">
+                                                Confirmation Required
+                                            </p>
+                                            <p className="text-xs text-gray-500">Type <strong>DELETE</strong> in the field below to confirm.</p>
+                                        </div>
+                                        <Input
+                                            id="delete-confirmation"
+                                            value={deleteConfirmation}
+                                            onChange={(e) => setDeleteConfirmation(e.target.value)}
+                                            placeholder="DELETE"
+                                            className="uppercase placeholder:normal-case"
+                                        />
+                                    </div>
+                                    <Button
+                                        variant="destructive"
+                                        onClick={handleDeleteAccount}
+                                        disabled={isDeletingAccount}
+                                    >
+                                        {isDeletingAccount && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Delete Account Permanently
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </div>
                 </div>
             </div>
         </Layout>

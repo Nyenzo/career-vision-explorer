@@ -146,6 +146,7 @@ export interface Application {
   // Additional fields from backend joins
   job_title?: string;
   company_name?: string;
+  company_logo_url?: string;
   applicant_name?: string;
   applicant_email?: string;
   resume_link?: string;
