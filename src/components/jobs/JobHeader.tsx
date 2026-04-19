@@ -1,5 +1,7 @@
 import React from "react";
 import { formatDistanceToNow } from "date-fns";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/use-auth";
 
 interface JobHeaderProps {
     job: {
@@ -12,8 +14,8 @@ interface JobHeaderProps {
         job_type?: string;
         posted?: string;
         created_at?: string;
-        matchScore: number;
-        match_score?: number;
+        matchScore: number | null;
+        match_score?: number | null;
         similarity_score?: number;
         company_logo_url?: string;
         companyInfo?: {
@@ -25,7 +27,13 @@ interface JobHeaderProps {
 }
 
 export const JobHeader = ({ job, showMatchScore = true }: JobHeaderProps) => {
-    const score = Math.round((job.matchScore ?? job.similarity_score ?? 0) * ((job.matchScore <= 1 || job.similarity_score <= 1) ? 100 : 1));
+    const { isJobSeeker, isAuthenticated } = useAuth();
+    const isAuthenticatedJobSeeker = isAuthenticated && isJobSeeker();
+
+    const rawScore = job.matchScore ?? job.match_score ?? null;
+    const score = rawScore != null
+        ? Math.round(rawScore * (rawScore <= 1 ? 100 : 1))
+        : null;
     const roleTitle = job.title || job.job_title || "Untitled Role";
     const companyName = job.company || job.company_name || job.companyInfo?.name || "Unknown Company";
     const logoUrl = job.companyInfo?.logoUrl || job.company_logo_url;
@@ -60,13 +68,24 @@ export const JobHeader = ({ job, showMatchScore = true }: JobHeaderProps) => {
 
     return (
         <section className="bg-surface-container-lowest p-10 rounded-lg shadow-sm relative overflow-hidden">
-            {/* Match badge is only shown for job seeker-facing views */}
-            {showMatchScore && (
+            {/* Match badge is only shown for authenticated job seekers */}
+            {showMatchScore && isAuthenticatedJobSeeker && score != null && (
                 <div className="absolute top-0 right-0 p-8">
                     <div className={`${getMatchColorClassname(score)} px-6 py-3 rounded-full flex items-center gap-2 shadow-sm ring-4`}>
                         <span className="font-headline font-bold text-xl">{score}%</span>
                         <span className="text-xs font-label font-semibold tracking-wider uppercase">Match</span>
                     </div>
+                </div>
+            )}
+            {showMatchScore && isAuthenticatedJobSeeker && score == null && (
+                <div className="absolute top-0 right-0 p-8">
+                    <Link
+                        to="/profile"
+                        className="bg-surface-container border border-outline/20 px-5 py-3 rounded-full flex items-center gap-2 hover:bg-surface-container-high transition-colors shadow-sm"
+                    >
+                        <span className="material-symbols-outlined text-sm text-primary">person_add</span>
+                        <span className="font-label text-xs font-semibold tracking-wider text-on-surface-variant">Complete profile for match</span>
+                    </Link>
                 </div>
             )}
 

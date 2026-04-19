@@ -9,7 +9,7 @@ interface Job {
   type: string;
   salary: string;
   posted: string;
-  matchScore: number;
+  matchScore: number | null;
   skills: string[];
   description: string;
   experienceLevel?: string;
@@ -241,7 +241,7 @@ export const useJobsFilter = (jobs: Job[]) => {
       }
 
       // High match filter
-      if (filter.highMatch && job.matchScore < 80) {
+      if (filter.highMatch && (job.matchScore == null || job.matchScore < 80)) {
         return false;
       }
 

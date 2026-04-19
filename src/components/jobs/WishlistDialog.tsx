@@ -90,6 +90,7 @@ const WishlistJobCard = ({ job, onRemove }: WishlistJobCardProps) => {
           <div>
             <CardTitle className="text-lg flex items-center gap-2">
               {job.title}
+              {job.matchScore != null && (
               <Badge className={`text-xs ${job.matchScore >= 90 ? 'bg-green-500' :
                   job.matchScore >= 80 ? 'bg-blue-500' :
                     job.matchScore >= 70 ? 'bg-yellow-500' :
@@ -97,6 +98,7 @@ const WishlistJobCard = ({ job, onRemove }: WishlistJobCardProps) => {
                 } text-white`}>
                 {job.matchScore}% Match
               </Badge>
+              )}
             </CardTitle>
             <p className="text-sm text-gray-600">{job.company}</p>
           </div>

@@ -19,7 +19,7 @@ interface Job {
   type: string;
   salary: string;
   posted: string;
-  matchScore: number;
+  matchScore: number | null;
   skills: string[];
   description: string;
   experienceLevel?: string;

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/use-auth";
 
 interface Job {
   job_id: string;
@@ -9,7 +10,7 @@ interface Job {
   type: string;
   salary: string;
   posted: string;
-  matchScore: number;
+  matchScore: number | null;
   skills: string[];
   description: string;
   experienceLevel?: string;
@@ -33,10 +34,39 @@ interface JobCardProps {
 }
 
 export const JobCard = ({ job, isApplied, isSaved, onApply, onSave }: JobCardProps) => {
+  const { isJobSeeker, isAuthenticated } = useAuth();
+  const isAuthenticatedJobSeeker = isAuthenticated && isJobSeeker();
+
   const getMatchColorClassname = (score: number) => {
     if (score >= 90) return 'bg-tertiary-container text-on-tertiary-container match-glow';
     if (score >= 70) return 'bg-surface-container-highest text-on-surface-variant';
     return 'bg-surface-container-highest text-on-surface-variant';
+  };
+
+  const renderMatchBadge = () => {
+    // Unauthenticated or non-jobseeker: hide entirely
+    if (!isAuthenticatedJobSeeker) return null;
+
+    // Authenticated jobseeker with a real score: show percentage badge
+    if (job.matchScore != null) {
+      return (
+        <div className={`${getMatchColorClassname(job.matchScore)} px-4 py-2 rounded-full flex items-center gap-2`}>
+          <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
+          <span className="font-label text-xs font-bold tracking-wider">{job.matchScore}% MATCH</span>
+        </div>
+      );
+    }
+
+    // Authenticated jobseeker but null score: prompt to complete profile
+    return (
+      <Link
+        to="/profile"
+        className="bg-surface-container border border-outline/20 px-4 py-2 rounded-full flex items-center gap-2 hover:bg-surface-container-high transition-colors"
+      >
+        <span className="material-symbols-outlined text-sm text-primary">person_add</span>
+        <span className="font-label text-xs font-semibold tracking-wider text-on-surface-variant">Complete profile</span>
+      </Link>
+    );
   };
 
   return (
@@ -67,10 +97,7 @@ export const JobCard = ({ job, isApplied, isSaved, onApply, onSave }: JobCardPro
               </h2>
             </div>
             <div className="flex items-center gap-3">
-              <div className={`${getMatchColorClassname(job.matchScore)} px-4 py-2 rounded-full flex items-center gap-2`}>
-                <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
-                <span className="font-label text-xs font-bold tracking-wider">{job.matchScore || 0}% MATCH</span>
-              </div>
+              {renderMatchBadge()}
               <button
                 onClick={(e) => { e.preventDefault(); onSave(job.job_id); }}
                 className={`p-2 transition-colors ${isSaved ? 'text-primary' : 'text-outline hover:text-primary'}`}

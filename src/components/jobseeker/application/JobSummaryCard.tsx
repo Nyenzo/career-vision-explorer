@@ -29,7 +29,7 @@ export const JobSummaryCard = ({ job }: JobSummaryCardProps) => {
         </div>
       </div>
       
-      {job.matchScore && (
+      {job.matchScore != null && (
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-600">Match Score:</span>
           <div className={`px-3 py-1 rounded-full text-sm font-bold ${

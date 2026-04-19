@@ -16,7 +16,7 @@ interface Job {
   type: string;
   salary: string;
   posted: string;
-  matchScore: number;
+  matchScore: number | null;
   skills: string[];
   description: string;
   experienceLevel?: string;
@@ -69,7 +69,7 @@ const normalizeApiJobToUiJob = (apiJob: any): Job => {
     posted: apiJob.created_at
       ? new Date(apiJob.created_at).toLocaleDateString()
       : "Recently",
-    matchScore: Number(apiJob.match_score || 0),
+    matchScore: apiJob.match_score != null ? Number(apiJob.match_score) : null,
     skills,
     description: String(
       apiJob.job_description ||

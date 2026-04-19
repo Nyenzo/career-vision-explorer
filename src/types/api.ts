@@ -48,6 +48,8 @@ export interface Job {
   skills_required?: string[];
   description?: string;
   remote_friendly?: boolean;
+  // Vector match score (cosine similarity, 0-100 scale, null if no embedding)
+  match_score?: number | null;
   // Profile information (from view)
   posted_by_name?: string;
   posted_by_email?: string;

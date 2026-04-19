@@ -5,7 +5,7 @@ import { Job as APIJob } from './api';
 // Extended Job type for UI components with additional fields
 export interface JobListing extends APIJob {
   // UI-specific fields
-  matchScore: number;
+  matchScore: number | null;
   type: string; // Maps to job_type from API
   salary: string; // Maps to salary_range from API
   posted: string; // Formatted date from created_at

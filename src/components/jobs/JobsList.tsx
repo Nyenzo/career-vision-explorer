@@ -10,7 +10,7 @@ interface Job {
   type: string;
   salary: string;
   posted: string;
-  matchScore: number;
+  matchScore: number | null;
   skills: string[];
   description: string;
   experienceLevel?: string;
@@ -41,7 +41,7 @@ export const JobsList = ({ jobs, isJobApplied, isJobSaved, onApply, onSave }: Jo
     );
   }
 
-  const highMatchJobs = jobs.filter(job => job.matchScore >= 90);
+  const highMatchJobs = jobs.filter(job => job.matchScore != null && job.matchScore >= 90);
   const recentJobs = jobs.filter(job => job.posted.includes('day') || job.posted.includes('Just now') || job.posted.includes('hours'));
 
   return (
