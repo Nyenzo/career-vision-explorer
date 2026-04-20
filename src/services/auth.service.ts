@@ -1,4 +1,5 @@
 import { apiClient } from "../lib/api-client";
+import { authStorage } from "../lib/session-auth-storage";
 import {
   User,
   UserLogin,
@@ -18,7 +19,7 @@ class AuthService {
     if (!tokenResponse.access_token) throw new Error("Missing access_token");
 
     apiClient.setToken(tokenResponse.access_token);
-    localStorage.setItem("refresh_token", tokenResponse.refresh_token);
+    authStorage.setRefreshToken(tokenResponse.refresh_token);
 
     const user: User = {
       user_id: tokenResponse.user_id,
@@ -29,7 +30,7 @@ class AuthService {
       resume_link: tokenResponse.user?.resume_link,
     };
 
-    localStorage.setItem("user", JSON.stringify(user));
+    authStorage.setUserRaw(JSON.stringify(user));
     return user;
   }
 
@@ -66,7 +67,7 @@ class AuthService {
   async logout(): Promise<void> {
     // Invalidate tokens on the backend before clearing local state
     try {
-      const refreshToken = localStorage.getItem("refresh_token");
+      const refreshToken = authStorage.getRefreshToken();
       await apiClient.post("/auth/logout", {
         refresh_token: refreshToken || undefined,
       });
@@ -74,13 +75,12 @@ class AuthService {
       // Best-effort — clear local state even if backend call fails
     }
     apiClient.setToken(null);
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("user");
+    authStorage.clearAuthSession();
     localStorage.removeItem("visiondrillImpersonation");
   }
 
   async refreshToken(): Promise<TokenResponse> {
-    const refreshToken = localStorage.getItem("refresh_token");
+    const refreshToken = authStorage.getRefreshToken();
     if (!refreshToken) throw new Error("No refresh token available");
 
     const request: RefreshTokenRequest = { refresh_token: refreshToken };
@@ -114,7 +114,7 @@ class AuthService {
   }
 
   getStoredUser(): User | null {
-    const userStr = localStorage.getItem("user");
+    const userStr = authStorage.getUserRaw();
     if (userStr && userStr !== "undefined") {
       try {
         return JSON.parse(userStr);
@@ -126,12 +126,12 @@ class AuthService {
   }
 
   setStoredUser(user: User): void {
-    localStorage.setItem("user", JSON.stringify(user));
+    authStorage.setUserRaw(JSON.stringify(user));
   }
 
   setStoredTokens(accessToken: string, refreshToken: string): void {
     apiClient.setToken(accessToken);
-    localStorage.setItem("refresh_token", refreshToken);
+    authStorage.setRefreshToken(refreshToken);
   }
 
   hasRole(role: "job_seeker" | "employer"): boolean {
@@ -262,7 +262,7 @@ class AuthService {
 
     const existingUser = this.getStoredUser();
     const existingAccessToken = apiClient.getToken();
-    const existingRefreshToken = localStorage.getItem("refresh_token");
+    const existingRefreshToken = authStorage.getRefreshToken();
 
     if (existingUser && existingAccessToken && existingRefreshToken) {
       return {

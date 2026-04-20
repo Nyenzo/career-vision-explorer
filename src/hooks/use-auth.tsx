@@ -148,27 +148,9 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         );
         return;
       }
-      console.error("Error loading profile:", err);
-      const message = getErrorMessage(err, "");
-      if (message.includes("401") || message.includes("403")) {
-        try {
-          await authService.refreshToken();
-          const userProfile = await profileService.getProfile();
-          setProfile(userProfile);
-          if (userProfile.name) {
-            setUser((prev) => {
-              if (!prev || prev.name) return prev;
-              const updated = { ...prev, name: userProfile.name };
-              authService.setStoredUser(updated);
-              return updated;
-            });
-          }
-        } catch {
-          setError("Session expired. Please log in again.");
-        }
-      }
-      // For all other errors (network, timeout, 5xx) we silently continue —
-      // the user is still authenticated, profile is just unavailable.
+      // For all other errors (network, 401 handled by api-client interceptor, 5xx)
+      // we silently continue — the user is still authenticated, profile just unavailable.
+      console.warn("Profile load failed:", err);
     }
   }, [user?.account_type]);
 
@@ -226,6 +208,21 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
       profileAbortRef.current?.abort();
     };
   }, []);
+
+  // Listen for session expiry events fired by the api-client 401 interceptor
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      authService.logout();
+      setUser(null);
+      setProfile(null);
+      setOriginalUser(null);
+      setIsImpersonating(false);
+      toast.error("Your session has expired. Please sign in again.");
+      navigate("/login", { replace: true });
+    };
+    window.addEventListener("vd:session-expired", handleSessionExpired);
+    return () => window.removeEventListener("vd:session-expired", handleSessionExpired);
+  }, [navigate]);
 
   useEffect(() => {
     initializeAuth();
@@ -294,6 +291,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     setOriginalUser(null);
     setIsImpersonating(false);
     toast.success("Logged out successfully");
+    navigate("/login", { replace: true });
   };
 
   const refreshProfile = async () => {

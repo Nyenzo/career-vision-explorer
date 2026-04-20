@@ -38,6 +38,7 @@ const SavedJobsPage = () => {
                     jobId: application.job_id,
                     title: application.job_title || application.job?.title || "Untitled Role",
                     company: application.company_name || application.job?.company || "Unknown Company",
+                    logoUrl: application.company_logo_url || undefined,
                     appliedAt: application.applied_at || application.created_at,
                     status: application.status,
                     matchScore: application.match_score,
@@ -115,6 +116,7 @@ const SavedJobsPage = () => {
                                     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                                         <div className="flex min-w-0 items-start gap-4">
                                             <Avatar className="h-14 w-14 border border-slate-200">
+                                                <AvatarImage src={job.logoUrl} alt={job.company} />
                                                 <AvatarFallback className="bg-slate-900 text-white">
                                                     {job.company.slice(0, 2).toUpperCase()}
                                                 </AvatarFallback>
@@ -167,6 +169,7 @@ const SavedJobsPage = () => {
                                     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                                         <div className="flex min-w-0 items-start gap-4">
                                             <Avatar className="h-14 w-14 border border-slate-200">
+                                                <AvatarImage src={application.logoUrl} alt={application.company} />
                                                 <AvatarFallback className="bg-slate-900 text-white">
                                                     {application.company.slice(0, 2).toUpperCase()}
                                                 </AvatarFallback>

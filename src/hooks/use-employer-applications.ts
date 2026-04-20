@@ -28,7 +28,9 @@ function toEmployerApplication(app: Application): EmployerApplication {
     : 'Unknown date';
   return {
     ...app,
-    id: app.application_id,
+    // Backend returns `id` and `jobseeker_id`; map to the frontend shape.
+    id: app.application_id ?? (app as unknown as Record<string, string>).id,
+    user_id: app.user_id ?? (app as unknown as Record<string, string>).jobseeker_id,
     appliedDate,
     applicantInfo: {
       name: app.applicant_name || 'Unknown Applicant',

@@ -75,7 +75,7 @@ export const JobsContainer = ({ jobs }: JobsContainerProps) => {
     if (isJobInWishlist(job.job_id)) {
       removeFromWishlist(job.job_id);
     } else {
-      addToWishlist(job);
+      addToWishlist({ ...job, logoUrl: job.companyInfo?.logoUrl });
     }
   };
 

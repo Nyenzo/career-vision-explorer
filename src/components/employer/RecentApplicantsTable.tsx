@@ -11,16 +11,13 @@ import {
 import {
   Search,
   Eye,
-  ExternalLink,
   Users,
   CheckCircle,
   XCircle,
-  Clock,
 } from "lucide-react";
 import { useEmployerApplications } from "@/hooks/use-employer-applications";
 import { ApplicantProfileDialog } from "./ApplicantProfileDialog";
 import { useNavigate } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
 import { RecentApplicationsTableSkeleton } from "@/components/ui/skeleton-loaders";
 
 export const RecentApplicantsTable = () => {
@@ -30,13 +27,9 @@ export const RecentApplicantsTable = () => {
     error,
     statusFilter,
     setStatusFilter,
-    jobFilter,
-    setJobFilter,
     searchQuery,
     setSearchQuery,
     reviewApplication,
-    stats,
-    uniqueJobs,
   } = useEmployerApplications();
   const navigate = useNavigate();
 
@@ -50,140 +43,66 @@ export const RecentApplicantsTable = () => {
     return "bg-red-100 text-red-700 border-red-200";
   };
 
-  const getStatusBadgeColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "pending":
-        return "bg-yellow-100 text-yellow-700 border-yellow-200";
-      case "reviewed":
-        return "bg-blue-100 text-blue-700 border-blue-200";
-      case "accepted":
-        return "bg-green-100 text-green-700 border-green-200";
-      case "rejected":
-        return "bg-gray-100 text-gray-700 border-gray-200";
-      default:
-        return "bg-gray-100 text-gray-700 border-gray-200";
-    }
-  };
-
-
   const handleViewAllApplicants = () => {
     navigate("/employer/applicants");
   };
 
   return (
-    <div className="space-y-4">
-      {/* Header: Search + Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+    <div>
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">
-            Recent Applications
-          </h3>
-          <p className="text-sm text-gray-500 mt-1">
-            View and manage the latest candidate applications
-          </p>
+          <h3 className="text-base font-semibold text-gray-900">Recent Applications</h3>
         </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto items-start sm:items-center">
+        <div className="flex items-center gap-3">
           {/* Search */}
-          <div className="relative flex-1 sm:w-64 w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <div className="relative w-48 hidden sm:block">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
             <Input
               type="search"
               placeholder="Search applicants..."
-              className="pl-10 bg-gray-50 border-gray-200 focus:bg-white transition-colors w-full"
+              className="pl-9 h-8 text-sm bg-gray-50 border-gray-200 focus:bg-white"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-
           {/* Status Filter */}
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[140px] bg-gray-50 border-gray-200">
-              <SelectValue placeholder="Filter status" />
+            <SelectTrigger className="w-[120px] h-8 text-sm bg-gray-50 border-gray-200">
+              <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="pending">
-                <div className="flex items-center">
-                  <Clock className="h-3 w-3 mr-1 text-yellow-600" />
-                  Pending ({stats.pending})
-                </div>
-              </SelectItem>
-              <SelectItem value="reviewed">
-                <div className="flex items-center">
-                  <Eye className="h-3 w-3 mr-1 text-blue-600" />
-                  Reviewed ({stats.reviewed})
-                </div>
-              </SelectItem>
-              <SelectItem value="accepted">
-                <div className="flex items-center">
-                  <CheckCircle className="h-3 w-3 mr-1 text-green-600" />
-                  Accepted ({stats.accepted})
-                </div>
-              </SelectItem>
-              <SelectItem value="rejected">
-                <div className="flex items-center">
-                  <XCircle className="h-3 w-3 mr-1 text-gray-600" />
-                  Rejected ({stats.rejected})
-                </div>
-              </SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="reviewed">Reviewed</SelectItem>
+              <SelectItem value="accepted">Accepted</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
             </SelectContent>
           </Select>
-
-          {/* Job Filter */}
-          {uniqueJobs.length > 0 && (
-            <Select value={jobFilter} onValueChange={setJobFilter}>
-              <SelectTrigger className="w-[180px] bg-gray-50 border-gray-200">
-                <SelectValue placeholder="Filter by job" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Jobs</SelectItem>
-                {uniqueJobs.map((job) => (
-                  <SelectItem key={job.id} value={job.id}>
-                    {job.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-
           <Button
-            variant="outline"
+            variant="link"
             onClick={handleViewAllApplicants}
-            className="whitespace-nowrap hover:bg-blue-50 border-blue-200 text-blue-700"
+            className="text-sm text-indigo-600 font-medium p-0 h-auto hover:no-underline"
           >
-            <ExternalLink className="h-4 w-4 mr-2" />
-            View All
+            View All Candidates
           </Button>
         </div>
       </div>
 
       {/* Table for Desktop */}
-      <div className="hidden sm:block bg-white rounded-lg border border-gray-200 overflow-x-auto">
-        <table className="min-w-full table-auto">
-          <thead className="bg-gray-50">
-            <tr className="border-gray-200">
-              <th className="px-4 py-2 text-left font-semibold text-gray-900">
-                Candidate
-              </th>
-              <th className="px-4 py-2 text-left font-semibold text-gray-900">
-                Position
-              </th>
-              <th className="px-4 py-2 text-left font-semibold text-gray-900">
-                Applied
-              </th>
-              <th className="px-4 py-2 text-left font-semibold text-gray-900">
-                Match Score
-              </th>
-              <th className="px-4 py-2 text-left font-semibold text-gray-900">
-                Status
-              </th>
-              <th className="px-4 py-2 text-right font-semibold text-gray-900">
-                Actions
-              </th>
+      <div className="hidden sm:block overflow-x-auto">
+        <table className="min-w-full">
+          <thead>
+            <tr className="border-b border-gray-100">
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Candidate</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Position</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Applied</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Match Score</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Status</th>
+              <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-400">Actions</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-gray-50">
             {isLoading ? (
               <tr>
                 <td colSpan={6} className="text-center py-8 text-gray-500">
@@ -200,11 +119,9 @@ export const RecentApplicantsTable = () => {
             ) : recentApplications.length === 0 ? (
               <tr>
                 <td colSpan={6} className="text-center py-8 text-gray-500">
-                  <Users className="h-12 w-12 text-gray-300 mb-2" />
+                  <Users className="h-12 w-12 text-gray-300 mb-2 mx-auto" />
                   <p>No recent applicants found</p>
-                  <p className="text-sm">
-                    Applications will appear here as they come in
-                  </p>
+                  <p className="text-sm">Applications will appear here as they come in</p>
                 </td>
               </tr>
             ) : (
@@ -214,87 +131,64 @@ export const RecentApplicantsTable = () => {
                   applicant={applicant}
                   onStatusChange={reviewApplication}
                 >
-                  <tr className="cursor-pointer hover:bg-blue-50/50 transition-colors border-gray-100">
-                    <td className="px-4 py-2">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                  <tr className="cursor-pointer hover:bg-gray-50/60 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm shrink-0">
                           {applicant.applicantInfo.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">
-                            {applicant.applicantInfo.name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {applicant.applicantInfo.email}
-                          </p>
+                          <p className="text-sm font-semibold text-gray-900">{applicant.applicantInfo.name}</p>
+                          <p className="text-xs text-gray-400">{applicant.applicantInfo.email}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-2">{applicant.jobInfo.title}</td>
-                    <td className="px-4 py-2">{applicant.appliedDate}</td>
-                    <td className="px-4 py-2">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getScoreBadgeColor(
-                          applicant.match_score || 0,
-                        )}`}
-                      >
-                        {applicant.match_score || 0}% match
+                    <td className="px-6 py-4">
+                      <span className="inline-block text-xs font-medium bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                        {applicant.jobInfo.title}
                       </span>
                     </td>
-                    <td className="px-4 py-2">
-                      <Badge
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusBadgeColor(
-                          applicant.status,
-                        )}`}
-                      >
-                        {applicant.status}
-                      </Badge>
+                    <td className="px-6 py-4 text-sm text-gray-500">{applicant.appliedDate}</td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${getScoreBadgeColor(applicant.match_score || 0)}`}>
+                        {applicant.match_score || 0}%
+                      </span>
                     </td>
-                    <td className="px-4 py-2 text-right">
-                      <div className="flex flex-wrap sm:flex-nowrap items-center justify-end gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 w-8 p-0 hover:bg-blue-50 border-blue-200"
-                        >
-                          <Eye className="h-3 w-3 text-blue-600" />
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${applicant.status.toLowerCase() === 'accepted' ? 'bg-green-500' : applicant.status.toLowerCase() === 'rejected' ? 'bg-gray-400' : 'bg-blue-500'}`} />
+                        <span className="text-sm text-gray-700">{applicant.status}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button size="sm" variant="outline" className="h-7 w-7 p-0">
+                          <Eye className="h-3.5 w-3.5 text-gray-500" />
                         </Button>
                         {applicant.status === "Pending" && (
                           <>
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                reviewApplication(applicant.id, "Reviewed");
-                              }}
-                              className="h-8 px-3 text-xs hover:bg-blue-50 border-blue-200 text-blue-700"
+                              onClick={(e) => { e.stopPropagation(); reviewApplication(applicant.id, "Reviewed"); }}
+                              className="h-7 px-2.5 text-xs text-blue-700 border-blue-200 hover:bg-blue-50"
                             >
-                              <CheckCircle className="h-3 w-3 mr-1" />
                               Review
                             </Button>
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                reviewApplication(applicant.id, "Accepted");
-                              }}
-                              className="h-8 px-3 text-xs hover:bg-green-50 border-green-200 text-green-700"
+                              onClick={(e) => { e.stopPropagation(); reviewApplication(applicant.id, "Accepted"); }}
+                              className="h-7 px-2.5 text-xs text-green-700 border-green-200 hover:bg-green-50"
                             >
-                              <CheckCircle className="h-3 w-3 mr-1" />
                               Accept
                             </Button>
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                reviewApplication(applicant.id, "Rejected");
-                              }}
-                              className="h-8 px-3 text-xs hover:bg-red-50 border-red-200 text-red-700"
+                              onClick={(e) => { e.stopPropagation(); reviewApplication(applicant.id, "Rejected"); }}
+                              className="h-7 px-2.5 text-xs text-red-700 border-red-200 hover:bg-red-50"
                             >
-                              <XCircle className="h-3 w-3 mr-1" />
                               Reject
                             </Button>
                           </>
@@ -350,13 +244,10 @@ export const RecentApplicantsTable = () => {
                       </p>
                     </div>
                   </div>
-                  <Badge
-                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusBadgeColor(
-                      applicant.status,
-                    )}`}
-                  >
-                    {applicant.status}
-                  </Badge>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${applicant.status.toLowerCase() === 'accepted' ? 'bg-green-500' : applicant.status.toLowerCase() === 'rejected' ? 'bg-gray-400' : 'bg-blue-500'}`} />
+                    <span className="text-xs font-medium text-gray-700">{applicant.status}</span>
+                  </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row justify-between gap-2">

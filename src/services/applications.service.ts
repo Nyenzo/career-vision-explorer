@@ -65,10 +65,16 @@ class ApplicationsService {
   }
 
   async reviewApplication(applicationId: string, status: 'Reviewed' | 'Accepted' | 'Rejected', notes?: string): Promise<Application> {
-    // Use query parameters as the backend expects
+    // Map frontend status labels to backend values (reviewed|shortlisted|rejected).
+    const STATUS_MAP: Record<string, string> = {
+      Accepted: 'shortlisted',
+      Reviewed: 'reviewed',
+      Rejected: 'rejected',
+    };
+    const backendStatus = STATUS_MAP[status] ?? status.toLowerCase();
     const params = new URLSearchParams({
-      status: status,
-      ...(notes && { notes })
+      status: backendStatus,
+      ...(notes && { notes }),
     });
     return await apiClient.post<Application>(`/applications/${applicationId}/review?${params.toString()}`);
   }

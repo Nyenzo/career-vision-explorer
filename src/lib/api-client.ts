@@ -11,6 +11,8 @@ type ApiRequestError = Error & {
 class ApiClient {
   private baseURL: string;
   private token: string | null = null;
+  // Singleton promise: deduplicates concurrent 401-triggered refresh attempts
+  private refreshPromise: Promise<string | null> | null = null;
 
   constructor() {
     this.baseURL = API_CONFIG.BASE_URL;
@@ -20,6 +22,50 @@ class ApiClient {
   setToken(token: string | null) {
     this.token = token;
     authStorage.setAccessToken(token);
+  }
+
+  /**
+   * Attempt a token refresh using the stored refresh token.
+   * Multiple concurrent calls share the same in-flight promise so the
+   * refresh endpoint is never called more than once at a time.
+   */
+  private async attemptTokenRefresh(): Promise<string | null> {
+    if (this.refreshPromise) return this.refreshPromise;
+
+    this.refreshPromise = (async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10_000);
+      try {
+        const refreshToken = authStorage.getRefreshToken();
+        if (!refreshToken) return null;
+
+        const response = await fetch(`${this.baseURL}/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: refreshToken }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) return null;
+
+        const data = await response.json() as { access_token?: string; refresh_token?: string };
+        if (!data.access_token) return null;
+
+        this.setToken(data.access_token);
+        if (data.refresh_token) {
+          authStorage.setRefreshToken(data.refresh_token);
+        }
+        return data.access_token;
+      } catch {
+        clearTimeout(timeoutId);
+        return null;
+      } finally {
+        this.refreshPromise = null;
+      }
+    })();
+
+    return this.refreshPromise;
   }
 
   getToken(): string | null {
@@ -143,6 +189,37 @@ class ApiClient {
         const error: ApiRequestError = new Error(errorMessage);
         error.status = response.status;
         error.response = errorData;
+
+        // 401 interceptor: refresh token + single retry 
+        const isAuthEndpoint =
+          endpoint.includes('/auth/refresh') ||
+          endpoint.includes('/auth/login');
+        if (response.status === 401 && !isAuthEndpoint) {
+          const newToken = await this.attemptTokenRefresh();
+          if (newToken) {
+            const retryHeaders = { ...headers, Authorization: `Bearer ${newToken}` };
+            const retryController = new AbortController();
+            const retryTimeoutId = setTimeout(() => retryController.abort(), timeoutMs);
+            try {
+              const retryResponse = await fetch(url, {
+                ...options,
+                headers: retryHeaders,
+                signal: retryController.signal,
+              });
+              clearTimeout(retryTimeoutId);
+              if (retryResponse.ok) {
+                const ct = retryResponse.headers.get('content-type');
+                if (ct?.includes('application/json')) return retryResponse.json() as Promise<T>;
+                return retryResponse.text() as unknown as Promise<T>;
+              }
+            } catch {
+              clearTimeout(retryTimeoutId);
+            }
+          }
+          // Refresh failed or retry still 401 — session is truly expired
+          window.dispatchEvent(new CustomEvent('vd:session-expired'));
+        }
+
         throw error;
       }
 

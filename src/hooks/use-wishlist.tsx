@@ -16,6 +16,7 @@ export interface WishlistJob {
   skills: string[];
   description: string;
   experienceLevel?: string;
+  logoUrl?: string;
   dateSaved: string;
 }
 
@@ -38,6 +39,7 @@ type SavedJobApiItem = {
     id?: string;
     job_title?: string;
     company_name?: string;
+    company_logo_url?: string;
     location?: string;
     job_type?: string;
     salary_range?: string;
@@ -69,6 +71,7 @@ const mapSavedJobToWishlistJob = (saved: SavedJobApiItem): WishlistJob => {
     skills: Array.isArray(job.required_skills) ? job.required_skills : [],
     description: job.job_description || "",
     experienceLevel: job.experience_level,
+    logoUrl: job.company_logo_url || undefined,
     dateSaved: saved.created_at,
   };
 };
