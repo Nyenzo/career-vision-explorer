@@ -1,5 +1,6 @@
 
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ThumbsUp, ThumbsDown, Download, Mail, FileText, Briefcase, Check, X, Eye, Loader2 } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Download, Mail, FileText, Briefcase, Check, X, Eye, Loader2, User } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { EmployerApplication } from "@/hooks/use-employer-applications";
 import { API_CONFIG } from "@/config/api.config";
@@ -31,6 +32,7 @@ export function ApplicantProfileDialog({
   const [open, setOpen] = React.useState(false);
   const [pdfViewerUrl, setPdfViewerUrl] = React.useState<string | null>(null);
   const [pdfViewerLoading, setPdfViewerLoading] = React.useState(false);
+  const navigate = useNavigate();
 
   const closePdfViewer = React.useCallback(() => {
     if (pdfViewerUrl) URL.revokeObjectURL(pdfViewerUrl);
@@ -172,19 +174,32 @@ export function ApplicantProfileDialog({
           <div className="space-y-6 overflow-y-auto flex-1 pr-1">
             {/* Applicant Info & Match Score */}
             <div className="flex justify-between items-start">
-              <div className="space-y-1">
-                <h3 className="text-lg font-medium">{applicant.applicantInfo.name}</h3>
-                <p className="text-sm text-gray-500 flex items-center gap-1">
-                  <Briefcase className="h-3.5 w-3.5" />
-                  Applied for: {applicant.jobInfo.title}
-                </p>
-                <p className="text-sm text-gray-500 flex items-center gap-1">
-                  <Mail className="h-3.5 w-3.5" />
-                  {applicant.applicantInfo.email || 'No email provided'}
-                </p>
-                <p className="text-sm text-gray-500">
-                  Applied: {applicant.appliedDate}
-                </p>
+              <div className="flex items-start gap-3">
+                {applicant.applicantInfo.avatar_url ? (
+                  <img
+                    src={applicant.applicantInfo.avatar_url}
+                    alt={applicant.applicantInfo.name}
+                    className="w-12 h-12 rounded-full object-cover shrink-0"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-semibold text-base shrink-0">
+                    {applicant.applicantInfo.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div className="space-y-1">
+                  <h3 className="text-lg font-medium">{applicant.applicantInfo.name}</h3>
+                  <p className="text-sm text-gray-500 flex items-center gap-1">
+                    <Briefcase className="h-3.5 w-3.5" />
+                    Applied for: {applicant.jobInfo.title}
+                  </p>
+                  <p className="text-sm text-gray-500 flex items-center gap-1">
+                    <Mail className="h-3.5 w-3.5" />
+                    {applicant.applicantInfo.email || 'No email provided'}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Applied: {applicant.appliedDate}
+                  </p>
+                </div>
               </div>
               <div>
                 <span className={`${getScoreBadgeColor(matchScore)} text-xs px-3 py-1 rounded-full font-medium`}>
@@ -319,6 +334,16 @@ export function ApplicantProfileDialog({
 
           <DialogFooter className="flex justify-between">
             <div className="space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => { navigate(`/profile/${applicant.user_id}`); setOpen(false); }}
+                className="border-blue-200 text-blue-600 hover:bg-blue-50"
+                disabled={!applicant.user_id}
+              >
+                <User className="h-4 w-4 mr-2" />
+                View Profile
+              </Button>
               <Button
                 onClick={handleReject}
                 variant="outline"

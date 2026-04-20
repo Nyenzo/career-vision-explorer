@@ -151,6 +151,7 @@ export interface Application {
   company_logo_url?: string;
   applicant_name?: string;
   applicant_email?: string;
+  applicant_avatar_url?: string;
   resume_link?: string;
   cv_url?: string;
   match_score?: number;

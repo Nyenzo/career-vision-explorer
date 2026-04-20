@@ -2,6 +2,7 @@ import React from "react";
 import { formatDistanceToNow } from "date-fns";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
+import { getMatchScoreBgClass } from "@/lib/utils";
 
 interface JobHeaderProps {
   job: {
@@ -63,21 +64,13 @@ export const JobHeader = ({ job, showMatchScore = true }: JobHeaderProps) => {
     return `${formatted} (${relative})`;
   };
 
-  const getMatchColorClassname = (matchScore: number) => {
-    if (matchScore >= 90)
-      return "bg-tertiary-container text-on-tertiary-container ring-tertiary-container/30";
-    if (matchScore >= 70)
-      return "bg-surface-container-highest text-on-surface-variant ring-surface-variant/30";
-    return "bg-surface-container-highest text-on-surface-variant ring-surface-variant/30";
-  };
-
   return (
     <section className="bg-surface-container-lowest p-10 rounded-lg shadow-sm relative overflow-hidden">
       {/* Match badge is only shown for authenticated job seekers */}
       {showMatchScore && isAuthenticatedJobSeeker && score != null && (
         <div className="absolute top-0 right-0 p-8">
           <div
-            className={`${getMatchColorClassname(score)} px-6 py-3 rounded-full flex items-center gap-2 shadow-sm ring-4`}
+            className={`${getMatchScoreBgClass(score)} text-white px-6 py-3 rounded-full flex items-center gap-2 shadow-sm ring-4 ring-white/20`}
           >
             <span className="font-headline font-bold text-xl">{score}%</span>
             <span className="text-xs font-label font-semibold tracking-wider uppercase">

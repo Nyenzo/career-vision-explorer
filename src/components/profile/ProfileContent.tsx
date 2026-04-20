@@ -454,6 +454,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
 
         const employerUserPayload = {
           ...(cleanPayload.name ? { full_name: cleanPayload.name } : {}),
+          ...(cleanPayload.phone_number ? { phone_number: cleanPayload.phone_number } : {}),
           bio: cleanPayload.bio,
           location: cleanPayload.location,
         };
@@ -498,7 +499,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
         const userData = {
           ...remainingUserData,
           ...(name !== undefined ? { full_name: name } : {}), // API expects full_name
-          ...(phone_number !== undefined ? { phone: phone_number } : {}),
+          ...(phone_number !== undefined ? { phone_number: phone_number } : {}),
           ...(avatar_url !== undefined
             ? { profile_image_url: avatar_url }
             : {}),
@@ -1654,8 +1655,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                         <Separator className="my-4" />
                         <div
                           className={`flex items-center gap-3 p-3 rounded-lg ${companyData.is_verified
-                              ? "bg-green-50 border border-green-200"
-                              : "bg-yellow-50 border border-yellow-200"
+                            ? "bg-green-50 border border-green-200"
+                            : "bg-yellow-50 border border-yellow-200"
                             }`}
                         >
                           {companyData.is_verified ? (
@@ -2250,8 +2251,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                             })
                           }
                           className={`px-4 py-1 rounded-full text-xs font-bold border-2 transition-all ${editForm.preferred_job_type === opt.value
-                              ? "border-primary bg-primary-fixed text-primary"
-                              : "border-surface-container-high text-slate-500 hover:border-primary/50"
+                            ? "border-primary bg-primary-fixed text-primary"
+                            : "border-surface-container-high text-slate-500 hover:border-primary/50"
                             }`}
                         >
                           {opt.label}
@@ -2274,8 +2275,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                             })
                           }
                           className={`px-4 py-1 rounded-full text-xs font-bold border-2 transition-all ${editForm.preferred_job_type === opt.value
-                              ? "border-primary bg-primary-fixed text-primary"
-                              : "border-surface-container-high text-slate-500 hover:border-primary/50"
+                            ? "border-primary bg-primary-fixed text-primary"
+                            : "border-surface-container-high text-slate-500 hover:border-primary/50"
                             }`}
                         >
                           {opt.label}
@@ -2315,8 +2316,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                         setEditForm({ ...editForm, availability: value as any })
                       }
                       className={`px-4 py-2 rounded-full font-bold text-sm transition-all ${editForm.availability === value
-                          ? "bg-white text-primary shadow-sm border border-slate-100"
-                          : "text-slate-500 bg-surface-container-low hover:bg-slate-200/50"
+                        ? "bg-white text-primary shadow-sm border border-slate-100"
+                        : "text-slate-500 bg-surface-container-low hover:bg-slate-200/50"
                         }`}
                     >
                       {label}

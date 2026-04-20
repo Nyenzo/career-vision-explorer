@@ -22,6 +22,7 @@ const Login = () => {
   const { login, signInWithLinkedIn, signInWithGoogle } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [activeRole, setActiveRole] = useState<"jobseeker" | "employer">("jobseeker");
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -106,6 +107,30 @@ const Login = () => {
               <p className="text-on-surface-variant font-body">Sign in to continue your visionary journey.</p>
             </div>
 
+            {/* Role Tab Switcher */}
+            <div className="flex rounded-full bg-surface-container-low p-1 gap-1">
+              <button
+                type="button"
+                onClick={() => setActiveRole("jobseeker")}
+                className={`flex-1 py-2 px-4 rounded-full font-label text-sm font-semibold transition-all duration-200 ${activeRole === "jobseeker"
+                    ? "bg-primary text-on-primary shadow-sm"
+                    : "text-on-surface-variant hover:text-on-surface"
+                  }`}
+              >
+                Job Seeker
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveRole("employer")}
+                className={`flex-1 py-2 px-4 rounded-full font-label text-sm font-semibold transition-all duration-200 ${activeRole === "employer"
+                    ? "bg-primary text-on-primary shadow-sm"
+                    : "text-on-surface-variant hover:text-on-surface"
+                  }`}
+              >
+                Employer
+              </button>
+            </div>
+
             {/* Form Section */}
             <form className="flex flex-col gap-6" onSubmit={form.handleSubmit(onSubmit)}>
               <div className="space-y-5">
@@ -169,42 +194,47 @@ const Login = () => {
               </button>
             </form>
 
-            {/* Divider */}
-            <div className="flex items-center gap-4 py-2">
-              <div className="flex-grow h-[1px] bg-outline-variant opacity-30"></div>
-              <span className="font-label text-xs font-semibold text-outline-variant uppercase tracking-widest">or</span>
-              <div className="flex-grow h-[1px] bg-outline-variant opacity-30"></div>
-            </div>
+            {/* Divider + Social Login (jobseekers only) */}
+            {activeRole === "jobseeker" && (
+              <>
+                {/* Divider */}
+                <div className="flex items-center gap-4 py-2">
+                  <div className="flex-grow h-[1px] bg-outline-variant opacity-30"></div>
+                  <span className="font-label text-xs font-semibold text-outline-variant uppercase tracking-widest">or</span>
+                  <div className="flex-grow h-[1px] bg-outline-variant opacity-30"></div>
+                </div>
 
-            {/* Social Login */}
-            <div className="space-y-4">
-              <button
-                type="button"
-                onClick={handleGoogleLogin}
-                disabled={isLoading}
-                className="w-full flex items-center justify-center gap-3 py-4 px-6 bg-surface-container-low rounded-full hover:bg-surface-container-high transition-colors group disabled:opacity-50"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
-                  <path fill="#EA4335" d="M12 10.2v3.9h5.4c-.2 1.2-1.4 3.6-5.4 3.6-3.2 0-5.9-2.7-5.9-6s2.7-6 5.9-6c1.8 0 3 .8 3.7 1.5l2.5-2.4C16.6 3.3 14.5 2.4 12 2.4 6.8 2.4 2.7 6.6 2.7 12s4.1 9.6 9.3 9.6c5.4 0 8.9-3.8 8.9-9.1 0-.6-.1-1-.1-1.4H12z" />
-                  <path fill="#34A853" d="M3.9 7.5l3.2 2.4c.9-1.8 2.7-3.1 4.9-3.1 1.8 0 3 .8 3.7 1.5l2.5-2.4C16.6 3.3 14.5 2.4 12 2.4c-3.6 0-6.8 2.1-8.1 5.1z" />
-                  <path fill="#4A90E2" d="M12 21.6c2.4 0 4.5-.8 6-2.3l-2.8-2.3c-.8.6-1.8 1-3.2 1-2.9 0-5.3-1.9-6.2-4.6l-3.2 2.5c1.4 3.1 4.6 5.7 9.4 5.7z" />
-                  <path fill="#FBBC05" d="M5.8 13.4c-.2-.6-.3-1.1-.3-1.7s.1-1.2.3-1.7L2.6 7.5C2 8.9 1.7 10.4 1.7 12s.3 3.1.9 4.5l3.2-2.5z" />
-                </svg>
-                <span className="font-body font-medium text-on-surface-variant">Continue with Google</span>
-              </button>
+                {/* Social Login */}
+                <div className="space-y-4">
+                  <button
+                    type="button"
+                    onClick={handleGoogleLogin}
+                    disabled={isLoading}
+                    className="w-full flex items-center justify-center gap-3 py-4 px-6 bg-surface-container-low rounded-full hover:bg-surface-container-high transition-colors group disabled:opacity-50"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
+                      <path fill="#EA4335" d="M12 10.2v3.9h5.4c-.2 1.2-1.4 3.6-5.4 3.6-3.2 0-5.9-2.7-5.9-6s2.7-6 5.9-6c1.8 0 3 .8 3.7 1.5l2.5-2.4C16.6 3.3 14.5 2.4 12 2.4 6.8 2.4 2.7 6.6 2.7 12s4.1 9.6 9.3 9.6c5.4 0 8.9-3.8 8.9-9.1 0-.6-.1-1-.1-1.4H12z" />
+                      <path fill="#34A853" d="M3.9 7.5l3.2 2.4c.9-1.8 2.7-3.1 4.9-3.1 1.8 0 3 .8 3.7 1.5l2.5-2.4C16.6 3.3 14.5 2.4 12 2.4c-3.6 0-6.8 2.1-8.1 5.1z" />
+                      <path fill="#4A90E2" d="M12 21.6c2.4 0 4.5-.8 6-2.3l-2.8-2.3c-.8.6-1.8 1-3.2 1-2.9 0-5.3-1.9-6.2-4.6l-3.2 2.5c1.4 3.1 4.6 5.7 9.4 5.7z" />
+                      <path fill="#FBBC05" d="M5.8 13.4c-.2-.6-.3-1.1-.3-1.7s.1-1.2.3-1.7L2.6 7.5C2 8.9 1.7 10.4 1.7 12s.3 3.1.9 4.5l3.2-2.5z" />
+                    </svg>
+                    <span className="font-body font-medium text-on-surface-variant">Continue with Google</span>
+                  </button>
 
-              <button
-                type="button"
-                onClick={handleLinkedInLogin}
-                disabled={isLoading}
-                className="w-full flex items-center justify-center gap-3 py-4 px-6 bg-surface-container-low rounded-full hover:bg-surface-container-high transition-colors group disabled:opacity-50"
-              >
-                <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"></path>
-                </svg>
-                <span className="font-body font-medium text-on-surface-variant">Continue with LinkedIn</span>
-              </button>
-            </div>
+                  <button
+                    type="button"
+                    onClick={handleLinkedInLogin}
+                    disabled={isLoading}
+                    className="w-full flex items-center justify-center gap-3 py-4 px-6 bg-surface-container-low rounded-full hover:bg-surface-container-high transition-colors group disabled:opacity-50"
+                  >
+                    <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"></path>
+                    </svg>
+                    <span className="font-body font-medium text-on-surface-variant">Continue with LinkedIn</span>
+                  </button>
+                </div>
+              </>
+            )}
 
             {/* Footer Link */}
             <div className="text-center pt-4">

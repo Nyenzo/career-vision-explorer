@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
+import { getMatchScoreBgClass } from "@/lib/utils";
 
 interface Job {
   job_id: string;
@@ -43,14 +44,6 @@ export const JobCard = ({
   const { isJobSeeker, isAuthenticated } = useAuth();
   const isAuthenticatedJobSeeker = isAuthenticated && isJobSeeker();
 
-  const getMatchColorClassname = (score: number) => {
-    if (score >= 90)
-      return "bg-tertiary-container text-on-tertiary-container match-glow";
-    if (score >= 70)
-      return "bg-surface-container-highest text-on-surface-variant";
-    return "bg-surface-container-highest text-on-surface-variant";
-  };
-
   const renderMatchBadge = () => {
     // Unauthenticated or non-jobseeker: hide entirely
     if (!isAuthenticatedJobSeeker) return null;
@@ -59,7 +52,7 @@ export const JobCard = ({
     if (job.matchScore != null) {
       return (
         <div
-          className={`${getMatchColorClassname(job.matchScore)} px-4 py-2 rounded-full flex items-center gap-2`}
+          className={`${getMatchScoreBgClass(job.matchScore)} text-white px-4 py-2 rounded-full flex items-center gap-2`}
         >
           <span
             className="material-symbols-outlined text-sm"
@@ -194,11 +187,10 @@ export const JobCard = ({
                 onApply(job);
               }}
               disabled={isApplied}
-              className={`px-10 py-3 font-bold rounded-full transition-transform active:scale-95 ${
-                isApplied
+              className={`px-10 py-3 font-bold rounded-full transition-transform active:scale-95 ${isApplied
                   ? "bg-secondary-fixed text-on-secondary-fixed shadow-none cursor-default"
                   : "gradient-btn text-on-primary hover:scale-[1.02] shadow-md shadow-primary/20"
-              }`}
+                }`}
             >
               {isApplied ? "Applied ✓" : "Apply Now"}
             </button>
