@@ -61,6 +61,7 @@ import {
   Profile as ProfileType,
   ProfileUpdate,
   CompanyData,
+  ParseResumeResponse,
 } from "@/types/api";
 import { useNavigate } from "react-router-dom";
 import { ProfilePageSkeleton } from "@/components/ui/skeleton-loaders";
@@ -306,7 +307,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
         setEditForm(sanitizedAuthProfile);
         setLocalCompletionPercentage(
           sanitizedAuthProfile.profile_completion_percentage ||
-          calculateProfileCompletion(sanitizedAuthProfile),
+            calculateProfileCompletion(sanitizedAuthProfile),
         );
       }
       loadProfile();
@@ -383,7 +384,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
       // Use backend value if available, otherwise calculate locally
       setLocalCompletionPercentage(
         sanitizedProfileData.profile_completion_percentage ||
-        calculateProfileCompletion(sanitizedProfileData),
+          calculateProfileCompletion(sanitizedProfileData),
       );
     } catch (error) {
       console.error("Error loading profile:", error);
@@ -517,7 +518,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
       // Use backend value if available, otherwise calculate locally
       setLocalCompletionPercentage(
         sanitizedUpdatedProfile.profile_completion_percentage ||
-        calculateProfileCompletion(sanitizedUpdatedProfile),
+          calculateProfileCompletion(sanitizedUpdatedProfile),
       );
       setEditing(false);
       toast.success("Profile updated successfully!");
@@ -753,12 +754,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
           setProfile((prev) =>
             prev
               ? {
-                ...prev,
-                company_data: {
-                  ...(prev.company_data || {}),
-                  company_logo_url: uploadResult.image_url,
-                } as CompanyData,
-              }
+                  ...prev,
+                  company_data: {
+                    ...(prev.company_data || {}),
+                    company_logo_url: uploadResult.image_url,
+                  } as CompanyData,
+                }
               : prev,
           );
         } else {
@@ -796,13 +797,13 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
     : undefined;
   const previewFrame = photoEditorImageSize
     ? getCropFrame(
-      photoEditorImageSize.width,
-      photoEditorImageSize.height,
-      PHOTO_PREVIEW_SIZE,
-      Math.max(1.05, Math.min(3, photoEditorZoom)),
-      photoEditorX,
-      photoEditorY,
-    )
+        photoEditorImageSize.width,
+        photoEditorImageSize.height,
+        PHOTO_PREVIEW_SIZE,
+        Math.max(1.05, Math.min(3, photoEditorZoom)),
+        photoEditorX,
+        photoEditorY,
+      )
     : null;
 
   const handleCancel = () => {
@@ -813,7 +814,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
     // Use backend value if available, otherwise calculate locally
     setLocalCompletionPercentage(
       profile?.profile_completion_percentage ||
-      calculateProfileCompletion(profile),
+        calculateProfileCompletion(profile),
     );
     setEditing(false);
   };
@@ -857,8 +858,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
       status in AVAILABILITY_DISPLAY
         ? status
         : Object.keys(AVAILABILITY_DISPLAY).find(
-          (k) => AVAILABILITY_DISPLAY[k] === status,
-        );
+            (k) => AVAILABILITY_DISPLAY[k] === status,
+          );
     switch (key) {
       case "available":
         return "bg-green-300 text-green-800 border-green-500";
@@ -974,59 +975,87 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
 
     setIsParsing(true);
     try {
-      const response = await profileService.parseResume(resumeFile);
-      console.log("Resume parse response:", response);
+      const response: ParseResumeResponse =
+        await profileService.parseResume(resumeFile);
 
-      // Check if response has the expected structure
-      if (!response || !response.parsed_data) {
-        throw new Error("Invalid response structure from CV parser");
+      // Map the parse response fields onto the edit form so the user can
+      // review everything before saving manually.
+      setEditForm((prev) => ({
+        ...prev,
+        ...(response.professional_title != null && {
+          professional_title: response.professional_title,
+        }),
+        ...(response.bio != null && { bio: response.bio }),
+        ...(response.location != null && { location: response.location }),
+        ...(response.experience_years != null && {
+          experience_years: response.experience_years,
+        }),
+        ...(response.skills?.length && { skills: response.skills }),
+        ...(response.linkedin_url != null && {
+          linkedin_url: response.linkedin_url,
+        }),
+        ...(response.github_url != null && { github_url: response.github_url }),
+        ...(response.portfolio_url != null && {
+          portfolio_url: response.portfolio_url,
+        }),
+        ...(response.twitter_url != null && {
+          twitter_url: response.twitter_url,
+        }),
+        ...(response.stackoverflow_url != null && {
+          stackoverflow_url: response.stackoverflow_url,
+        }),
+        ...(response.work_experience?.length && {
+          work_experience: response.work_experience.map((we) => ({
+            company: we.company,
+            position: we.title,
+            description: we.description ?? "",
+            start_date: we.start_date ?? undefined,
+            end_date: we.end_date ?? undefined,
+            currently_working: we.currently_working,
+          })),
+        }),
+        ...(response.projects?.length && {
+          projects: response.projects.map((p) => ({
+            name: p.name,
+            description: p.description,
+            tech_stack: p.technologies,
+            url: p.url ?? undefined,
+          })),
+        }),
+        resume_link: response.resume_url,
+        resume_url: response.resume_url,
+      }));
+
+      // Also update the displayed profile so the CV link appears immediately.
+      setProfile((prev) => {
+        if (!prev) return prev;
+        const updated = {
+          ...prev,
+          resume_url: response.resume_url,
+          resume_link: response.resume_url,
+        };
+        return {
+          ...updated,
+          profile_completion_percentage: calculateProfileCompletion(updated),
+        };
+      });
+
+      if (response.warning) {
+        toast.warning(
+          "CV saved — we couldn't auto-fill everything. Please review your profile.",
+        );
+      } else {
+        toast.success(
+          "Profile updated from your CV. Review and save when ready.",
+        );
       }
-
-      const updatedProfile = response.updated_profile;
-      const parsedData = response.parsed_data;
-
-      // Log the parsed data for debugging
-      console.log("Parsed data:", parsedData);
-
-      // Create a comprehensive update object with safe access
-      const updatePayload = {
-        ...profile,
-        // Safely spread personal_info if it exists
-        ...(parsedData.personal_info &&
-          typeof parsedData.personal_info === "object"
-          ? parsedData.personal_info
-          : {}),
-        // Safely spread professional_summary if it exists
-        ...(parsedData.professional_summary &&
-          typeof parsedData.professional_summary === "object"
-          ? parsedData.professional_summary
-          : {}),
-        // Update arrays with fallbacks
-        skills: parsedData.skills || profile?.skills || [],
-        work_experience:
-          parsedData.work_experience || profile?.work_experience || [],
-        education: parsedData.education || profile?.education || "",
-        projects: parsedData.projects || profile?.projects || [],
-        certifications:
-          parsedData.certifications || profile?.certifications || [],
-        languages: parsedData.languages || profile?.languages || [],
-        // Safely spread additional_info if it exists
-        ...(parsedData.additional_info &&
-          typeof parsedData.additional_info === "object"
-          ? parsedData.additional_info
-          : {}),
-        resume_link: response.cv_file_url || profile?.resume_link,
-      };
-
-      setEditForm(updatePayload);
-      toast.success("Resume parsed successfully! Review and save the changes.");
     } catch (error) {
       console.error("Error parsing resume:", error);
-      if (error instanceof Error) {
-        toast.error(`Failed to parse resume: ${error.message}`);
-      } else {
-        toast.error("Failed to parse resume. Please try again.");
-      }
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to parse resume. Please try again.",
+      );
     } finally {
       setIsParsing(false);
     }
@@ -1653,10 +1682,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                       <>
                         <Separator className="my-4" />
                         <div
-                          className={`flex items-center gap-3 p-3 rounded-lg ${companyData.is_verified
+                          className={`flex items-center gap-3 p-3 rounded-lg ${
+                            companyData.is_verified
                               ? "bg-green-50 border border-green-200"
                               : "bg-yellow-50 border border-yellow-200"
-                            }`}
+                          }`}
                         >
                           {companyData.is_verified ? (
                             <>
@@ -1668,8 +1698,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                                 <p className="text-xs text-green-600">
                                   {companyData.verification_date
                                     ? `Verified on ${new Date(
-                                      companyData.verification_date,
-                                    ).toLocaleDateString()}`
+                                        companyData.verification_date,
+                                      ).toLocaleDateString()}`
                                     : "Verified company"}
                                 </p>
                               </div>
@@ -1876,7 +1906,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                       className="hidden"
                       type="file"
                       onChange={handleFileChange}
-                      accept=".pdf,.docx"
+                      accept=".pdf,.docx,.doc,.txt"
                     />
                     <span className="material-symbols-outlined text-4xl text-slate-400 group-hover:text-primary mb-2 transition-colors">
                       upload_file
@@ -1885,16 +1915,16 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                       Choose File
                     </p>
                     <p className="text-xs text-slate-400 mt-1">
-                      {resumeFile ? resumeFile.name : "PDF, DOCX up to 10MB"}
+                      {resumeFile
+                        ? resumeFile.name
+                        : "PDF, DOCX, TXT up to 5 MB"}
                     </p>
                   </label>
                 )}
 
                 {editing && resumeFile && (
                   <button
-                    onClick={() => {
-                      // Normally handleResumeParse() but we might not have it attached. Assuming handleResumeParse exists.
-                    }}
+                    onClick={handleResumeParse}
                     disabled={isParsing}
                     className="flex items-center justify-center gap-2 w-full py-4 px-6 bg-surface-container-highest text-on-surface font-semibold rounded-full hover:bg-slate-200 transition-all active:scale-95 disabled:opacity-50"
                   >
@@ -2249,10 +2279,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                               preferred_job_type: opt.value as any,
                             })
                           }
-                          className={`px-4 py-1 rounded-full text-xs font-bold border-2 transition-all ${editForm.preferred_job_type === opt.value
+                          className={`px-4 py-1 rounded-full text-xs font-bold border-2 transition-all ${
+                            editForm.preferred_job_type === opt.value
                               ? "border-primary bg-primary-fixed text-primary"
                               : "border-surface-container-high text-slate-500 hover:border-primary/50"
-                            }`}
+                          }`}
                         >
                           {opt.label}
                         </button>
@@ -2273,10 +2304,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                               preferred_job_type: opt.value as any,
                             })
                           }
-                          className={`px-4 py-1 rounded-full text-xs font-bold border-2 transition-all ${editForm.preferred_job_type === opt.value
+                          className={`px-4 py-1 rounded-full text-xs font-bold border-2 transition-all ${
+                            editForm.preferred_job_type === opt.value
                               ? "border-primary bg-primary-fixed text-primary"
                               : "border-surface-container-high text-slate-500 hover:border-primary/50"
-                            }`}
+                          }`}
                         >
                           {opt.label}
                         </button>
@@ -2314,10 +2346,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                       onClick={() =>
                         setEditForm({ ...editForm, availability: value as any })
                       }
-                      className={`px-4 py-2 rounded-full font-bold text-sm transition-all ${editForm.availability === value
+                      className={`px-4 py-2 rounded-full font-bold text-sm transition-all ${
+                        editForm.availability === value
                           ? "bg-white text-primary shadow-sm border border-slate-100"
                           : "text-slate-500 bg-surface-container-low hover:bg-slate-200/50"
-                        }`}
+                      }`}
                     >
                       {label}
                     </button>
@@ -2709,8 +2742,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
                     <div className="w-full bg-slate-50 border border-slate-100 rounded-lg px-4 py-3 text-sm font-semibold text-slate-700">
                       {profile?.work_authorization
                         ? profile.work_authorization
-                          .replace(/_/g, " ")
-                          .replace(/\b\w/g, (c) => c.toUpperCase())
+                            .replace(/_/g, " ")
+                            .replace(/\b\w/g, (c) => c.toUpperCase())
                         : "-"}
                     </div>
                   )}
@@ -3078,295 +3111,295 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ forcedAccountType }) => {
               <div className="space-y-0">
                 {editing
                   ? (() => {
-                    const eduList = Array.isArray(editForm.education)
-                      ? (editForm.education as any[])
-                      : [];
-                    if (eduList.length === 0) {
-                      return (
-                        <div className="text-center py-8">
-                          <span className="material-symbols-outlined text-slate-300 text-4xl">
-                            school
-                          </span>
-                          <p className="text-sm text-slate-400 mt-2">
-                            No education entries yet. Click "+ Add Education"
-                            to begin.
-                          </p>
-                        </div>
-                      );
-                    }
-                    return (
-                      <>
-                        {eduList.map((edu: any, index: number) => (
-                          <div
-                            key={index}
-                            className="p-5 mb-4 bg-surface-container-low/30 rounded-xl border border-surface-container-high space-y-4"
-                          >
-                            <div className="flex justify-between items-start">
-                              <h4 className="text-sm font-semibold text-slate-700">
-                                Education #{index + 1}
-                              </h4>
-                              <button
-                                onClick={() => {
-                                  const nx = [
-                                    ...(Array.isArray(editForm.education)
-                                      ? (editForm.education as any[])
-                                      : []),
-                                  ];
-                                  nx.splice(index, 1);
-                                  setEditForm({
-                                    ...editForm,
-                                    education: nx as any,
-                                  });
-                                }}
-                                className="p-1 hover:bg-red-100 rounded text-red-400 transition-colors"
-                              >
-                                <span className="material-symbols-outlined text-[20px]">
-                                  delete
-                                </span>
-                              </button>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div>
-                                <label className="text-xs font-bold text-slate-500">
-                                  Degree / Qualification
-                                </label>
-                                <input
-                                  type="text"
-                                  value={edu.degree || ""}
-                                  placeholder="e.g. Bachelor of Science"
-                                  onChange={(e) => {
-                                    const nx = [
-                                      ...(Array.isArray(editForm.education)
-                                        ? (editForm.education as any[])
-                                        : []),
-                                    ];
-                                    nx[index] = {
-                                      ...nx[index],
-                                      degree: e.target.value,
-                                    };
-                                    setEditForm({
-                                      ...editForm,
-                                      education: nx as any,
-                                    });
-                                  }}
-                                  className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1"
-                                />
-                              </div>
-                              <div>
-                                <label className="text-xs font-bold text-slate-500">
-                                  Institution
-                                </label>
-                                <input
-                                  type="text"
-                                  value={edu.institution || ""}
-                                  placeholder="e.g. University of Nairobi"
-                                  onChange={(e) => {
-                                    const nx = [
-                                      ...(Array.isArray(editForm.education)
-                                        ? (editForm.education as any[])
-                                        : []),
-                                    ];
-                                    nx[index] = {
-                                      ...nx[index],
-                                      institution: e.target.value,
-                                    };
-                                    setEditForm({
-                                      ...editForm,
-                                      education: nx as any,
-                                    });
-                                  }}
-                                  className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1"
-                                />
-                              </div>
-                              <div>
-                                <label className="text-xs font-bold text-slate-500">
-                                  Field of Study
-                                </label>
-                                <input
-                                  type="text"
-                                  value={edu.field_of_study || ""}
-                                  placeholder="e.g. Computer Science"
-                                  onChange={(e) => {
-                                    const nx = [
-                                      ...(Array.isArray(editForm.education)
-                                        ? (editForm.education as any[])
-                                        : []),
-                                    ];
-                                    nx[index] = {
-                                      ...nx[index],
-                                      field_of_study: e.target.value,
-                                    };
-                                    setEditForm({
-                                      ...editForm,
-                                      education: nx as any,
-                                    });
-                                  }}
-                                  className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1"
-                                />
-                              </div>
-                              <div>
-                                <label className="text-xs font-bold text-slate-500">
-                                  GPA (optional)
-                                </label>
-                                <input
-                                  type="text"
-                                  value={edu.gpa || ""}
-                                  placeholder="e.g. 3.8"
-                                  onChange={(e) => {
-                                    const nx = [
-                                      ...(Array.isArray(editForm.education)
-                                        ? (editForm.education as any[])
-                                        : []),
-                                    ];
-                                    nx[index] = {
-                                      ...nx[index],
-                                      gpa: e.target.value,
-                                    };
-                                    setEditForm({
-                                      ...editForm,
-                                      education: nx as any,
-                                    });
-                                  }}
-                                  className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1"
-                                />
-                              </div>
-                              <div>
-                                <label className="text-xs font-bold text-slate-500">
-                                  Start Year
-                                </label>
-                                <input
-                                  type="text"
-                                  value={edu.start_year || ""}
-                                  placeholder="e.g. 2018"
-                                  onChange={(e) => {
-                                    const nx = [
-                                      ...(Array.isArray(editForm.education)
-                                        ? (editForm.education as any[])
-                                        : []),
-                                    ];
-                                    nx[index] = {
-                                      ...nx[index],
-                                      start_year: e.target.value,
-                                    };
-                                    setEditForm({
-                                      ...editForm,
-                                      education: nx as any,
-                                    });
-                                  }}
-                                  className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1"
-                                />
-                              </div>
-                              <div>
-                                <label className="text-xs font-bold text-slate-500">
-                                  End Year
-                                </label>
-                                <input
-                                  type="text"
-                                  value={edu.end_year || ""}
-                                  placeholder="e.g. 2022"
-                                  onChange={(e) => {
-                                    const nx = [
-                                      ...(Array.isArray(editForm.education)
-                                        ? (editForm.education as any[])
-                                        : []),
-                                    ];
-                                    nx[index] = {
-                                      ...nx[index],
-                                      end_year: e.target.value,
-                                    };
-                                    setEditForm({
-                                      ...editForm,
-                                      education: nx as any,
-                                    });
-                                  }}
-                                  className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1"
-                                />
-                              </div>
-                            </div>
+                      const eduList = Array.isArray(editForm.education)
+                        ? (editForm.education as any[])
+                        : [];
+                      if (eduList.length === 0) {
+                        return (
+                          <div className="text-center py-8">
+                            <span className="material-symbols-outlined text-slate-300 text-4xl">
+                              school
+                            </span>
+                            <p className="text-sm text-slate-400 mt-2">
+                              No education entries yet. Click "+ Add Education"
+                              to begin.
+                            </p>
                           </div>
-                        ))}
-                      </>
-                    );
-                  })()
-                  : (() => {
-                    const rawEdu = profile?.education;
-                    if (!rawEdu)
+                        );
+                      }
                       return (
-                        <p className="text-sm text-slate-400 py-2">
-                          No education details added.
-                        </p>
-                      );
-                    if (typeof rawEdu === "string")
-                      return (
-                        <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line py-2">
-                          {rawEdu}
-                        </p>
-                      );
-                    if (!Array.isArray(rawEdu))
-                      return (
-                        <p className="text-sm text-slate-400 py-2">
-                          No education details added.
-                        </p>
-                      );
-                    const validEntries = (rawEdu as any[]).filter(
-                      (edu: any) =>
-                        edu &&
-                        typeof edu === "object" &&
-                        (edu.degree || edu.institution || edu.field_of_study),
-                    );
-                    if (validEntries.length === 0) {
-                      return (
-                        <p className="text-sm text-slate-400 py-2">
-                          No education details added yet. Click "Edit Profile"
-                          to add your background.
-                        </p>
-                      );
-                    }
-                    return (
-                      <div className="space-y-0">
-                        {validEntries.map((edu: any, idx: number) => (
-                          <div key={idx}>
-                            <div className="flex gap-5 items-start py-5">
-                              <div className="w-12 h-12 rounded-xl bg-[#EEF2FF] flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <span className="material-symbols-outlined text-[#6366f1] text-[22px]">
-                                  school
-                                </span>
+                        <>
+                          {eduList.map((edu: any, index: number) => (
+                            <div
+                              key={index}
+                              className="p-5 mb-4 bg-surface-container-low/30 rounded-xl border border-surface-container-high space-y-4"
+                            >
+                              <div className="flex justify-between items-start">
+                                <h4 className="text-sm font-semibold text-slate-700">
+                                  Education #{index + 1}
+                                </h4>
+                                <button
+                                  onClick={() => {
+                                    const nx = [
+                                      ...(Array.isArray(editForm.education)
+                                        ? (editForm.education as any[])
+                                        : []),
+                                    ];
+                                    nx.splice(index, 1);
+                                    setEditForm({
+                                      ...editForm,
+                                      education: nx as any,
+                                    });
+                                  }}
+                                  className="p-1 hover:bg-red-100 rounded text-red-400 transition-colors"
+                                >
+                                  <span className="material-symbols-outlined text-[20px]">
+                                    delete
+                                  </span>
+                                </button>
                               </div>
-                              <div className="flex-1">
-                                <div className="flex items-start justify-between">
-                                  <div>
-                                    <h5 className="font-bold text-slate-900 text-base leading-tight">
-                                      {edu.degree || "Degree"}
-                                      {edu.field_of_study
-                                        ? ` in ${edu.field_of_study}`
-                                        : ""}
-                                    </h5>
-                                    <p className="text-[#1a56db] font-semibold text-sm mt-0.5">
-                                      {edu.institution || "Institution"}
-                                    </p>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="text-xs font-bold text-slate-500">
+                                    Degree / Qualification
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={edu.degree || ""}
+                                    placeholder="e.g. Bachelor of Science"
+                                    onChange={(e) => {
+                                      const nx = [
+                                        ...(Array.isArray(editForm.education)
+                                          ? (editForm.education as any[])
+                                          : []),
+                                      ];
+                                      nx[index] = {
+                                        ...nx[index],
+                                        degree: e.target.value,
+                                      };
+                                      setEditForm({
+                                        ...editForm,
+                                        education: nx as any,
+                                      });
+                                    }}
+                                    className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-xs font-bold text-slate-500">
+                                    Institution
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={edu.institution || ""}
+                                    placeholder="e.g. University of Nairobi"
+                                    onChange={(e) => {
+                                      const nx = [
+                                        ...(Array.isArray(editForm.education)
+                                          ? (editForm.education as any[])
+                                          : []),
+                                      ];
+                                      nx[index] = {
+                                        ...nx[index],
+                                        institution: e.target.value,
+                                      };
+                                      setEditForm({
+                                        ...editForm,
+                                        education: nx as any,
+                                      });
+                                    }}
+                                    className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-xs font-bold text-slate-500">
+                                    Field of Study
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={edu.field_of_study || ""}
+                                    placeholder="e.g. Computer Science"
+                                    onChange={(e) => {
+                                      const nx = [
+                                        ...(Array.isArray(editForm.education)
+                                          ? (editForm.education as any[])
+                                          : []),
+                                      ];
+                                      nx[index] = {
+                                        ...nx[index],
+                                        field_of_study: e.target.value,
+                                      };
+                                      setEditForm({
+                                        ...editForm,
+                                        education: nx as any,
+                                      });
+                                    }}
+                                    className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-xs font-bold text-slate-500">
+                                    GPA (optional)
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={edu.gpa || ""}
+                                    placeholder="e.g. 3.8"
+                                    onChange={(e) => {
+                                      const nx = [
+                                        ...(Array.isArray(editForm.education)
+                                          ? (editForm.education as any[])
+                                          : []),
+                                      ];
+                                      nx[index] = {
+                                        ...nx[index],
+                                        gpa: e.target.value,
+                                      };
+                                      setEditForm({
+                                        ...editForm,
+                                        education: nx as any,
+                                      });
+                                    }}
+                                    className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-xs font-bold text-slate-500">
+                                    Start Year
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={edu.start_year || ""}
+                                    placeholder="e.g. 2018"
+                                    onChange={(e) => {
+                                      const nx = [
+                                        ...(Array.isArray(editForm.education)
+                                          ? (editForm.education as any[])
+                                          : []),
+                                      ];
+                                      nx[index] = {
+                                        ...nx[index],
+                                        start_year: e.target.value,
+                                      };
+                                      setEditForm({
+                                        ...editForm,
+                                        education: nx as any,
+                                      });
+                                    }}
+                                    className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-xs font-bold text-slate-500">
+                                    End Year
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={edu.end_year || ""}
+                                    placeholder="e.g. 2022"
+                                    onChange={(e) => {
+                                      const nx = [
+                                        ...(Array.isArray(editForm.education)
+                                          ? (editForm.education as any[])
+                                          : []),
+                                      ];
+                                      nx[index] = {
+                                        ...nx[index],
+                                        end_year: e.target.value,
+                                      };
+                                      setEditForm({
+                                        ...editForm,
+                                        education: nx as any,
+                                      });
+                                    }}
+                                    className="w-full bg-surface border-0 rounded-lg px-3 py-2 text-sm mt-1"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      );
+                    })()
+                  : (() => {
+                      const rawEdu = profile?.education;
+                      if (!rawEdu)
+                        return (
+                          <p className="text-sm text-slate-400 py-2">
+                            No education details added.
+                          </p>
+                        );
+                      if (typeof rawEdu === "string")
+                        return (
+                          <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line py-2">
+                            {rawEdu}
+                          </p>
+                        );
+                      if (!Array.isArray(rawEdu))
+                        return (
+                          <p className="text-sm text-slate-400 py-2">
+                            No education details added.
+                          </p>
+                        );
+                      const validEntries = (rawEdu as any[]).filter(
+                        (edu: any) =>
+                          edu &&
+                          typeof edu === "object" &&
+                          (edu.degree || edu.institution || edu.field_of_study),
+                      );
+                      if (validEntries.length === 0) {
+                        return (
+                          <p className="text-sm text-slate-400 py-2">
+                            No education details added yet. Click "Edit Profile"
+                            to add your background.
+                          </p>
+                        );
+                      }
+                      return (
+                        <div className="space-y-0">
+                          {validEntries.map((edu: any, idx: number) => (
+                            <div key={idx}>
+                              <div className="flex gap-5 items-start py-5">
+                                <div className="w-12 h-12 rounded-xl bg-[#EEF2FF] flex items-center justify-center flex-shrink-0 mt-0.5">
+                                  <span className="material-symbols-outlined text-[#6366f1] text-[22px]">
+                                    school
+                                  </span>
+                                </div>
+                                <div className="flex-1">
+                                  <div className="flex items-start justify-between">
+                                    <div>
+                                      <h5 className="font-bold text-slate-900 text-base leading-tight">
+                                        {edu.degree || "Degree"}
+                                        {edu.field_of_study
+                                          ? ` in ${edu.field_of_study}`
+                                          : ""}
+                                      </h5>
+                                      <p className="text-[#1a56db] font-semibold text-sm mt-0.5">
+                                        {edu.institution || "Institution"}
+                                      </p>
+                                    </div>
+                                    {(edu.start_year || edu.end_year) && (
+                                      <span className="text-xs text-slate-400 font-medium bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100 flex-shrink-0 ml-4">
+                                        {edu.start_year || "—"} –{" "}
+                                        {edu.end_year || "Present"}
+                                      </span>
+                                    )}
                                   </div>
-                                  {(edu.start_year || edu.end_year) && (
-                                    <span className="text-xs text-slate-400 font-medium bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100 flex-shrink-0 ml-4">
-                                      {edu.start_year || "—"} –{" "}
-                                      {edu.end_year || "Present"}
+                                  {edu.gpa && (
+                                    <span className="inline-block mt-2 text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                                      GPA: {edu.gpa}
                                     </span>
                                   )}
                                 </div>
-                                {edu.gpa && (
-                                  <span className="inline-block mt-2 text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                                    GPA: {edu.gpa}
-                                  </span>
-                                )}
                               </div>
+                              {idx < validEntries.length - 1 && (
+                                <div className="border-b border-surface-container-low" />
+                              )}
                             </div>
-                            {idx < validEntries.length - 1 && (
-                              <div className="border-b border-surface-container-low" />
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })()}
+                          ))}
+                        </div>
+                      );
+                    })()}
               </div>
             </section>
 

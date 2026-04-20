@@ -125,12 +125,12 @@ class ProfileService {
     );
   }
 
-  async parseResume(file: File): Promise<any> {
-    const response = await apiClient.uploadFile<any>(
-      "/ai/upload-and-parse-cv",
+  async parseResume(file: File): Promise<import("../types/api").ParseResumeResponse> {
+    return await apiClient.uploadFile<import("../types/api").ParseResumeResponse>(
+      "/ai/parse-resume",
       file,
+      "file",
     );
-    return response?.data || response;
   }
 
   async deleteProfile(): Promise<{ message: string }> {

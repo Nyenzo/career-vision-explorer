@@ -272,6 +272,51 @@ export interface Project {
   end_date?: string;
 }
 
+// --- POST /api/v1/ai/parse-resume response types ---
+
+export interface ParseResumeWorkExperience {
+  company: string;
+  title: string;
+  start_date: string | null;
+  end_date: string | null;
+  currently_working: boolean;
+  description: string;
+}
+
+export interface ParseResumeEducation {
+  institution: string;
+  degree: string;
+  field_of_study: string;
+  start_date: string | null;
+  end_date: string | null;
+}
+
+export interface ParseResumeProject {
+  name: string;
+  description: string;
+  url: string | null;
+  technologies: string[];
+}
+
+export interface ParseResumeResponse {
+  message: string;
+  resume_url: string;
+  warning: string | null;
+  professional_title: string | null;
+  bio: string | null;
+  location: string | null;
+  experience_years: number | null;
+  skills: string[];
+  linkedin_url: string | null;
+  github_url: string | null;
+  portfolio_url: string | null;
+  twitter_url: string | null;
+  stackoverflow_url: string | null;
+  work_experience: ParseResumeWorkExperience[];
+  education: ParseResumeEducation[];
+  projects: ParseResumeProject[];
+}
+
 export interface CompanyData {
   company_name?: string;
   company_website?: string;
