@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { toast } from "sonner";
 import { JobApplicationDialog } from "@/components/jobseeker/JobApplicationDialog";
@@ -19,7 +18,7 @@ interface Job {
   type: string;
   salary: string;
   posted: string;
-  matchScore: number;
+  matchScore: number | null;
   skills: string[];
   description: string;
   experienceLevel?: string;
@@ -32,18 +31,18 @@ interface JobsContainerProps {
 export const JobsContainer = ({ jobs }: JobsContainerProps) => {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [applicationDialogOpen, setApplicationDialogOpen] = useState(false);
-  
+
   const { isJobSeeker } = useAuth();
-  
+
   // Allow job seekers to view and apply for jobs
   const canApplyForJobs = isJobSeeker();
-  
+
   // Always call hooks unconditionally (Rules of Hooks)
   const { getApplicationForJob: getAppFn } = useJobApplications();
   const getApplicationForJob = canApplyForJobs ? getAppFn : () => null;
-    
+
   const { addToWishlist, removeFromWishlist, isJobInWishlist } = useWishlist();
-  
+
   const {
     searchTerm,
     setSearchTerm,
@@ -61,16 +60,16 @@ export const JobsContainer = ({ jobs }: JobsContainerProps) => {
     setFiltersVisible,
     filteredJobs,
     activeFiltersCount,
-    resetFilters
+    resetFilters,
   } = useJobsFilter(jobs);
-  
+
   const handleApply = (job: Job) => {
     setSelectedJob(job);
     setApplicationDialogOpen(true);
   };
 
   const handleSaveJob = (jobId: string) => {
-const job = jobs.find(j => j.job_id === jobId);
+    const job = jobs.find((j) => j.job_id === jobId);
     if (!job) return;
 
     if (isJobInWishlist(job.job_id)) {
@@ -80,20 +79,20 @@ const job = jobs.find(j => j.job_id === jobId);
     }
   };
 
-const isJobApplied = (jobId: string) => {
-   const job = jobs.find(j => j.job_id === jobId);
-   return job ? !!getApplicationForJob(job.job_id) : false;
- };
+  const isJobApplied = (jobId: string) => {
+    const job = jobs.find((j) => j.job_id === jobId);
+    return job ? !!getApplicationForJob(job.job_id) : false;
+  };
 
-const isJobSaved = (jobId: string) => {
-   const job = jobs.find(j => j.job_id === jobId);
-   return job ? isJobInWishlist(job.job_id) : false;
- };
+  const isJobSaved = (jobId: string) => {
+    const job = jobs.find((j) => j.job_id === jobId);
+    return job ? isJobInWishlist(job.job_id) : false;
+  };
 
   return (
     <>
       <JobsHeader />
-      
+
       <JobsSearchBar
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -105,7 +104,7 @@ const isJobSaved = (jobId: string) => {
         jobTypeFilters={jobTypeFilters}
         setJobTypeFilters={setJobTypeFilters}
       />
-      
+
       {filtersVisible && (
         <div className="animate-fade-in">
           <JobsFilters
@@ -119,7 +118,7 @@ const isJobSaved = (jobId: string) => {
           />
         </div>
       )}
-      
+
       <JobsList
         jobs={filteredJobs}
         isJobApplied={isJobApplied}

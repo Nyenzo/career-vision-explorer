@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { create } from "zustand";
 import { toast } from "sonner";
@@ -13,7 +12,7 @@ export interface WishlistJob {
   type: string;
   salary: string;
   posted: string;
-  matchScore: number;
+  matchScore: number | null;
   skills: string[];
   description: string;
   experienceLevel?: string;
@@ -25,7 +24,7 @@ interface WishlistStore {
   isLoaded: boolean;
   loadedUserId: string | null;
   loadWishlist: (userId: string) => Promise<void>;
-  addToWishlist: (job: Omit<WishlistJob, 'dateSaved'>) => Promise<void>;
+  addToWishlist: (job: Omit<WishlistJob, "dateSaved">) => Promise<void>;
   removeFromWishlist: (jobId: string) => Promise<void>;
   isJobInWishlist: (jobId: string) => boolean;
   clearWishlist: () => Promise<void>;
@@ -65,7 +64,8 @@ const mapSavedJobToWishlistJob = (saved: SavedJobApiItem): WishlistJob => {
     type: humanizeJobType(job.job_type),
     salary: job.salary_range || "Not specified",
     posted: job.created_at || saved.created_at,
-    matchScore: typeof job.match_score === "number" ? Math.round(job.match_score) : 0,
+    matchScore:
+      typeof job.match_score === "number" ? Math.round(job.match_score) : 0,
     skills: Array.isArray(job.required_skills) ? job.required_skills : [],
     description: job.job_description || "",
     experienceLevel: job.experience_level,
@@ -110,7 +110,8 @@ const useWishlistStore = create<WishlistStore>((set, get) => ({
         await apiClient.post(`/jobs/${job.job_id}/save`);
       } catch (error) {
         set({ wishlistJobs });
-        const message = error instanceof Error ? error.message : "Failed to save job";
+        const message =
+          error instanceof Error ? error.message : "Failed to save job";
         toast.error(message);
         return;
       }
@@ -131,7 +132,8 @@ const useWishlistStore = create<WishlistStore>((set, get) => ({
         await apiClient.delete(`/jobs/${jobId}/save`);
       } catch (error) {
         set({ wishlistJobs });
-        const message = error instanceof Error ? error.message : "Failed to remove saved job";
+        const message =
+          error instanceof Error ? error.message : "Failed to remove saved job";
         toast.error(message);
         return;
       }
@@ -150,7 +152,7 @@ const useWishlistStore = create<WishlistStore>((set, get) => ({
     set({ wishlistJobs: [] });
 
     await Promise.allSettled(
-      wishlistJobs.map((job) => apiClient.delete(`/jobs/${job.job_id}/save`))
+      wishlistJobs.map((job) => apiClient.delete(`/jobs/${job.job_id}/save`)),
     );
 
     toast.success("Wishlist cleared");
@@ -163,7 +165,9 @@ export const useWishlist = () => {
   const loadedUserId = useWishlistStore((state) => state.loadedUserId);
   const loadWishlist = useWishlistStore((state) => state.loadWishlist);
   const addToWishlist = useWishlistStore((state) => state.addToWishlist);
-  const removeFromWishlist = useWishlistStore((state) => state.removeFromWishlist);
+  const removeFromWishlist = useWishlistStore(
+    (state) => state.removeFromWishlist,
+  );
   const isJobInWishlist = useWishlistStore((state) => state.isJobInWishlist);
   const clearWishlist = useWishlistStore((state) => state.clearWishlist);
 
@@ -171,7 +175,11 @@ export const useWishlist = () => {
   const activeUserId = user?.user_id || null;
 
   useEffect(() => {
-    if (!isAuthenticated || user?.account_type !== "job_seeker" || !activeUserId) {
+    if (
+      !isAuthenticated ||
+      user?.account_type !== "job_seeker" ||
+      !activeUserId
+    ) {
       if (wishlistJobs.length > 0 || isLoaded || loadedUserId) {
         useWishlistStore.setState({
           wishlistJobs: [],

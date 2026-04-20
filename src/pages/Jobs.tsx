@@ -4,7 +4,14 @@ import { JobsContainer } from "@/components/jobs/JobsContainer";
 import { jobsService } from "../services/jobs.service";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
-import { DashboardStatsGridSkeleton, JobCardSkeleton, PageHeaderSkeleton } from "@/components/ui/skeleton-loaders";
+import {
+  DashboardStatsGridSkeleton,
+  JobCardSkeleton,
+  PageHeaderSkeleton,
+} from "@/components/ui/skeleton-loaders";
+
+const PAGE_SIZE = 20;
+const USE_RECOMMENDATIONS = true; // flip to false to debug with plain listing
 
 // Frontend Job type for the UI components
 interface Job {
@@ -16,7 +23,7 @@ interface Job {
   type: string;
   salary: string;
   posted: string;
-  matchScore: number;
+  matchScore: number | null;
   skills: string[];
   description: string;
   experienceLevel?: string;
@@ -34,11 +41,17 @@ interface Job {
 
 const normalizeApiJobToUiJob = (apiJob: any): Job => {
   let skills: string[] = [];
-  if (Array.isArray(apiJob.skills_required) && apiJob.skills_required.length > 0) {
+  if (
+    Array.isArray(apiJob.skills_required) &&
+    apiJob.skills_required.length > 0
+  ) {
     skills = apiJob.skills_required;
   } else if (apiJob.skills_required && !Array.isArray(apiJob.skills_required)) {
     skills = [apiJob.skills_required];
-  } else if (Array.isArray(apiJob.required_skills) && apiJob.required_skills.length > 0) {
+  } else if (
+    Array.isArray(apiJob.required_skills) &&
+    apiJob.required_skills.length > 0
+  ) {
     skills = apiJob.required_skills;
   } else if (apiJob.requirements) {
     skills = apiJob.requirements
@@ -52,10 +65,10 @@ const normalizeApiJobToUiJob = (apiJob: any): Job => {
   const title = String(apiJob.job_title ?? apiJob.title ?? "Untitled Role");
   const company = String(
     apiJob.company_name ??
-    apiJob.company ??
-    apiJob.employer_company_name ??
-    apiJob.posted_by_company ??
-    "Unknown Company"
+      apiJob.company ??
+      apiJob.employer_company_name ??
+      apiJob.posted_by_company ??
+      "Unknown Company",
   );
 
   return {
@@ -69,13 +82,13 @@ const normalizeApiJobToUiJob = (apiJob: any): Job => {
     posted: apiJob.created_at
       ? new Date(apiJob.created_at).toLocaleDateString()
       : "Recently",
-    matchScore: Number(apiJob.match_score || 0),
+    matchScore: apiJob.match_score != null ? Number(apiJob.match_score) : null,
     skills,
     description: String(
       apiJob.job_description ||
-      apiJob.description ||
-      apiJob.requirements ||
-      "No description available"
+        apiJob.description ||
+        apiJob.requirements ||
+        "No description available",
     ),
     experienceLevel: String(apiJob.experience_level || "Mid Level"),
     companyInfo: { logoUrl: apiJob.company_logo_url || undefined },
@@ -100,10 +113,7 @@ const generateMockUUID = (id: string): string => {
 };
 
 const normalizeKeyPart = (value?: string) =>
-  (value || "")
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, " ");
+  (value || "").toLowerCase().trim().replace(/\s+/g, " ");
 
 const getCanonicalJobKey = (job: Job) => {
   const idPart = normalizeKeyPart(job.job_id || job.id);
@@ -200,49 +210,13 @@ const Jobs = () => {
 
   const loadMoreJobs = useCallback(async () => {
     if (loadingMore || !hasMore) return;
-
     setLoadingMore(true);
-    const nextPage = currentPage + 1;
-
     try {
-      console.log(`Loading more jobs — page ${nextPage}`);
-
-      const jobsResponse = await jobsService.getJobs({
-        is_active: true,
-        page: nextPage + 1, // backend is 1-indexed
-        limit: 6,
-        sort_by: "created_at",
-        sort_order: "desc",
-      });
-
-      const apiJobs = jobsResponse.jobs || [];
-      if (apiJobs.length > 0) {
-        const transformedJobs = apiJobs.map((apiJob: any) =>
-          normalizeApiJobToUiJob(apiJob)
-        );
-
-        if (mountedRef.current) {
-          setJobs((prevJobs) => {
-            const merged = [...prevJobs, ...transformedJobs];
-            const deduped = dedupeJobs(merged);
-            console.log(`Added ${deduped.length - prevJobs.length} new jobs`);
-            return deduped;
-          });
-          setCurrentPage(nextPage);
-          setHasMore(apiJobs.length === 6);
-          toast.success(`Loaded ${transformedJobs.length} more jobs`);
-        }
-      } else {
-        setHasMore(false);
-      }
-    } catch (error) {
-      console.error("Error loading more jobs:", error);
-      toast.error("Failed to load more jobs");
-      setHasMore(false);
+      await loadJobs(currentPage + 1);
     } finally {
       setLoadingMore(false);
     }
-  }, [currentPage, hasMore, loadingMore]);
+  }, [currentPage, hasMore, loadingMore, isAuthenticated]);
 
   const clearCache = async () => {
     setClearingCache(true);
@@ -267,61 +241,47 @@ const Jobs = () => {
     }
   };
 
-  const loadJobs = async () => {
-    if (loadingRef.current) {
-      console.log("Jobs already loading, skipping...");
-      return;
+  const loadJobs = async (page = 1) => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
+    if (page === 1) {
+      setLoading(true);
+      setError(null);
     }
 
-    loadingRef.current = true;
-    setLoading(true);
-    setError(null);
-    setCurrentPage(0);
-    setHasMore(true);
-
     try {
-      console.log("Loading active jobs from GET /api/v1/jobs/?is_active=true");
+      // Authenticated users → ranked recommendations endpoint
+      // Unauthenticated users → plain listing sorted by date
+      const response =
+        isAuthenticated && USE_RECOMMENDATIONS
+          ? await jobsService.getRecommendedJobs({ page, limit: PAGE_SIZE })
+          : await jobsService.getJobs({
+              is_active: true,
+              page,
+              limit: PAGE_SIZE,
+              sort_by: "created_at",
+              sort_order: "desc",
+            });
 
-      const jobsResponse = await jobsService.getJobs({
-        is_active: true,
-        page: 1,
-        limit: 6,
-        sort_by: "created_at",
-        sort_order: "desc",
-      });
+      const apiJobs = response.jobs || response.recommendations || [];
+      const transformed = apiJobs.map(normalizeApiJobToUiJob);
 
-      console.log("Jobs response:", jobsResponse);
-
-      if (!mountedRef.current) return;
-
-      const apiJobs = jobsResponse.jobs || [];
-      if (apiJobs.length > 0) {
-        const transformedJobs = apiJobs.map((apiJob: any) =>
-          normalizeApiJobToUiJob(apiJob)
-        );
-
-        if (mountedRef.current) {
-          setJobs(dedupeJobs(transformedJobs));
-          setHasMore(apiJobs.length === 6);
-          toast.success(`Loaded ${transformedJobs.length} jobs`);
-        }
-        return;
-      }
-
-      // No jobs returned
       if (mountedRef.current) {
-        setError("No jobs found. Please try again later.");
+        setJobs(
+          page === 1
+            ? dedupeJobs(transformed)
+            : (prev) => dedupeJobs([...prev, ...transformed]),
+        );
+        setCurrentPage(page);
+        setHasMore(apiJobs.length === PAGE_SIZE);
       }
     } catch (err: any) {
-      console.error("Error loading jobs:", err);
       if (mountedRef.current) {
-        setError("Failed to load jobs. Please try again later.");
+        setError("Failed to load jobs. Please try again.");
         toast.error("Failed to load jobs.");
       }
     } finally {
-      if (mountedRef.current) {
-        setLoading(false);
-      }
+      if (mountedRef.current) setLoading(false);
       loadingRef.current = false;
     }
   };
@@ -407,7 +367,9 @@ const Jobs = () => {
                 disabled={loadingMore}
                 className="px-6 py-3 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white rounded-lg transition-colors duration-200 flex items-center space-x-2"
               >
-                <span>{loadingMore ? "Loading More Jobs" : "Load More Jobs"}</span>
+                <span>
+                  {loadingMore ? "Loading More Jobs" : "Load More Jobs"}
+                </span>
                 {!loadingMore && (
                   <svg
                     className="w-4 h-4"
@@ -439,7 +401,6 @@ const Jobs = () => {
               </div>
             </div>
           )}
-
 
           {!hasMore && jobs.length > 0 && (
             <div className="text-center py-8 text-gray-500">
