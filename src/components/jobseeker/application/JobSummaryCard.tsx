@@ -1,4 +1,5 @@
 import { Building, MapPin, Briefcase, DollarSign } from "lucide-react";
+import { getMatchScoreLightClass } from "@/lib/utils";
 
 interface JobSummaryCardProps {
   job: any;
@@ -36,15 +37,7 @@ export const JobSummaryCard = ({ job }: JobSummaryCardProps) => {
             Match Score:
           </span>
           <div
-            className={`px-3 py-1 rounded-full text-sm font-bold ${
-              job.matchScore >= 90
-                ? "bg-green-100 text-green-800"
-                : job.matchScore >= 80
-                  ? "bg-blue-100 text-blue-800"
-                  : job.matchScore >= 70
-                    ? "bg-yellow-100 text-yellow-800"
-                    : "bg-orange-100 text-orange-800"
-            }`}
+            className={`px-3 py-1 rounded-full text-sm font-bold ${getMatchScoreLightClass(job.matchScore)}`}
           >
             {job.matchScore}%
           </div>

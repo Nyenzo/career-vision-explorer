@@ -8,6 +8,7 @@ import { useJobApplications } from "@/hooks/use-job-applications";
 import { Bookmark, Briefcase, MapPin, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getMatchScoreBgClass } from "@/lib/utils";
 import { SavedJobCardSkeleton } from "@/components/ui/skeleton-loaders";
 
 const SavedJobsPage = () => {
@@ -125,7 +126,7 @@ const SavedJobsPage = () => {
                                             <div className="min-w-0">
                                                 <div className="mb-1 flex flex-wrap items-center gap-2">
                                                     <h3 className="truncate text-2xl font-semibold text-slate-900">{job.title}</h3>
-                                                    <Badge className="rounded-full bg-emerald-600 text-[10px] uppercase tracking-wide text-white">
+                                                    <Badge className={`rounded-full ${getMatchScoreBgClass(job.matchScore ?? 0)} text-[10px] uppercase tracking-wide text-white`}>
                                                         {job.matchScore}% Match
                                                     </Badge>
                                                 </div>
@@ -182,7 +183,7 @@ const SavedJobsPage = () => {
                                                         {application.status}
                                                     </Badge>
                                                     {typeof application.matchScore === "number" && (
-                                                        <Badge className="rounded-full bg-emerald-600 text-[10px] uppercase tracking-wide text-white">
+                                                        <Badge className={`rounded-full ${getMatchScoreBgClass(application.matchScore ?? 0)} text-[10px] uppercase tracking-wide text-white`}>
                                                             {application.matchScore}% Match
                                                         </Badge>
                                                     )}

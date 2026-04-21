@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Search, Users, XCircle } from "lucide-react";
+import { ArrowLeft, Search, Users, XCircle, CheckCircle, Eye, User } from "lucide-react";
 import { useEmployerApplications } from "@/hooks/use-employer-applications";
 import { ApplicantProfileDialog } from "@/components/employer/ApplicantProfileDialog";
 import { ApplicantsTableRowSkeleton } from "@/components/ui/skeleton-loaders";
@@ -120,9 +120,17 @@ const AllApplicants = () => {
                       <TableRow className="cursor-pointer hover:bg-blue-50/50 transition-colors">
                         <TableCell>
                           <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                              {applicant.applicantInfo.name.charAt(0).toUpperCase()}
-                            </div>
+                            {applicant.applicantInfo.avatar_url ? (
+                              <img
+                                src={applicant.applicantInfo.avatar_url}
+                                alt={applicant.applicantInfo.name}
+                                className="w-8 h-8 rounded-full object-cover shrink-0"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                                {applicant.applicantInfo.name.charAt(0).toUpperCase()}
+                              </div>
+                            )}
                             <div>
                               <p className="font-medium text-gray-900">{applicant.applicantInfo.name}</p>
                               <p className="text-xs text-gray-500">{applicant.applicantInfo.email}</p>
@@ -148,8 +156,8 @@ const AllApplicants = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Button size="sm" variant="outline" className="h-8 w-8 p-0 hover:bg-blue-50 border-blue-200">
-                              <Eye className="h-3 w-3 text-blue-600" />
+                            <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); navigate(`/profile/${applicant.user_id}`); }} className="h-8 w-8 p-0 hover:bg-blue-50 border-blue-200" disabled={!applicant.user_id} title="View profile">
+                              <User className="h-3 w-3 text-blue-600" />
                             </Button>
                             {applicant.status === "Pending" && (
                               <>

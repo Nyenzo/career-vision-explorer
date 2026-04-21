@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getMatchScoreBgClass } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -105,15 +106,7 @@ const WishlistJobCard = ({ job, onRemove }: WishlistJobCardProps) => {
               {job.title}
               {job.matchScore != null && (
                 <Badge
-                  className={`text-xs ${
-                    job.matchScore >= 90
-                      ? "bg-green-500"
-                      : job.matchScore >= 80
-                        ? "bg-blue-500"
-                        : job.matchScore >= 70
-                          ? "bg-yellow-500"
-                          : "bg-orange-500"
-                  } text-white`}
+                  className={`text-xs ${getMatchScoreBgClass(job.matchScore)} text-white`}
                 >
                   {job.matchScore}% Match
                 </Badge>

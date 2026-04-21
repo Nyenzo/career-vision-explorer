@@ -12,6 +12,7 @@ export interface EmployerApplication extends Application {
   applicantInfo: {
     name: string;
     email: string;
+    avatar_url?: string;
   };
   jobInfo: {
     title: string;
@@ -35,6 +36,7 @@ function toEmployerApplication(app: Application): EmployerApplication {
     applicantInfo: {
       name: app.applicant_name || 'Unknown Applicant',
       email: app.applicant_email || '',
+      avatar_url: app.applicant_avatar_url,
     },
     jobInfo: {
       title: app.job_title || app.job?.title || '',

@@ -134,9 +134,17 @@ export const RecentApplicantsTable = () => {
                   <tr className="cursor-pointer hover:bg-gray-50/60 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm shrink-0">
-                          {applicant.applicantInfo.name.charAt(0).toUpperCase()}
-                        </div>
+                        {applicant.applicantInfo.avatar_url ? (
+                          <img
+                            src={applicant.applicantInfo.avatar_url}
+                            alt={applicant.applicantInfo.name}
+                            className="w-9 h-9 rounded-full object-cover shrink-0"
+                          />
+                        ) : (
+                          <div className="w-9 h-9 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm shrink-0">
+                            {applicant.applicantInfo.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
                         <div>
                           <p className="text-sm font-semibold text-gray-900">{applicant.applicantInfo.name}</p>
                           <p className="text-xs text-gray-400">{applicant.applicantInfo.email}</p>
@@ -232,9 +240,17 @@ export const RecentApplicantsTable = () => {
               <div className="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                      {applicant.applicantInfo.name.charAt(0).toUpperCase()}
-                    </div>
+                    {applicant.applicantInfo.avatar_url ? (
+                      <img
+                        src={applicant.applicantInfo.avatar_url}
+                        alt={applicant.applicantInfo.name}
+                        className="w-8 h-8 rounded-full object-cover shrink-0"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                        {applicant.applicantInfo.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
                     <div>
                       <p className="font-medium text-gray-900">
                         {applicant.applicantInfo.name}
