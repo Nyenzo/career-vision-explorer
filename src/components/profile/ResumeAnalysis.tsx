@@ -1,302 +1,258 @@
-
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { Upload, FileText, Check, X } from "lucide-react";
+import {
+  Upload,
+  FileText,
+  X,
+  ExternalLink,
+  AlertTriangle,
+  CheckCircle2,
+} from "lucide-react";
+import { profileService } from "@/services/profile.service";
+import { ParseResumeResponse } from "@/types/api";
+import { toast } from "sonner";
 
-interface Skill {
-  name: string;
-  level: number;
-  category: "technical" | "soft" | "language";
+const ACCEPTED_TYPES = [
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/msword",
+  "text/plain",
+];
+const ACCEPTED_EXTENSIONS = [".pdf", ".docx", ".doc", ".txt"];
+const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+
+interface ResumeAnalysisProps {
+  onProfileParsed?: (data: ParseResumeResponse) => void;
+  existingResumeUrl?: string | null;
 }
 
-interface ResumeAnalysisResult {
-  jobTitle: string;
-  experience: number;
-  education: string[];
-  skills: Skill[];
-  strengths: string[];
-  improvements: string[];
-  suggestedRoles: string[];
-}
-
-const ResumeAnalysis = () => {
-  const { toast } = useToast();
+const ResumeAnalysis = ({
+  onProfileParsed,
+  existingResumeUrl,
+}: ResumeAnalysisProps) => {
+  const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [resume, setResume] = useState<File | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<ResumeAnalysisResult | null>(null);
-  
-  const handleResumeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setResume(file);
-      parseResume(file);
+  const [result, setResult] = useState<ParseResumeResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const validateFile = (f: File): string | null => {
+    const ext = f.name.split(".").pop()?.toLowerCase();
+    const isValidType =
+      ACCEPTED_TYPES.includes(f.type) ||
+      (ext !== undefined && ACCEPTED_EXTENSIONS.includes(`.${ext}`));
+    if (!isValidType) {
+      return "Invalid file type. Please upload a PDF, DOCX, or TXT file.";
+    }
+    if (f.size === 0) {
+      return "File is empty. Please select a valid resume file.";
+    }
+    if (f.size > MAX_SIZE_BYTES) {
+      return "File is too large. Maximum size is 5 MB.";
+    }
+    return null;
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+
+    const err = validateFile(selected);
+    if (err) {
+      setValidationError(err);
+      setFile(null);
+      e.target.value = "";
+      return;
+    }
+
+    setValidationError(null);
+    setError(null);
+    setResult(null);
+    setFile(selected);
+    e.target.value = "";
+  };
+
+  const handleUpload = async () => {
+    if (!file) return;
+
+    setIsUploading(true);
+    setError(null);
+
+    try {
+      const response = await profileService.parseResume(file);
+      setResult(response);
+      onProfileParsed?.(response);
+      toast.success("Profile updated from your CV");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Failed to upload resume. Please try again.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setIsUploading(false);
     }
   };
-  
-  const parseResume = (file: File) => {
-    setIsUploading(true);
-    
-    // Simulate file upload
-    let uploadProgress = 0;
-    const uploadInterval = setInterval(() => {
-      uploadProgress += 20;
-      setProgress(uploadProgress);
-      
-      if (uploadProgress >= 100) {
-        clearInterval(uploadInterval);
-        setIsUploading(false);
-        setIsAnalyzing(true);
-        
-        // Simulate AI analysis
-        setTimeout(() => {
-          setIsAnalyzing(false);
-          
-          // Mock analysis result
-          const mockResult: ResumeAnalysisResult = {
-            jobTitle: "Senior Software Engineer",
-            experience: 5,
-            education: ["BSc Computer Science, University of Nairobi", "MSc Data Science, Strathmore University"],
-            skills: [
-              { name: "JavaScript", level: 90, category: "technical" },
-              { name: "React", level: 85, category: "technical" },
-              { name: "Node.js", level: 80, category: "technical" },
-              { name: "Python", level: 75, category: "technical" },
-              { name: "Communication", level: 85, category: "soft" },
-              { name: "Problem Solving", level: 90, category: "soft" },
-              { name: "Team Leadership", level: 80, category: "soft" },
-              { name: "English", level: 95, category: "language" },
-              { name: "Swahili", level: 90, category: "language" },
-            ],
-            strengths: [
-              "Strong technical background in web development",
-              "Proven leadership experience",
-              "Excellent problem-solving abilities",
-              "Advanced communication skills"
-            ],
-            improvements: [
-              "Consider adding more data science projects to portfolio",
-              "Certification in cloud technologies would be beneficial",
-              "More emphasis on quantitative achievements"
-            ],
-            suggestedRoles: [
-              "Senior Frontend Developer",
-              "Technical Team Lead",
-              "Full Stack Engineer",
-              "Software Engineering Manager"
-            ]
-          };
-          
-          setAnalysisResult(mockResult);
-          toast({
-            title: "Resume Analysis Complete",
-            description: "We've analyzed your resume and extracted key information."
-          });
-        }, 2000);
-      }
-    }, 500);
+
+  const handleReset = () => {
+    setFile(null);
+    setResult(null);
+    setError(null);
+    setValidationError(null);
   };
-  
+
+  const resumeUrl = result?.resume_url || existingResumeUrl;
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Resume Analysis</CardTitle>
+          <CardTitle>Resume / CV Upload</CardTitle>
           <CardDescription>
-            Upload your resume for AI-powered analysis and receive personalized insights.
+            Upload your CV to automatically fill in your profile. Accepted
+            formats: PDF, DOCX, TXT — max 5 MB.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          {!resume ? (
-            <div className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center">
-              <FileText className="h-8 w-8 mx-auto text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">Upload your resume</h3>
-              <p className="mt-1 text-sm text-gray-500">PDF, DOCX or TXT up to 5MB</p>
-              <div className="mt-4">
-                <div className="relative">
-                  <input
-                    type="file"
-                    accept=".pdf,.docx,.doc,.txt"
-                    onChange={handleResumeUpload}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
-                  <Button variant="outline">
-                    <Upload className="mr-2 h-4 w-4" />
-                    Select File
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <div className="flex items-center justify-between border rounded-md p-3 mb-4">
-                <div className="flex items-center">
-                  <FileText className="h-5 w-5 text-blue-500 mr-2" />
-                  <span className="text-sm font-medium">{resume.name}</span>
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setResume(null)}
-                  disabled={isUploading || isAnalyzing}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              
-              {isUploading && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Uploading...</span>
-                    <span>{progress}%</span>
-                  </div>
-                  <Progress value={progress} />
-                </div>
-              )}
-              
-              {isAnalyzing && (
-                <div className="space-y-2">
-                  <p className="text-sm">Analyzing your resume with AI...</p>
-                  <Progress value={65} />
-                </div>
-              )}
-            </div>
+        <CardContent className="space-y-4">
+          {/* Current CV link (before upload or when no new result yet) */}
+          {resumeUrl && !result && (
+            <a
+              href={resumeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:underline"
+            >
+              <FileText className="h-4 w-4" />
+              View uploaded CV
+              <ExternalLink className="h-3 w-3" />
+            </a>
           )}
-          
-          {analysisResult && (
-            <div className="mt-6 space-y-6">
-              <div>
-                <h3 className="text-lg font-medium">Profile Summary</h3>
-                <div className="mt-2 bg-gray-50 rounded-md p-4">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium">{analysisResult.jobTitle}</p>
-                    <p className="text-sm text-gray-500">{analysisResult.experience} years experience</p>
-                  </div>
-                  <div className="mt-2">
-                    <p className="text-sm font-medium">Education</p>
-                    <ul className="mt-1 text-sm text-gray-600">
-                      {analysisResult.education.map((edu, index) => (
-                        <li key={index}>{edu}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-medium">Skills Assessment</h3>
-                <div className="mt-2 space-y-4">
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Technical Skills</h4>
-                    <div className="space-y-2">
-                      {analysisResult.skills
-                        .filter(skill => skill.category === "technical")
-                        .map(skill => (
-                          <div key={skill.name} className="space-y-1">
-                            <div className="flex justify-between text-sm">
-                              <span>{skill.name}</span>
-                              <span>{skill.level}%</span>
-                            </div>
-                            <Progress value={skill.level} />
-                          </div>
-                        ))
-                      }
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Soft Skills</h4>
-                    <div className="space-y-2">
-                      {analysisResult.skills
-                        .filter(skill => skill.category === "soft")
-                        .map(skill => (
-                          <div key={skill.name} className="space-y-1">
-                            <div className="flex justify-between text-sm">
-                              <span>{skill.name}</span>
-                              <span>{skill.level}%</span>
-                            </div>
-                            <Progress value={skill.level} />
-                          </div>
-                        ))
-                      }
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Languages</h4>
-                    <div className="space-y-2">
-                      {analysisResult.skills
-                        .filter(skill => skill.category === "language")
-                        .map(skill => (
-                          <div key={skill.name} className="space-y-1">
-                            <div className="flex justify-between text-sm">
-                              <span>{skill.name}</span>
-                              <span>{skill.level}%</span>
-                            </div>
-                            <Progress value={skill.level} />
-                          </div>
-                        ))
-                      }
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="text-lg font-medium mb-2">Strengths</h3>
-                  <ul className="space-y-2">
-                    {analysisResult.strengths.map((strength, index) => (
-                      <li key={index} className="flex items-start">
-                        <Check className="h-5 w-5 text-green-500 mr-2 shrink-0" />
-                        <span className="text-sm">{strength}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                
-                <div>
-                  <h3 className="text-lg font-medium mb-2">Areas for Improvement</h3>
-                  <ul className="space-y-2">
-                    {analysisResult.improvements.map((item, index) => (
-                      <li key={index} className="flex items-start">
-                        <div className="h-5 w-5 text-blue-500 mr-2 shrink-0 flex items-center justify-center">
-                          <span className="text-sm font-bold">+</span>
-                        </div>
-                        <span className="text-sm">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-medium mb-2">Suggested Roles</h3>
-                <div className="flex flex-wrap gap-2">
-                  {analysisResult.suggestedRoles.map((role, index) => (
-                    <div 
-                      key={index} 
-                      className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm"
+
+          {/* Upload area — hidden after a successful parse */}
+          {!result && (
+            <>
+              {!file ? (
+                <div className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center">
+                  <FileText className="h-8 w-8 mx-auto text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">
+                    Upload your resume
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    PDF, DOCX or TXT up to 5 MB
+                  </p>
+                  <div className="mt-4">
+                    <input
+                      ref={inputRef}
+                      type="file"
+                      accept=".pdf,.docx,.doc,.txt"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => inputRef.current?.click()}
                     >
-                      {role}
-                    </div>
-                  ))}
+                      <Upload className="mr-2 h-4 w-4" />
+                      Select File
+                    </Button>
+                  </div>
+                  {validationError && (
+                    <p className="mt-2 text-sm text-red-600">
+                      {validationError}
+                    </p>
+                  )}
                 </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between border rounded-md p-3">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-blue-500" />
+                      <span className="text-sm font-medium">{file.name}</span>
+                      <span className="text-xs text-gray-400">
+                        ({(file.size / 1024 / 1024).toFixed(1)} MB)
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleReset}
+                      disabled={isUploading}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {isUploading ? (
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-600">
+                        Uploading and parsing your CV…
+                      </p>
+                      <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-600 rounded-full animate-[progress-indeterminate_1.5s_ease-in-out_infinite]" />
+                      </div>
+                    </div>
+                  ) : (
+                    <Button onClick={handleUpload} className="w-full">
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload &amp; Parse CV
+                    </Button>
+                  )}
+
+                  {error && <p className="text-sm text-red-600">{error}</p>}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Success state */}
+          {result && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 rounded-md p-3">
+                <CheckCircle2 className="h-5 w-5 shrink-0" />
+                <span className="text-sm font-medium">
+                  Profile updated from your CV ✓
+                </span>
               </div>
-              
-              <div className="pt-2">
-                <Button className="w-full">Find Matching Jobs</Button>
-              </div>
+
+              {result.warning && (
+                <div className="flex items-start gap-2 text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-3">
+                  <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
+                  <span className="text-sm">
+                    Your CV was saved, but we couldn&apos;t auto-fill your
+                    profile. You can fill it in manually.
+                  </span>
+                </div>
+              )}
+
+              {result.resume_url && (
+                <a
+                  href={result.resume_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:underline"
+                >
+                  <FileText className="h-4 w-4" />
+                  View uploaded CV
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              )}
+
+              <Button
+                variant="outline"
+                onClick={handleReset}
+                className="w-full"
+              >
+                Upload Another CV
+              </Button>
             </div>
           )}
         </CardContent>
