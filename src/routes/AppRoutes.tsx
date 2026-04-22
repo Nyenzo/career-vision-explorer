@@ -43,6 +43,11 @@ const EmployerDashboard = lazy(
 const EmployerJobs = lazy(() => import("@/pages/employer/EmployerJobs"));
 const AllApplicants = lazy(() => import("@/pages/employer/AllApplicants"));
 
+// Founder matching
+const FounderDashboard = lazy(() => import("@/pages/founder/FounderDashboard"));
+const CofounderOnboarding = lazy(() => import("@/pages/founder/CofounderOnboarding"));
+const FounderProfile = lazy(() => import("@/pages/founder/FounderProfile"));
+
 // Jobseeker
 const JobSeekerDashboard = lazy(
   () => import("@/pages/jobseeker/JobSeekerDashboard")
@@ -222,6 +227,40 @@ export const AppRoutes = () => {
               <ProtectedRoute requiredRole="employer">
                 <Suspense fallback={<PageLoader />}>
                   <EmployerProfile />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+
+        {/* Founder Matching Routes */}
+        <Route path="/founder" element={<Outlet />}>
+          <Route
+            path="onboarding"
+            element={
+              <ProtectedRoute requiredRole="job_seeker">
+                <Suspense fallback={<PageLoader />}>
+                  <CofounderOnboarding />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="dashboard"
+            element={
+              <ProtectedRoute requiredRole="job_seeker">
+                <Suspense fallback={<PageLoader />}>
+                  <FounderDashboard />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="profile"
+            element={
+              <ProtectedRoute requiredRole="job_seeker">
+                <Suspense fallback={<PageLoader />}>
+                  <FounderProfile />
                 </Suspense>
               </ProtectedRoute>
             }

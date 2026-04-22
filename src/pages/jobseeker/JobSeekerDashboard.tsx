@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { cofounderMatchingService } from "@/services/founder-matching.service";
 import Layout from "@/components/layout/Layout";
 import { DashboardBackground } from "@/components/jobseeker/dashboard/DashboardBackground";
 import { ProfileCompletionCard } from "@/components/jobseeker/dashboard/ProfileCompletionCard";
@@ -23,6 +24,7 @@ import {
   Users,
   Target,
   TrendingUp,
+  Loader2,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -43,7 +45,25 @@ const JobSeekerDashboard = () => {
   const { user, profile, isLoading: authLoading } = useAuth();
   const { isLoading: applicationsLoading } = useJobApplications();
   const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [isFounderLoading, setIsFounderLoading] = useState(false);
   const navigate = useNavigate();
+  const minPhotosRequired = 3;
+
+  const handleCofounderClick = async () => {
+    setIsFounderLoading(true);
+    try {
+      const founderProfile = await cofounderMatchingService.getProfile();
+      if (founderProfile.onboarding_completed && (founderProfile.photo_urls?.length ?? 0) >= minPhotosRequired) {
+        navigate("/founder/dashboard");
+      } else {
+        navigate("/founder/onboarding");
+      }
+    } catch {
+      toast.error("Failed to load co-founder profile. Please try again.");
+    } finally {
+      setIsFounderLoading(false);
+    }
+  };
 
   // If critical dependencies are loading, show ONE unified page loader.
   if (authLoading || applicationsLoading) {
@@ -54,7 +74,17 @@ const JobSeekerDashboard = () => {
     );
   }
 
-  const handleSaveProfile = async (data: any) => {
+  const handleSaveProfile = async (data: {
+    name: string;
+    email: string;
+    role: string;
+    education?: string;
+    experience?: string;
+    location?: string;
+    phone?: string;
+    bio?: string;
+    profileImage?: string;
+  }) => {
     console.log("Saving profile:", data);
   };
 
@@ -133,6 +163,25 @@ const JobSeekerDashboard = () => {
             <div className="lg:col-span-8 flex flex-col gap-8">
               <ProfileCompletionCard />
               <QuickStatsCards />
+              {/* Co-Founder Matching CTA */}
+              <section
+                className="relative overflow-hidden rounded-lg border border-blue-200 bg-gradient-to-br from-blue-600 to-blue-800 p-6 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                onClick={!isFounderLoading ? handleCofounderClick : undefined}
+              >
+                <div className="relative z-10">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-blue-200 mb-1">New</p>
+                  <h3 className="text-xl font-bold text-white mb-2">Find Your Co-Founder</h3>
+                  <p className="text-sm text-blue-100 mb-4 max-w-sm">
+                    Connect with technically strong co-founders and collaborators who match your vision, skills, and ambition.
+                  </p>
+                  <button disabled={isFounderLoading} className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-blue-700 hover:bg-blue-50 transition-colors disabled:opacity-70">
+                    {isFounderLoading ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading...</> : "Get Started →"}
+                  </button>
+                </div>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-10 text-9xl font-black text-white select-none pointer-events-none">
+                  ✦
+                </div>
+              </section>
             </div>
           </div>
         </main>
@@ -152,7 +201,7 @@ const JobSeekerDashboard = () => {
               : "",
             experience: profile?.experience_years?.toString() || "",
             location: profile?.location || "",
-            phone: profile?.phone || "",
+            phone: profile?.phone_number || "",
             bio: profile?.bio || "",
             profileImage: profile?.avatar_url || "",
           }}
