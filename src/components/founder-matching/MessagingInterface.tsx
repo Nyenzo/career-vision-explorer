@@ -22,31 +22,21 @@ function ConversationListItem({
     onClick: () => void;
 }) {
     const lastMsg = conv.last_message;
-    const timeAgo = lastMsg ? "2M AGO" : ""; // Placeholder for time
     return (
         <button
             onClick={onClick}
             className={cn(
-                "w-full flex items-start gap-3 px-4 py-3 text-left transition hover:bg-gray-50",
-                isActive ? "bg-white shadow-sm rounded-l-xl relative z-10" : "bg-transparent rounded-l-xl"
+                "w-full flex items-center gap-3 px-4 py-3 text-left transition hover:bg-gray-50",
+                isActive ? "bg-blue-50 border-r-2 border-blue-500" : ""
             )}
         >
-            {isActive && (
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-full" />
-            )}
-            <div className={cn(
-                "h-10 w-10 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-sm overflow-hidden",
-                isActive ? "ring-2 ring-blue-500 ring-offset-2" : "bg-slate-200 text-slate-600"
-            )}>
+            <div className="h-10 w-10 rounded-full flex-shrink-0 flex items-center justify-center bg-slate-200 text-slate-600 font-bold text-sm">
                 {conv.title?.[0]?.toUpperCase() ?? "?"}
             </div>
-            <div className="flex-1 min-w-0 mt-0.5">
-                <div className="flex items-center justify-between">
-                    <p className="text-sm font-bold text-gray-900 truncate">{conv.title || "Conversation"}</p>
-                    {timeAgo && <p className="text-[9px] font-bold text-gray-400 uppercase">{timeAgo}</p>}
-                </div>
+            <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-900 truncate">{conv.title || "Conversation"}</p>
                 {lastMsg && (
-                    <p className="text-xs text-gray-500 truncate mt-0.5 font-medium">{lastMsg}</p>
+                    <p className="text-xs text-gray-400 truncate">{lastMsg}</p>
                 )}
             </div>
         </button>
@@ -58,34 +48,22 @@ function MessageBubble({ msg, isMine }: { msg: Message; isMine: boolean }) {
         ? new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
         : "";
     return (
-        <div className={cn("flex items-end gap-2", isMine ? "justify-end" : "justify-start")}>
-            {!isMine && (
-                <div className="h-8 w-8 rounded-full bg-slate-200 flex-shrink-0 flex items-center justify-center font-bold text-xs text-slate-600">
-                    A
-                </div>
-            )}
-            <div className="flex flex-col gap-1 max-w-2xl">
-                <div
-                    className={cn(
-                        "px-6 py-4 text-sm leading-relaxed font-medium",
-                        isMine
-                            ? "bg-blue-600 text-white rounded-3xl rounded-br-sm"
-                            : "bg-[#f1f5f9] text-gray-800 rounded-3xl rounded-bl-sm"
-                    )}
-                >
-                    <p>{msg.message_text}</p>
-                </div>
+        <div className={cn("flex", isMine ? "justify-end" : "justify-start")}>
+            <div
+                className={cn(
+                    "max-w-xs lg:max-w-sm rounded-2xl px-4 py-2 text-sm",
+                    isMine
+                        ? "bg-blue-600 text-white rounded-br-sm"
+                        : "bg-gray-100 text-gray-900 rounded-bl-sm"
+                )}
+            >
+                <p>{msg.message_text}</p>
                 {time && (
-                    <p className={cn("text-[10px] font-semibold text-gray-300 mx-2", isMine ? "text-right" : "text-left")}>
+                    <p className={cn("mt-1 text-[10px] text-right", isMine ? "text-blue-200" : "text-gray-400")}>
                         {time}
                     </p>
                 )}
             </div>
-            {isMine && (
-                <div className="h-8 w-8 rounded-full bg-blue-100 flex-shrink-0 flex items-center justify-center font-bold text-xs text-blue-700">
-                    M
-                </div>
-            )}
         </div>
     );
 }
@@ -257,20 +235,13 @@ export function MessagingInterface({
     }, [isConnected, onlineProfiles.length, typingProfiles]);
 
     return (
-        <div className="flex h-[800px] bg-white w-full rounded-2xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100">
+        <div className="flex h-[600px] rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm">
             {/* Sidebar */}
-            <div className="w-[320px] flex-shrink-0 bg-gray-50/50 flex flex-col border-r border-gray-100">
-                <div className="p-6 pb-2">
-                    <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Messages</h2>
-                    <div className="mt-4 relative">
-                        <input
-                            type="text"
-                            placeholder="Search matches..."
-                            className="w-full rounded-xl bg-gray-100/80 border-transparent px-4 py-2.5 text-sm font-medium focus:border-blue-300 focus:bg-white focus:ring-2 focus:ring-blue-100 transition"
-                        />
-                    </div>
+            <div className="w-64 flex-shrink-0 border-r border-gray-100 flex flex-col">
+                <div className="px-4 py-3 border-b border-gray-100">
+                    <h2 className="font-bold text-gray-900">Messages</h2>
                 </div>
-                <div className="flex-1 overflow-y-auto p-2 pt-4">
+                <div className="flex-1 overflow-y-auto">
                     {isLoadingConvs ? (
                         <div className="flex items-center justify-center py-8">
                             <Loader2 className="h-5 w-5 animate-spin text-blue-400" />
@@ -278,19 +249,17 @@ export function MessagingInterface({
                     ) : conversations.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-8 gap-2 text-center px-4">
                             <MessageCircle className="h-8 w-8 text-gray-200" />
-                            <p className="text-xs text-gray-400 font-medium">No conversations yet.</p>
+                            <p className="text-xs text-gray-400">No conversations yet. Message a mutual match to start.</p>
                         </div>
                     ) : (
-                        <div className="flex flex-col gap-1">
-                            {conversations.map((conv) => (
-                                <ConversationListItem
-                                    key={conv.conversation_id}
-                                    conv={conv}
-                                    isActive={String(conv.conversation_id) === activeConvId}
-                                    onClick={() => openConversation(conv)}
-                                />
-                            ))}
-                        </div>
+                        conversations.map((conv) => (
+                            <ConversationListItem
+                                key={conv.conversation_id}
+                                conv={conv}
+                                isActive={String(conv.conversation_id) === activeConvId}
+                                onClick={() => openConversation(conv)}
+                            />
+                        ))
                     )}
                 </div>
             </div>
@@ -306,40 +275,34 @@ export function MessagingInterface({
                 ) : (
                     <>
                         {/* Header */}
-                        <div className="flex items-center justify-between gap-4 px-8 py-5 border-b border-gray-100 bg-white">
-                            <div className="flex items-center gap-4 min-w-0">
-                                <div className="h-12 w-12 rounded-full bg-slate-200 flex items-center justify-center font-bold text-lg text-slate-600 flex-shrink-0">
+                        <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-gray-100">
+                            <div className="flex items-center gap-3 min-w-0">
+                                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">
                                     {activeConvName.charAt(0).toUpperCase()}
                                 </div>
                                 <div className="min-w-0">
-                                    <div className="flex items-center gap-2">
-                                        <h3 className="text-xl font-bold text-gray-900 tracking-tight truncate">{activeConvName}</h3>
-                                        <span className="inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-[9px] font-bold tracking-widest text-green-600 uppercase border border-green-100">
-                                            Match
-                                        </span>
-                                    </div>
-                                    <p className="text-sm font-medium text-gray-500 truncate mt-0.5">Founder • {typingLabel || "Ready to connect"}</p>
+                                    <p className="font-semibold text-gray-900 truncate">{activeConvName}</p>
+                                    <p className="text-xs text-gray-500 truncate">{typingLabel}</p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3 flex-shrink-0">
-                                <button className="inline-flex items-center gap-2 rounded-full bg-gray-50 border border-gray-200 px-4 py-2 text-xs font-bold text-gray-700 transition hover:bg-gray-100">
-                                    View Profile
-                                </button>
+                            <div className={cn(
+                                "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold",
+                                isConnected ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"
+                            )}>
+                                <Radio className="h-3.5 w-3.5" />
+                                {isConnected ? "Live" : "Offline"}
                             </div>
                         </div>
 
                         {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-8 flex flex-col gap-6 bg-white">
-                            <div className="text-center">
-                                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">OCTOBER 24, 2023</p>
-                            </div>
+                        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
                             {isLoadingMsgs ? (
                                 <div className="flex items-center justify-center h-full">
                                     <Loader2 className="h-5 w-5 animate-spin text-blue-400" />
                                 </div>
                             ) : messages.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center h-full gap-2">
-                                    <p className="text-sm font-medium text-gray-400">No messages yet. Say hello!</p>
+                                    <p className="text-sm text-gray-400">No messages yet. Say hello!</p>
                                 </div>
                             ) : (
                                 messages.map((msg) => (
@@ -354,26 +317,24 @@ export function MessagingInterface({
                         </div>
 
                         {/* Input */}
-                        <div className="px-8 py-6 bg-white border-t border-gray-50">
-                            <div className="flex items-center gap-3 bg-[#f8fafc] rounded-full p-2 border border-gray-100 focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-300 transition-all">
-                                <button className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200/50 text-gray-500 hover:text-gray-700 transition flex-shrink-0">
-                                    <span className="text-xl leading-none font-medium mb-0.5">+</span>
-                                </button>
+                        <div className="px-4 py-3 border-t border-gray-100">
+                            <div className="flex items-center gap-2">
                                 <input
                                     ref={inputRef}
                                     type="text"
                                     value={draft}
                                     onChange={(e) => setDraft(e.target.value)}
                                     onKeyDown={handleKeyDown}
-                                    placeholder="Write your message..."
-                                    className="flex-1 bg-transparent px-2 py-2 text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none"
+                                    placeholder="Type a message..."
+                                    className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent"
                                 />
                                 <button
                                     onClick={handleSend}
                                     disabled={!draft.trim() || isSending}
-                                    className="flex h-10 items-center justify-center gap-2 rounded-full bg-blue-600 px-6 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-50 transition flex-shrink-0"
+                                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition"
+                                    aria-label="Send"
                                 >
-                                    {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send"}
+                                    {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                                 </button>
                             </div>
                         </div>

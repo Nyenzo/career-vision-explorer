@@ -1,6 +1,5 @@
 import React from "react";
-import { X, Bookmark, Check, MapPin, Building, Clock, Award, Zap, ChevronDown, ChevronUp } from "lucide-react";
-import { useState } from "react";
+import { X, Bookmark, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CofounderMatchWithProfile } from "@/types/founder-matching";
 
@@ -14,23 +13,18 @@ interface SwipeCardProps {
 
 function TagChip({ label }: { label: string }) {
     return (
-        <span className="inline-flex items-center gap-1 rounded-sm bg-gray-50 px-2 py-1 text-[9px] font-bold tracking-wider text-gray-600 uppercase border border-gray-100">
-            <span className="text-gray-400">•</span>
+        <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 px-2.5 py-0.5 text-[10px] font-semibold tracking-wide text-gray-600 uppercase">
+            <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
             {label}
         </span>
     );
 }
 
-function InfoBox({ icon: Icon, label, value }: { icon: any, label: string, value: string }) {
+function InfoBox({ label, value }: { label: string; value: string }) {
     return (
-        <div className="flex items-center gap-3 rounded-xl bg-gray-50/60 p-3 min-w-0">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50/50 text-blue-600">
-                <Icon className="h-4 w-4" />
-            </div>
-            <div className="flex flex-col min-w-0">
-                <p className="text-[10px] font-semibold text-gray-400 mb-0.5">{label}</p>
-                <p className="text-xs font-bold text-gray-900 truncate">{value || "Not specified"}</p>
-            </div>
+        <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 min-w-0 flex-1">
+            <p className="text-[9px] font-semibold uppercase tracking-widest text-gray-400">{label}</p>
+            <p className="mt-0.5 text-xs font-semibold text-gray-800 truncate">{value}</p>
         </div>
     );
 }
@@ -46,22 +40,24 @@ export function SwipeCard({ match, onLike, onDecline, onSkip, isLoading }: Swipe
     const education = profile.education?.[0];
     const achievements = profile.achievements?.[0];
 
-    const [isBioExpanded, setIsBioExpanded] = useState(false);
+    // Build tags from profile fields
+    const tags: string[] = [
+        profile.location_preference,
+        profile.commitment_level?.replace("_", "-"),
+        ...(profile.industries?.slice(0, 2) ?? []),
+        ...(profile.technical_skills?.slice(0, 1) ?? []),
+    ]
+        .filter(Boolean)
+        .map((t) => String(t))
+        .slice(0, 5);
 
-    const bioWords = bio.split(/\s+/);
-    const isBioLong = bioWords.length > 25;
-    const displayBio = isBioExpanded ? bio : (isBioLong ? bioWords.slice(0, 25).join(" ") + "..." : bio);
-
-    const skills = [...(profile.technical_skills || []), ...(profile.soft_skills || [])].slice(0, 8);
-    const seekingRoles = profile.seeking_roles || [];
-    
     const profileId = profile.profile_id;
 
     return (
-        <div className="flex flex-col items-center gap-4 w-full pb-6">
-            <div className="w-full rounded-[2rem] bg-white shadow-sm border border-gray-100 overflow-hidden max-w-[1000px] flex flex-col md:flex-row">
+        <div className="w-full rounded-2xl border border-gray-100 bg-white shadow-md overflow-hidden">
+            <div className="flex flex-col md:flex-row">
                 {/* Photo section */}
-                <div className="relative w-full md:w-[320px] shrink-0 bg-slate-900 m-4 rounded-[1.5rem] overflow-hidden h-[280px] md:h-auto md:max-h-[380px]">
+                <div className="relative md:w-72 w-full h-56 md:h-auto flex-shrink-0 bg-slate-800">
                     {photo ? (
                         <img
                             src={photo}
@@ -70,106 +66,88 @@ export function SwipeCard({ match, onLike, onDecline, onSkip, isLoading }: Swipe
                         />
                     ) : (
                         <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-700 to-slate-900">
-                            <span className="text-6xl font-bold text-white opacity-50">
+                            <span className="text-4xl font-bold text-white opacity-50">
                                 {name.charAt(0).toUpperCase()}
                             </span>
                         </div>
                     )}
+                    {/* Profile badge */}
+                    <div className="absolute left-3 top-3">
+                        <span className="inline-flex items-center rounded-full bg-slate-900/70 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-sm">
+                            Profile Preview
+                        </span>
+                    </div>
                 </div>
 
                 {/* Details section */}
-                <div className="flex flex-col p-5 gap-3 w-full justify-center min-w-0">
-                    {/* Name and Role */}
-                    <div className="flex flex-col">
-                        <h2 className="text-2xl font-bold text-gray-900 tracking-tight">{name}</h2>
-                        <p className="text-sm font-bold text-blue-600 mt-0.5">{role}</p>
-                    </div>
-
-                    {/* Bio */}
-                    <div className="flex flex-col gap-1">
-                        <p className="text-sm text-gray-700 leading-relaxed font-medium">
-                            {displayBio}
-                        </p>
-                        {isBioLong && (
-                            <button 
-                                onClick={() => setIsBioExpanded(!isBioExpanded)}
-                                className="text-xs font-bold text-blue-600 hover:text-blue-700 self-start flex items-center gap-1 mt-1"
-                            >
-                                {isBioExpanded ? (
-                                    <>Read less <ChevronUp className="h-3 w-3" /></>
-                                ) : (
-                                    <>Read more <ChevronDown className="h-3 w-3" /></>
-                                )}
-                            </button>
+                <div className="flex flex-1 flex-col p-5 gap-3">
+                    {/* Name + experience row */}
+                    <div className="flex items-start justify-between gap-2">
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-900">{name}</h2>
+                            <p className="text-sm font-semibold text-blue-600">{role}</p>
+                        </div>
+                        {experience !== undefined && experience !== null && (
+                            <div className="text-right flex-shrink-0">
+                                <p className="text-[9px] font-semibold uppercase tracking-widest text-gray-400">Experience</p>
+                                <p className="text-base font-bold text-gray-900">{experience}+ Years</p>
+                            </div>
                         )}
                     </div>
 
-                    {/* Properties Grid */}
-                    <div className="grid grid-cols-2 gap-2 mt-1">
-                        <InfoBox icon={MapPin} label="Location" value={profile.location_preference?.replace(/_/g, " ") || ""} />
-                        <InfoBox icon={Award} label="Commitment" value={profile.commitment_level?.replace(/_/g, " ") || ""} />
-                        <InfoBox icon={Building} label="Industry" value={profile.industries?.[0] || ""} />
-                        <InfoBox icon={Clock} label="Experience" value={experience ? `${experience} years` : ""} />
+                    {/* Bio */}
+                    <p className="text-sm text-gray-600 leading-relaxed line-clamp-3">{bio}</p>
+
+                    {/* Tags */}
+                    {tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                            {tags.map((tag) => (
+                                <TagChip key={tag} label={tag} />
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Info boxes */}
+                    <div className="flex gap-2">
+                        {achievements && <InfoBox label="Previous Exit" value={achievements} />}
+                        {education && <InfoBox label="Education" value={education} />}
                     </div>
 
-                    {/* Skills */}
-                    {skills.length > 0 && (
-                        <div className="flex flex-col gap-1.5 mt-1">
-                            <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Skills</h3>
-                            <div className="flex flex-wrap gap-1.5">
-                                {skills.map((skill) => (
-                                    <TagChip key={skill} label={skill} />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Seeking Roles */}
-                    {seekingRoles.length > 0 && (
-                        <div className="flex flex-col gap-1.5 mt-1">
-                            <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Looking for a co-founder who is</h3>
-                            <div className="flex flex-wrap gap-1.5">
-                                {seekingRoles.map((role) => (
-                                    <span key={role} className="inline-flex items-center rounded-full bg-blue-50/50 px-3 py-1.5 text-[11px] font-bold text-blue-700 border border-blue-100">
-                                        {role}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-                    )}
+                    {/* Swipe hint */}
+                    <p className="text-[9px] font-semibold uppercase tracking-widest text-gray-300 mt-auto pt-1">
+                        Swipe to Explore
+                    </p>
                 </div>
             </div>
 
             {/* Action buttons */}
-            <div className="flex flex-col items-center justify-center gap-4 mt-2">
-                <div className="flex items-center gap-6">
-                    <button
-                        onClick={() => onDecline(profileId)}
-                        disabled={isLoading}
-                        aria-label="Decline"
-                        className="flex h-16 w-16 items-center justify-center rounded-full bg-white border border-gray-100 text-gray-400 shadow-sm transition hover:scale-105 hover:border-gray-300 hover:text-gray-600 disabled:opacity-50"
-                    >
-                        <X className="h-6 w-6" />
-                    </button>
+            <div className="flex items-center justify-center gap-6 border-t border-gray-100 py-4 bg-gray-50/50">
+                <button
+                    onClick={() => onDecline(profileId)}
+                    disabled={isLoading}
+                    aria-label="Decline"
+                    className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-gray-200 bg-white text-gray-400 shadow-sm transition hover:border-red-300 hover:text-red-500 hover:shadow-md disabled:opacity-50"
+                >
+                    <X className="h-5 w-5" />
+                </button>
 
-                    <button
-                        onClick={() => onLike(profileId)}
-                        disabled={isLoading}
-                        aria-label="Like"
-                        className="flex h-16 w-16 items-center justify-center rounded-full bg-[#10b981] text-white shadow-sm transition hover:scale-105 hover:bg-[#059669] disabled:opacity-50"
-                    >
-                        <Check className="h-7 w-7 stroke-[3]" />
-                    </button>
-                </div>
-                
-                <div className="flex flex-col items-center gap-1 text-xs font-medium text-gray-400">
-                    <div className="flex items-center gap-2">
-                        <span className="text-red-400">&larr; Pass</span>
-                        <span>&bull;</span>
-                        <span className="text-[#10b981]">Connect &rarr;</span>
-                    </div>
-                    <span>Press arrow keys</span>
-                </div>
+                <button
+                    onClick={() => onLike(profileId)}
+                    disabled={isLoading}
+                    aria-label="Like"
+                    className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition hover:bg-blue-700 hover:shadow-xl disabled:opacity-50"
+                >
+                    <Check className="h-6 w-6" />
+                </button>
+
+                <button
+                    onClick={() => onSkip(profileId)}
+                    disabled={isLoading}
+                    aria-label="Skip"
+                    className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-gray-200 bg-white text-gray-400 shadow-sm transition hover:border-gray-400 hover:text-gray-600 hover:shadow-md disabled:opacity-50"
+                >
+                    <Bookmark className="h-5 w-5" />
+                </button>
             </div>
         </div>
     );

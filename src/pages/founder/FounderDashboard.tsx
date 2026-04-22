@@ -8,9 +8,6 @@ import {
   User,
   LayoutDashboard,
   Loader2,
-  Eye,
-  Star,
-  Activity
 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import { cofounderMatchingService } from "@/services/founder-matching.service";
@@ -52,20 +49,16 @@ export default function FounderDashboard() {
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [activeConversation, setActiveConversation] = useState<ActiveConversation | undefined>();
   const [mutualCount, setMutualCount] = useState(0);
-  const [founderName, setFounderName] = useState<string>("");
 
   useEffect(() => {
     cofounderMatchingService
       .getProfile()
       .then((profile) => {
-        if (profile.name) {
-          setFounderName(profile.name.split(" ")[0]);
-        }
         if (!profile.onboarding_completed || (profile.photo_urls?.length ?? 0) < MIN_PHOTOS_REQUIRED) {
           navigate("/founder/onboarding", { replace: true });
         }
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setIsLoadingProfile(false));
   }, [navigate]);
 
@@ -110,75 +103,82 @@ export default function FounderDashboard() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
 
-      <section className="bg-gray-50 pt-8 pb-4 border-b border-gray-200">
-        <div className="mx-auto max-w-5xl px-4">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-1">
-              <h1 className="text-4xl font-semibold tracking-tight text-gray-900">
-                Welcome, <span className="text-blue-600">{founderName || "Founder"}</span>.
-              </h1>
-              <p className="text-sm text-gray-500">
-                Find your perfect co-founder.
+      <section className="border-b border-gray-200 bg-white">
+        <div className="mx-auto max-w-5xl px-4 py-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-600">
+                Visiondrill Founder Network
               </p>
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight text-gray-900">Cofounder workspace</h1>
+                <p className="mt-2 max-w-2xl text-sm text-gray-600">
+                  Discover aligned builders, manage your network, and keep conversations moving without leaving the main Visiondrill experience.
+                </p>
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => navigate("/jobseeker/dashboard")}
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                Jobseeker dashboard
+              </button>
               <button
                 onClick={() => navigate("/founder/profile")}
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
               >
                 <User className="h-4 w-4" />
-                View profile
+                Edit profile
               </button>
             </div>
           </div>
 
-          {stats && (
-            <div className="mt-8 flex items-center gap-4 overflow-x-auto pb-4 hide-scrollbar">
-              <div className="flex min-w-[220px] flex-col items-center rounded-full bg-white py-4 px-6 shadow-sm border border-gray-100 relative">
-                <div className="text-xl font-bold text-blue-600">{stats.matches_count ?? 0}</div>
-                <div className="text-[9px] font-bold tracking-widest text-gray-500 uppercase mt-1">Profile Views</div>
-                <Eye className="absolute right-6 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-300" />
-              </div>
-              <div className="flex min-w-[220px] flex-col items-center rounded-full bg-white py-4 px-6 shadow-sm border border-gray-100 relative">
-                <div className="text-xl font-bold text-blue-600">{stats.mutual_interest_count ?? 0}</div>
-                <div className="text-[9px] font-bold tracking-widest text-gray-500 uppercase mt-1">Connections</div>
-                <Activity className="absolute right-6 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-300" />
-              </div>
-              <div className="flex min-w-[220px] flex-col items-center rounded-full bg-white py-4 px-6 shadow-sm border border-gray-100 relative">
-                <div className="text-xl font-bold text-blue-600">{stats.pending_matches ?? 0}</div>
-                <div className="text-[9px] font-bold tracking-widest text-gray-500 uppercase mt-1">Interested</div>
-                <Star className="absolute right-6 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-300" />
-              </div>
-            </div>
-          )}
-
-          <div className="mt-4 flex flex-wrap gap-6">
+          <div className="mt-6 flex flex-wrap gap-2">
             {TABS.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => switchTab(tab.key)}
                 className={cn(
-                  "relative flex items-center gap-2 pb-4 text-sm font-bold tracking-wide transition-colors",
+                  "relative inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition",
                   activeTab === tab.key
-                    ? "text-blue-600"
-                    : "text-gray-500 hover:text-gray-900"
+                    ? "bg-blue-50 text-blue-700"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 )}
               >
+                {tab.icon}
                 {tab.label}
                 {tab.key === "network" && mutualCount > 0 && (
-                  <span className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[9px] font-bold text-white">
+                  <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[10px] font-bold text-white">
                     {mutualCount}
                   </span>
-                )}
-                {activeTab === tab.key && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t-full bg-blue-600" />
                 )}
               </button>
             ))}
           </div>
         </div>
       </section>
+
+      {stats && (
+        <div className="bg-white border-b border-gray-100">
+          <div className="mx-auto max-w-5xl px-4 py-3 flex items-center gap-6 overflow-x-auto">
+            {[
+              { label: "Matches", value: stats.matches_count ?? 0 },
+              { label: "Mutual", value: stats.mutual_interest_count ?? 0 },
+              { label: "Pending", value: stats.pending_matches ?? 0 },
+            ].map((item) => (
+              <div key={item.label} className="flex-shrink-0 text-center">
+                <p className="text-base font-bold text-gray-900">{item.value}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+                  {item.label}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <main className="flex-1 mx-auto w-full max-w-5xl px-4 py-6">
         {activeTab === "discover" && (

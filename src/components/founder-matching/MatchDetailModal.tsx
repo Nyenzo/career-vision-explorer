@@ -58,7 +58,7 @@ export function MatchDetailModal({ match, onClose, onMessage }: MatchDetailModal
         setFollowStats(stats);
         setIsFollowing(stats.is_following ?? false);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [match]);
 
   if (!match) return null;

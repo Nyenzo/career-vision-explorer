@@ -23,44 +23,44 @@ function MatchCard({ match, onMessage, onArchive }: MatchCardProps) {
   return (
     <div
       className={cn(
-        "flex items-center gap-6 rounded-[1.5rem] bg-white p-6 transition-all border",
-        isMutual ? "border-blue-100 shadow-[0_8px_30px_rgb(37,99,235,0.06)]" : "border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.02)]"
+        "flex items-center gap-4 rounded-xl border bg-white p-4 shadow-sm transition hover:shadow-md",
+        isMutual ? "border-blue-200" : "border-gray-100"
       )}
     >
-      <div className="h-20 w-20 rounded-2xl overflow-hidden flex-shrink-0 bg-slate-900">
+      <div className="h-14 w-14 rounded-full overflow-hidden flex-shrink-0 bg-slate-200">
         {photo ? (
           <img src={photo} alt={name} className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-700 to-slate-900">
-            <span className="text-3xl font-bold text-white">{name.charAt(0)}</span>
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-600 to-slate-800">
+            <span className="text-xl font-bold text-white">{name.charAt(0)}</span>
           </div>
         )}
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-3 flex-wrap">
-          <p className="text-xl font-bold text-gray-900 tracking-tight truncate">{name}</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="font-semibold text-gray-900 truncate">{name}</p>
           {isMutual && (
-            <span className="rounded-full bg-green-50 border border-green-100 px-2.5 py-0.5 text-[9px] font-bold text-green-600 uppercase tracking-widest">
+            <span className="rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-[10px] font-bold text-blue-600 uppercase tracking-wide">
               Mutual
             </span>
           )}
         </div>
-        <p className="text-sm font-medium text-blue-600 mt-1 truncate">{role}</p>
+        <p className="text-sm text-gray-500 truncate">{role}</p>
         {profile.industries && profile.industries.length > 0 && (
           <p className="text-xs text-gray-400 truncate">{profile.industries.slice(0, 2).join(" · ")}</p>
         )}
       </div>
 
-      <div className="flex flex-col items-end gap-4 flex-shrink-0">
-        <span className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest bg-gray-50 text-gray-400">
+      <div className="flex flex-col items-end gap-2 flex-shrink-0">
+        <span className="rounded-full px-2.5 py-0.5 text-xs font-bold bg-slate-100 text-slate-600">
           {isMutual ? "Connected" : "Open"}
         </span>
         <div className="flex items-center gap-1">
           {isMutual && (
             <button
               onClick={() => onMessage(profile.profile_id)}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-700 transition hover:scale-105"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-700 transition"
               aria-label="Message"
             >
               <MessageCircle className="h-4 w-4" />
@@ -68,7 +68,7 @@ function MatchCard({ match, onMessage, onArchive }: MatchCardProps) {
           )}
           <button
             onClick={() => onArchive(match.match_id)}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-300 transition hover:bg-red-50"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-300 transition"
             aria-label="Archive"
           >
             <X className="h-4 w-4" />
@@ -141,14 +141,14 @@ export function MatchesFeed({ onOpenConversation }: MatchesFeedProps) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Matches</h1>
-        <div className="flex items-center gap-1 rounded-xl bg-gray-100/80 p-1">
+        <h1 className="text-2xl font-bold text-gray-900">Matches</h1>
+        <div className="flex items-center gap-1 rounded-lg bg-gray-100 p-1">
           {filters.map((entry) => (
             <button
               key={entry.key}
               onClick={() => setFilter(entry.key)}
               className={cn(
-                "rounded-lg px-4 py-2 text-xs font-bold uppercase tracking-wider transition",
+                "rounded-md px-3 py-1.5 text-xs font-semibold transition",
                 filter === entry.key
                   ? "bg-white text-blue-600 shadow-sm"
                   : "text-gray-500 hover:text-gray-700"

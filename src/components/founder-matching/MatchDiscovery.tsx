@@ -30,8 +30,8 @@ function RecentMatchCard({ match }: RecentMatchCardProps) {
         <p className="text-sm font-semibold text-gray-900 truncate max-w-[110px]">{name}</p>
         <p className="text-xs text-gray-500 truncate max-w-[110px]">{role}</p>
       </div>
-      <span className="rounded-full px-2 py-0.5 text-[10px] font-bold bg-green-50 text-green-700 border border-green-100">
-        Connected
+      <span className="rounded-full px-2 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-600">
+        Recently connected
       </span>
     </div>
   );
@@ -87,7 +87,7 @@ export function MatchDiscovery({ onViewAllMatches }: MatchDiscoveryProps) {
           return [...prev, ...newMatches];
         });
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const handleLike = async (profileId: string) => {
@@ -168,7 +168,13 @@ export function MatchDiscovery({ onViewAllMatches }: MatchDiscoveryProps) {
   const current = queue[0];
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-8">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Discovery</h1>
+        <p className="mt-1 text-sm text-gray-500">
+          Explore active founder profiles and collaborators who are open to building together.
+        </p>
+      </div>
 
       {isEmpty || !current ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-white py-16 gap-4">
