@@ -1,4 +1,4 @@
-﻿import { apiClient } from "../lib/api-client";
+import { apiClient } from "../lib/api-client";
 import type {
   CofounderMatchProfile,
   CofounderMatchProfileUpdate,
@@ -27,6 +27,15 @@ import type {
 const BASE = "/cofounder-matching";
 
 class CofounderMatchingService {
+  private normalizeMatch(match: any): any {
+    if (!match) return match;
+    if (match.id && !match.match_id) match.match_id = match.id;
+    if (match.matched_profile && match.matched_profile.id && !match.matched_profile.profile_id) {
+      match.matched_profile.profile_id = match.matched_profile.id;
+    }
+    return match;
+  }
+
   // --- Profile ---
 
   async getProfile(): Promise<CofounderMatchProfile> {
@@ -80,7 +89,9 @@ class CofounderMatchingService {
 
   async discoverMatches(request: MatchDiscoveryRequest = {}): Promise<MatchDiscoveryResponse> {
     const payload = { limit: 20, min_score: 0.3, ...request };
-    return apiClient.post<MatchDiscoveryResponse>(`${BASE}/discover`, payload);
+    const res = await apiClient.post<MatchDiscoveryResponse>(`${BASE}/discover`, payload);
+    res.matches?.forEach(this.normalizeMatch.bind(this));
+    return res;
   }
 
   // --- Swipe ---
@@ -109,15 +120,20 @@ class CofounderMatchingService {
   async listMatches(statusFilter?: string, limit = 20, offset = 0): Promise<MatchListResponse> {
     const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
     if (statusFilter) params.append("status_filter", statusFilter);
-    return apiClient.get<MatchListResponse>(`${BASE}/matches?${params}`);
+    const res = await apiClient.get<MatchListResponse>(`${BASE}/matches?${params}`);
+    res.matches?.forEach(this.normalizeMatch.bind(this));
+    return res;
   }
 
   async getMutualMatches(): Promise<{ mutual_matches: CofounderMatchWithProfile[] }> {
-    return apiClient.get<{ mutual_matches: CofounderMatchWithProfile[] }>(`${BASE}/matches/mutual`);
+    const res = await apiClient.get<{ mutual_matches: CofounderMatchWithProfile[] }>(`${BASE}/matches/mutual`);
+    res.mutual_matches?.forEach(this.normalizeMatch.bind(this));
+    return res;
   }
 
   async getMatch(matchId: string): Promise<CofounderMatchWithProfile> {
-    return apiClient.get<CofounderMatchWithProfile>(`${BASE}/matches/${matchId}`);
+    const res = await apiClient.get<CofounderMatchWithProfile>(`${BASE}/matches/${matchId}`);
+    return this.normalizeMatch(res);
   }
 
   async archiveMatch(matchId: string): Promise<void> {

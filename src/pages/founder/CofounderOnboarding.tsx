@@ -5,11 +5,9 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
-  LayoutDashboard,
   Lightbulb,
   Loader2,
   Plus,
-  Sparkles,
   Target,
   Users,
   X,
@@ -440,40 +438,11 @@ export default function CofounderOnboarding() {
       <main className="px-4 py-8">
         <div className="mx-auto max-w-3xl">
           <section className="mb-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-600">
-                  Visiondrill Founder Network
-                </p>
-                <div>
-                  <h1 className="text-3xl font-bold tracking-tight text-gray-900">Build your cofounder profile</h1>
-                  <p className="mt-2 text-sm text-gray-600">
-                    Your cofounder profile starts with the details already in your jobseeker profile.
-                    Fill the gaps and upload {MIN_PHOTOS} photos to unlock discovery.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => navigate("/jobseeker/dashboard")}
-                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
-                >
-                  <LayoutDashboard className="h-4 w-4" />
-                  Jobseeker dashboard
-                </button>
-              </div>
-            </div>
-          </section>
-
-          <section className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 text-sm text-gray-700 shadow-sm">
-            <div className="flex items-start gap-3">
-              <Sparkles className="mt-0.5 h-5 w-5 text-blue-600" />
-              <p>
-                Name is prefilled from your existing profile and is not part of onboarding.
-                Skills, bio, links, and other details are also preloaded whenever we already have them.
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-600">
+                Visiondrill Founder Network
               </p>
+              <h1 className="text-3xl font-bold tracking-tight text-gray-900">Build your cofounder profile</h1>
             </div>
           </section>
 
