@@ -36,6 +36,28 @@ class CofounderMatchingService {
     return match;
   }
 
+  private normalizeMessage(message: any): Message {
+    const normalized = { ...(message || {}) };
+    if (normalized.id && !normalized.message_id) {
+      normalized.message_id = normalized.id;
+    }
+    if (normalized.conversation_id == null && normalized.conversationId != null) {
+      normalized.conversation_id = normalized.conversationId;
+    }
+    return normalized as Message;
+  }
+
+  private normalizeConversation(conversation: any): Conversation {
+    const normalized = { ...(conversation || {}) };
+    if (normalized.id && !normalized.conversation_id) {
+      normalized.conversation_id = normalized.id;
+    }
+    if (Array.isArray(normalized.messages)) {
+      normalized.messages = normalized.messages.map((msg: any) => this.normalizeMessage(msg));
+    }
+    return normalized as Conversation;
+  }
+
   // --- Profile ---
 
   async getProfile(): Promise<CofounderMatchProfile> {
@@ -182,30 +204,41 @@ class CofounderMatchingService {
 
   async getConversations(limit = 20, offset = 0): Promise<ConversationListResponse> {
     const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
-    return apiClient.get<ConversationListResponse>(`${BASE}/conversations?${params}`);
+    const res = await apiClient.get<ConversationListResponse>(`${BASE}/conversations?${params}`);
+    return {
+      ...res,
+      conversations: (res.conversations || []).map((conv: any) => this.normalizeConversation(conv)),
+    };
   }
 
   async getMessages(conversationId: string, limit = 50, page = 1): Promise<Message[]> {
     const params = new URLSearchParams({ limit: String(limit), page: String(page) });
-    return apiClient.get<Message[]>(`${BASE}/conversations/${conversationId}/messages?${params}`);
+    const res = await apiClient.get<Message[]>(`${BASE}/conversations/${conversationId}/messages?${params}`);
+    return (res || []).map((msg: any) => this.normalizeMessage(msg));
   }
 
   async sendMessage(conversationId: string, text: string): Promise<Message> {
-    return apiClient.post<Message>(`${BASE}/conversations/${conversationId}/messages`, { message_text: text });
+    const res = await apiClient.post<Message>(`${BASE}/conversations/${conversationId}/messages`, { message_text: text });
+    return this.normalizeMessage(res);
   }
 
   async markConversationRead(conversationId: string): Promise<{ message: string }> {
+    if (!conversationId || conversationId === "undefined") {
+      throw new Error("Cannot mark conversation as read without a valid conversation id");
+    }
     return apiClient.put<{ message: string }>(`${BASE}/conversations/${conversationId}/read`);
   }
 
   async getOrCreateDirectConversation(otherProfileId: string): Promise<Conversation> {
-    return apiClient.post<Conversation>(`${BASE}/conversations/direct/${otherProfileId}`);
+    const res = await apiClient.post<Conversation>(`${BASE}/conversations/direct/${otherProfileId}`);
+    return this.normalizeConversation(res);
   }
 
   // --- Group conversations ---
 
   async getGroupConversations(): Promise<Conversation[]> {
-    return apiClient.get<Conversation[]>(`${BASE}/group-conversations`);
+    const res = await apiClient.get<Conversation[]>(`${BASE}/group-conversations`);
+    return (res || []).map((conv: any) => this.normalizeConversation(conv));
   }
 
   async sendGroupMessage(conversationId: string, text: string): Promise<Message> {

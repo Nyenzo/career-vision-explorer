@@ -81,8 +81,12 @@ export function NotificationsFeed({ onOpenConversation }: NotificationsFeedProps
     try {
       const conversation = await cofounderMatchingService.getOrCreateDirectConversation(profileId);
       const match = mutualMatches.find((entry) => entry.matched_profile.profile_id === profileId);
+      const conversationId = String((conversation as any).conversation_id ?? (conversation as any).id ?? "");
+      if (!conversationId) {
+        throw new Error("Conversation id missing in response");
+      }
       onOpenConversation(
-        String(conversation.conversation_id),
+        conversationId,
         match?.matched_profile.name || "Match"
       );
     } catch {

@@ -480,7 +480,7 @@ export default function CofounderOnboarding() {
                   {
                     key: "collaborator" as IntentType,
                     label: "I'm exploring both",
-                    desc: "You're open to founder and collaborator opportunities while you explore.",
+                    desc: "You're open to collaborating with founders or joining early teams while you explore the right fit.",
                     icon: <Target className="h-5 w-5" />,
                   },
                 ].map((option) => (

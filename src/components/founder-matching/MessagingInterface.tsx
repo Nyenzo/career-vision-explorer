@@ -43,6 +43,10 @@ function ConversationListItem({
     );
 }
 
+function conversationIdOf(conv: Conversation): string {
+    return String((conv as any).conversation_id ?? (conv as any).id ?? "");
+}
+
 function MessageBubble({ msg, isMine }: { msg: Message; isMine: boolean }) {
     const time = msg.created_at
         ? new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
@@ -222,7 +226,12 @@ export function MessagingInterface({
     };
 
     const openConversation = (conv: Conversation) => {
-        setActiveConvId(String(conv.conversation_id));
+        const convId = conversationIdOf(conv);
+        if (!convId) {
+            toast.error("Unable to open conversation");
+            return;
+        }
+        setActiveConvId(convId);
         setActiveConvName(conv.title ?? "Conversation");
         setMessages([]);
     };
@@ -257,11 +266,11 @@ export function MessagingInterface({
                             <p className="text-sm font-medium text-gray-400">No conversations yet</p>
                         </div>
                     ) : (
-                        conversations.map((conv) => (
+                        conversations.map((conv, idx) => (
                             <ConversationListItem
-                                key={conv.conversation_id}
+                                key={conversationIdOf(conv) || `conv-${idx}`}
                                 conv={conv}
-                                isActive={String(conv.conversation_id) === activeConvId}
+                                isActive={conversationIdOf(conv) === activeConvId}
                                 onClick={() => openConversation(conv)}
                             />
                         ))

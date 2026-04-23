@@ -136,7 +136,7 @@ export default function FounderDashboard() {
           {stats && (
             <div className="mt-8 flex items-center gap-4 overflow-x-auto pb-4 hide-scrollbar">
               <div className="flex min-w-[220px] flex-col items-center rounded-full bg-white py-4 px-6 shadow-sm border border-gray-100 relative">
-                <div className="text-xl font-bold text-blue-600">{stats.matches_count ?? 0}</div>
+                <div className="text-xl font-bold text-blue-600">{stats.profile_views ?? 0}</div>
                 <div className="text-[9px] font-bold tracking-widest text-gray-500 uppercase mt-1">Profile Views</div>
                 <Eye className="absolute right-6 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-300" />
               </div>

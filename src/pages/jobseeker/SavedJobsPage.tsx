@@ -109,9 +109,9 @@ const SavedJobsPage = () => {
                         </p>
 
                         <div className="space-y-4">
-                            {activeTab === "saved" && sortedSavedJobs.map((job) => (
+                            {activeTab === "saved" && sortedSavedJobs.map((job, idx) => (
                                 <article
-                                    key={job.job_id}
+                                    key={`${job.job_id ?? "saved-job"}-${job.dateSaved ?? "no-date"}-${idx}`}
                                     className="rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm"
                                 >
                                     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -162,9 +162,9 @@ const SavedJobsPage = () => {
                                 </article>
                             ))}
 
-                            {activeTab === "applied" && sortedAppliedJobs.map((application) => (
+                            {activeTab === "applied" && sortedAppliedJobs.map((application, idx) => (
                                 <article
-                                    key={application.applicationId}
+                                    key={`${application.applicationId ?? "applied"}-${application.jobId ?? "no-job"}-${application.appliedAt ?? "no-date"}-${idx}`}
                                     className="rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm"
                                 >
                                     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

@@ -112,8 +112,12 @@ export function MatchesFeed({ onOpenConversation }: MatchesFeedProps) {
     try {
       const conversation = await cofounderMatchingService.getOrCreateDirectConversation(profileId);
       const profile = matches.find((match) => match.matched_profile.profile_id === profileId);
+      const conversationId = String((conversation as any).conversation_id ?? (conversation as any).id ?? "");
+      if (!conversationId) {
+        throw new Error("Conversation id missing in response");
+      }
       onOpenConversation(
-        String(conversation.conversation_id),
+        conversationId,
         profile?.matched_profile.name || "Match"
       );
     } catch {

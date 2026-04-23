@@ -101,7 +101,11 @@ export function MatchDetailModal({ match, onClose, onMessage }: MatchDetailModal
     setMsgLoading(true);
     try {
       const conversation = await cofounderMatchingService.getOrCreateDirectConversation(profile.profile_id);
-      onMessage(String(conversation.conversation_id), name);
+      const conversationId = String((conversation as any).conversation_id ?? (conversation as any).id ?? "");
+      if (!conversationId) {
+        throw new Error("Conversation id missing in response");
+      }
+      onMessage(conversationId, name);
       onClose();
     } catch {
       toast.error("Failed to open conversation");

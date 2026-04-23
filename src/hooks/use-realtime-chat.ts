@@ -19,6 +19,17 @@ interface RealtimeReadPayload {
   messageId?: string;
 }
 
+interface RealtimeMessageRow {
+  id: string;
+  conversation_id: string;
+  sender_profile_id: string;
+  message_text: string;
+  is_read: boolean;
+  is_ai_generated: boolean;
+  read_at?: string | null;
+  created_at?: string;
+}
+
 interface UseRealtimeChatOptions {
   conversationId?: string;
   enabled: boolean;
@@ -89,6 +100,7 @@ export function useRealtimeChat({
 
     const channel = supabase.channel(`cofounder-chat:${conversationId}`, {
       config: {
+        private: true,
         broadcast: {
           ack: true,
           self: true,
@@ -136,38 +148,23 @@ export function useRealtimeChat({
         }
         onReadReceipt?.(payload);
       })
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "cofounder_messages",
-          filter: `conversation_id=eq.${conversationId}`,
-        },
-        (payload) => {
-          const row = payload.new as {
-            id: string;
-            conversation_id: string;
-            sender_profile_id: string;
-            message_text: string;
-            is_read: boolean;
-            is_ai_generated: boolean;
-            read_at?: string | null;
-            created_at?: string;
-          };
-
-          onMessage({
-            message_id: row.id,
-            conversation_id: row.conversation_id,
-            sender_profile_id: row.sender_profile_id,
-            message_text: row.message_text,
-            is_read: row.is_read,
-            is_ai_generated: row.is_ai_generated,
-            read_at: row.read_at ?? undefined,
-            created_at: row.created_at,
-          });
+      .on("broadcast", { event: "INSERT" }, ({ payload }: { payload: any }) => {
+        const row = (payload?.new ?? payload?.record ?? payload) as RealtimeMessageRow | undefined;
+        if (!row || row.conversation_id !== conversationId || !row.id) {
+          return;
         }
-      )
+
+        onMessage({
+          message_id: row.id,
+          conversation_id: row.conversation_id,
+          sender_profile_id: row.sender_profile_id,
+          message_text: row.message_text,
+          is_read: row.is_read,
+          is_ai_generated: row.is_ai_generated,
+          read_at: row.read_at ?? undefined,
+          created_at: row.created_at,
+        });
+      })
       .subscribe(async (status: string) => {
         setIsConnected(status === "SUBSCRIBED");
 
