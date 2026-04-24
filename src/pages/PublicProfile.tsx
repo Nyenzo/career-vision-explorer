@@ -5,6 +5,7 @@ import Layout from "@/components/layout/Layout";
 import { ProfileCardSkeleton } from "@/components/ui/skeleton-loaders";
 import { useToast } from "@/hooks/use-toast";
 import { profileService } from "@/services/profile.service";
+import { formatWorkDuration, formatExperienceYears } from "@/utils/profileUtils";
 
 interface PublicProfileData {
   user_id: string;
@@ -85,8 +86,8 @@ const PublicProfile = () => {
 
   const educationList = Array.isArray(profile.education)
     ? (profile.education as any[]).filter(
-        (e: any) => e && typeof e === "object" && (e.degree || e.institution || e.field_of_study),
-      )
+      (e: any) => e && typeof e === "object" && (e.degree || e.institution || e.field_of_study),
+    )
     : [];
   const workExpList = Array.isArray(profile.work_experience)
     ? (profile.work_experience as any[])
@@ -115,7 +116,7 @@ const PublicProfile = () => {
                     <span className="text-sm font-medium text-slate-600">Experience</span>
                   </div>
                   <span className="text-sm font-bold text-slate-900">
-                    {profile.experience_years || 0} Years
+                    {formatExperienceYears(profile.experience_years)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -324,16 +325,23 @@ const PublicProfile = () => {
                             </div>
                             {(exp.start_date || exp.duration) && (
                               <span className="text-xs text-slate-400 font-medium bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100 flex-shrink-0 ml-4">
-                                {exp.start_date
-                                  ? `${exp.start_date} – ${exp.currently_working ? "Present" : exp.end_date || ""}`
-                                  : exp.duration}
+                                {formatWorkDuration(
+                                  exp.start_date as string | undefined,
+                                  exp.end_date as string | undefined,
+                                  exp.currently_working as boolean | undefined
+                                ) || exp.duration as string}
                               </span>
                             )}
                           </div>
                           {exp.description && (
-                            <p className="text-slate-500 text-sm leading-relaxed mt-2">
-                              {exp.description}
-                            </p>
+                            <ul className="text-slate-500 text-sm leading-relaxed mt-2 list-disc pl-5 space-y-1">
+                              {String(exp.description)
+                                .split('\n')
+                                .filter((line) => line.trim() !== '')
+                                .map((line, i) => (
+                                  <li key={i}>{line.trim().replace(/^[•\-\*]\s*/, '')}</li>
+                                ))}
+                            </ul>
                           )}
                         </div>
                       </div>
