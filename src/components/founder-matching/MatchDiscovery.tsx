@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { ArrowRight, RefreshCw, Star } from "lucide-react";
 import { cofounderMatchingService } from "@/services/founder-matching.service";
+import { useQueryClient } from "@tanstack/react-query";
+import { cofounderQueryKeys, useCofounderDiscovery, useCofounderMutualMatches } from "@/hooks/use-cofounder-matching";
 import { SwipeCard } from "./SwipeCard";
 import { toast } from "sonner";
 import type { CofounderMatchWithProfile } from "@/types/founder-matching";
@@ -42,19 +44,26 @@ interface MatchDiscoveryProps {
 }
 
 export function MatchDiscovery({ onViewAllMatches }: MatchDiscoveryProps) {
+  const queryClient = useQueryClient();
   const [queue, setQueue] = useState<CofounderMatchWithProfile[]>([]);
   const [recentMatches, setRecentMatches] = useState<CofounderMatchWithProfile[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSwipeLoading, setIsSwipeLoading] = useState(false);
   const [isEmpty, setIsEmpty] = useState(false);
+  const discoveryQuery = useCofounderDiscovery(10, 0.3);
+  const mutualMatchesQuery = useCofounderMutualMatches();
+  const isLoading = discoveryQuery.isLoading && queue.length === 0;
 
   const loadDiscover = useCallback(async () => {
-    setIsLoading(true);
-    setIsEmpty(false);
     try {
       const [discoverRes, mutualRes] = await Promise.all([
-        cofounderMatchingService.discoverMatches({ limit: 10, min_score: 0.3 }),
-        cofounderMatchingService.getMutualMatches().catch(() => ({ mutual_matches: [] })),
+        queryClient.fetchQuery({
+          queryKey: cofounderQueryKeys.discovery(10, 0.3),
+          queryFn: () => cofounderMatchingService.discoverMatches({ limit: 10, min_score: 0.3 }),
+        }),
+        queryClient.fetchQuery({
+          queryKey: cofounderQueryKeys.mutualMatches(),
+          queryFn: () => cofounderMatchingService.getMutualMatches(),
+        }).catch(() => ({ mutual_matches: [] })),
       ]);
       setQueue(discoverRes.matches);
       setRecentMatches(mutualRes.mutual_matches.slice(0, 6));
@@ -63,21 +72,33 @@ export function MatchDiscovery({ onViewAllMatches }: MatchDiscoveryProps) {
       toast.error("Failed to load matches");
       setIsEmpty(true);
     } finally {
-      setIsLoading(false);
+      // no-op
     }
-  }, []);
+  }, [queryClient]);
 
   useEffect(() => {
-    loadDiscover();
-  }, [loadDiscover]);
+    if (discoveryQuery.data?.matches) {
+      setQueue(discoveryQuery.data.matches);
+      setIsEmpty(discoveryQuery.data.matches.length === 0);
+    }
+  }, [discoveryQuery.data]);
+
+  useEffect(() => {
+    if (mutualMatchesQuery.data?.mutual_matches) {
+      setRecentMatches(mutualMatchesQuery.data.mutual_matches.slice(0, 6));
+    }
+  }, [mutualMatchesQuery.data]);
 
   const removeTop = (profileId: string) => {
     setQueue((prev) => prev.filter((match) => match.matched_profile.profile_id !== profileId));
   };
 
   const replenishQueue = useCallback(() => {
-    cofounderMatchingService
-      .discoverMatches({ limit: 10, min_score: 0.3 })
+    queryClient
+      .fetchQuery({
+        queryKey: cofounderQueryKeys.discovery(10, 0.3),
+        queryFn: () => cofounderMatchingService.discoverMatches({ limit: 10, min_score: 0.3 }),
+      })
       .then((res) => {
         setQueue((prev) => {
           const existingIds = new Set(prev.map((match) => match.matched_profile.profile_id));
@@ -88,17 +109,24 @@ export function MatchDiscovery({ onViewAllMatches }: MatchDiscoveryProps) {
         });
       })
       .catch(() => { });
-  }, []);
+  }, [queryClient]);
 
   const handleLike = async (profileId: string) => {
     setIsSwipeLoading(true);
+    const matchedCard = queue.find((item) => item.matched_profile.profile_id === profileId);
     try {
       const res = await cofounderMatchingService.swipeRight(profileId);
+      queryClient.invalidateQueries({ queryKey: cofounderQueryKeys.all });
       if (res.is_mutual) {
         toast.success("It's a match! You both expressed interest");
-        cofounderMatchingService.getMutualMatches().then((result) => {
-          setRecentMatches(result.mutual_matches.slice(0, 6));
-        });
+        if (matchedCard) {
+          setRecentMatches((prev) => {
+            const deduped = prev.filter(
+              (item) => item.matched_profile.profile_id !== matchedCard.matched_profile.profile_id
+            );
+            return [matchedCard, ...deduped].slice(0, 6);
+          });
+        }
       } else {
         toast.success("Interest sent");
       }
@@ -117,6 +145,7 @@ export function MatchDiscovery({ onViewAllMatches }: MatchDiscoveryProps) {
     setIsSwipeLoading(true);
     try {
       await cofounderMatchingService.swipeLeft(profileId);
+      queryClient.invalidateQueries({ queryKey: cofounderQueryKeys.all });
     } catch {
       // Non-critical
     } finally {
@@ -132,6 +161,7 @@ export function MatchDiscovery({ onViewAllMatches }: MatchDiscoveryProps) {
     setIsSwipeLoading(true);
     try {
       await cofounderMatchingService.swipeSkip(profileId);
+      queryClient.invalidateQueries({ queryKey: cofounderQueryKeys.all });
     } catch {
       // Non-critical
     } finally {

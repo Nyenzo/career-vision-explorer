@@ -18,13 +18,8 @@ export function NotificationDropdown() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const { notifications, unreadCount, markAsRead, markAllAsRead, removeNotification, refresh } =
+  const { notifications, unreadCount, markAsRead, markAllAsRead, removeNotification } =
     useNotifications({ limit: 8 });
-
-  // Refresh list when dropdown opens
-  useEffect(() => {
-    if (open) refresh();
-  }, [open, refresh]);
 
   // Close on outside click
   useEffect(() => {

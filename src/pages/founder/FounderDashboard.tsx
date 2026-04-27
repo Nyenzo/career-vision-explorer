@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Compass,
   Users,
   Network,
   MessageCircle,
+  FolderKanban,
   User,
-  LayoutDashboard,
   Loader2,
   Eye,
   Star,
@@ -18,12 +18,17 @@ import { MatchDiscovery } from "@/components/founder-matching/MatchDiscovery";
 import { MatchesFeed } from "@/components/founder-matching/MatchesFeed";
 import { NotificationsFeed } from "@/components/founder-matching/NotificationsFeed";
 import { MessagingInterface } from "@/components/founder-matching/MessagingInterface";
+import { ProjectsTab } from "@/components/founder-matching/ProjectsTab";
+import {
+  useCofounderMutualMatches,
+  useCofounderProfile,
+  useCofounderStatistics,
+} from "@/hooks/use-cofounder-matching";
 import { cn } from "@/lib/utils";
-import type { MatchStatistics } from "@/types/founder-matching";
 
 const MIN_PHOTOS_REQUIRED = 3;
 
-type TabKey = "discover" | "matches" | "network" | "messages";
+type TabKey = "discover" | "matches" | "network" | "messages" | "projects";
 
 interface TabDef {
   key: TabKey;
@@ -36,6 +41,7 @@ const TABS: TabDef[] = [
   { key: "matches", label: "Matches", icon: <Users className="h-4 w-4" /> },
   { key: "network", label: "Network", icon: <Network className="h-4 w-4" /> },
   { key: "messages", label: "Messages", icon: <MessageCircle className="h-4 w-4" /> },
+  { key: "projects", label: "Projects", icon: <FolderKanban className="h-4 w-4" /> },
 ];
 
 interface ActiveConversation {
@@ -48,45 +54,33 @@ export default function FounderDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab") as TabKey | null;
   const [activeTab, setActiveTab] = useState<TabKey>(tabParam ?? "discover");
-  const [stats, setStats] = useState<MatchStatistics | null>(null);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [activeConversation, setActiveConversation] = useState<ActiveConversation | undefined>();
-  const [mutualCount, setMutualCount] = useState(0);
-  const [founderName, setFounderName] = useState<string>("");
+  const profileQuery = useCofounderProfile();
+  const statsQuery = useCofounderStatistics();
+  const mutualMatchesQuery = useCofounderMutualMatches();
+
+  const founderName = useMemo(() => {
+    const name = profileQuery.data?.name;
+    return name ? name.split(" ")[0] : "";
+  }, [profileQuery.data?.name]);
+
+  const mutualCount = mutualMatchesQuery.data?.mutual_matches.length ?? 0;
+  const statistics = useMemo(() => ({
+    profileViews: statsQuery.data?.profile_views ?? profileQuery.data?.views_count ?? 0,
+    mutualInterestCount: statsQuery.data?.mutual_interest_count ?? profileQuery.data?.mutual_interest_count ?? mutualCount,
+    pendingMatches: statsQuery.data?.pending_matches ?? 0,
+  }), [mutualCount, profileQuery.data?.mutual_interest_count, profileQuery.data?.views_count, statsQuery.data?.mutual_interest_count, statsQuery.data?.pending_matches, statsQuery.data?.profile_views]);
 
   useEffect(() => {
-    cofounderMatchingService
-      .getProfile()
-      .then((profile) => {
-        if (profile.name) {
-          setFounderName(profile.name.split(" ")[0]);
-        }
-        if (!profile.onboarding_completed || (profile.photo_urls?.length ?? 0) < MIN_PHOTOS_REQUIRED) {
-          navigate("/founder/onboarding", { replace: true });
-        }
-      })
-      .catch(() => { })
-      .finally(() => setIsLoadingProfile(false));
-  }, [navigate]);
-
-  const loadStats = useCallback(async () => {
-    try {
-      const [dashboardStats, mutual] = await Promise.all([
-        cofounderMatchingService.getStatistics(),
-        cofounderMatchingService.getMutualMatches().catch(() => ({ mutual_matches: [] })),
-      ]);
-      setStats(dashboardStats);
-      setMutualCount(mutual.mutual_matches.length);
-    } catch {
-      // Non-critical dashboard metadata
+    const profile = profileQuery.data;
+    if (!profile) {
+      return;
     }
-  }, []);
 
-  useEffect(() => {
-    if (!isLoadingProfile) {
-      loadStats();
+    if (!profile.onboarding_completed || (profile.photo_urls?.length ?? 0) < MIN_PHOTOS_REQUIRED) {
+      navigate("/founder/onboarding", { replace: true });
     }
-  }, [isLoadingProfile, loadStats]);
+  }, [navigate, profileQuery.data]);
 
   const switchTab = (tab: TabKey) => {
     setActiveTab(tab);
@@ -98,7 +92,7 @@ export default function FounderDashboard() {
     switchTab("messages");
   };
 
-  if (isLoadingProfile) {
+  if (profileQuery.isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
@@ -133,25 +127,23 @@ export default function FounderDashboard() {
             </div>
           </div>
 
-          {stats && (
-            <div className="mt-8 flex items-center gap-4 overflow-x-auto pb-4 hide-scrollbar">
-              <div className="flex min-w-[220px] flex-col items-center rounded-full bg-white py-4 px-6 shadow-sm border border-gray-100 relative">
-                <div className="text-xl font-bold text-blue-600">{stats.profile_views ?? 0}</div>
-                <div className="text-[9px] font-bold tracking-widest text-gray-500 uppercase mt-1">Profile Views</div>
-                <Eye className="absolute right-6 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-300" />
-              </div>
-              <div className="flex min-w-[220px] flex-col items-center rounded-full bg-white py-4 px-6 shadow-sm border border-gray-100 relative">
-                <div className="text-xl font-bold text-blue-600">{stats.mutual_interest_count ?? 0}</div>
-                <div className="text-[9px] font-bold tracking-widest text-gray-500 uppercase mt-1">Connections</div>
-                <Activity className="absolute right-6 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-300" />
-              </div>
-              <div className="flex min-w-[220px] flex-col items-center rounded-full bg-white py-4 px-6 shadow-sm border border-gray-100 relative">
-                <div className="text-xl font-bold text-blue-600">{stats.pending_matches ?? 0}</div>
-                <div className="text-[9px] font-bold tracking-widest text-gray-500 uppercase mt-1">Interested</div>
-                <Star className="absolute right-6 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-300" />
-              </div>
+          <div className="mt-8 flex items-center gap-4 overflow-x-auto pb-4 hide-scrollbar">
+            <div className="flex min-w-[220px] flex-col items-center rounded-full bg-white py-4 px-6 shadow-sm border border-gray-100 relative">
+              <div className="text-xl font-bold text-blue-600">{statistics.profileViews}</div>
+              <div className="text-[9px] font-bold tracking-widest text-gray-500 uppercase mt-1">Profile Views</div>
+              <Eye className="absolute right-6 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-300" />
             </div>
-          )}
+            <div className="flex min-w-[220px] flex-col items-center rounded-full bg-white py-4 px-6 shadow-sm border border-gray-100 relative">
+              <div className="text-xl font-bold text-blue-600">{statistics.mutualInterestCount}</div>
+              <div className="text-[9px] font-bold tracking-widest text-gray-500 uppercase mt-1">Connections</div>
+              <Activity className="absolute right-6 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-300" />
+            </div>
+            <div className="flex min-w-[220px] flex-col items-center rounded-full bg-white py-4 px-6 shadow-sm border border-gray-100 relative">
+              <div className="text-xl font-bold text-blue-600">{statistics.pendingMatches}</div>
+              <div className="text-[9px] font-bold tracking-widest text-gray-500 uppercase mt-1">Interested</div>
+              <Star className="absolute right-6 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-300" />
+            </div>
+          </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
             {TABS.map((tab) => (
@@ -193,6 +185,9 @@ export default function FounderDashboard() {
             initialConversationId={activeConversation?.conversationId}
             initialConversationName={activeConversation?.profileName}
           />
+        )}
+        {activeTab === "projects" && (
+          <ProjectsTab onOpenConversation={openConversation} currentProfile={profileQuery.data ?? null} />
         )}
       </main>
     </div>

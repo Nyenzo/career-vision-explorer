@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { MessageCircle, X, Star, Loader2 } from "lucide-react";
 import { cofounderMatchingService } from "@/services/founder-matching.service";
 import { toast } from "sonner";
+import { useArchiveCofounderMatch, useCofounderMatches } from "@/hooks/use-cofounder-matching";
 import type { CofounderMatchWithProfile } from "@/types/founder-matching";
 import { cn } from "@/lib/utils";
 
@@ -11,9 +13,10 @@ interface MatchCardProps {
   match: CofounderMatchWithProfile;
   onMessage: (profileId: string) => void;
   onArchive: (matchId: string) => void;
+  onViewProfile: (userId: string) => void;
 }
 
-function MatchCard({ match, onMessage, onArchive }: MatchCardProps) {
+function MatchCard({ match, onMessage, onArchive, onViewProfile }: MatchCardProps) {
   const profile = match.matched_profile;
   const photo = profile.photo_urls?.[0];
   const name = profile.name || "Unknown";
@@ -57,6 +60,14 @@ function MatchCard({ match, onMessage, onArchive }: MatchCardProps) {
           {isMutual ? "Connected" : "Open"}
         </span>
         <div className="flex items-center gap-1">
+          {profile.user_id && (
+            <button
+              onClick={() => onViewProfile(profile.user_id)}
+              className="rounded-full border border-gray-200 px-3 py-1.5 text-[11px] font-semibold text-gray-600 transition hover:border-blue-200 hover:text-blue-700"
+            >
+              View Profile
+            </button>
+          )}
           {isMutual && (
             <button
               onClick={() => onMessage(profile.profile_id)}
@@ -84,35 +95,18 @@ interface MatchesFeedProps {
 }
 
 export function MatchesFeed({ onOpenConversation }: MatchesFeedProps) {
-  const [matches, setMatches] = useState<CofounderMatchWithProfile[]>([]);
+  const navigate = useNavigate();
   const [filter, setFilter] = useState<FilterOption>("all");
-  const [isLoading, setIsLoading] = useState(true);
-
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const res = await cofounderMatchingService.listMatches(
-        filter === "all" ? undefined : filter,
-        50,
-        0
-      );
-      setMatches(res.matches);
-    } catch {
-      toast.error("Failed to load matches");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [filter]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  const matchesQuery = useCofounderMatches(filter);
+  const archiveMatchMutation = useArchiveCofounderMatch();
+  const matches = matchesQuery.data?.matches ?? [];
+  const isLoading = matchesQuery.isLoading;
 
   const handleMessage = async (profileId: string) => {
     try {
       const conversation = await cofounderMatchingService.getOrCreateDirectConversation(profileId);
       const profile = matches.find((match) => match.matched_profile.profile_id === profileId);
-      const conversationId = String((conversation as any).conversation_id ?? (conversation as any).id ?? "");
+      const conversationId = String(conversation.conversation_id ?? "");
       if (!conversationId) {
         throw new Error("Conversation id missing in response");
       }
@@ -127,12 +121,15 @@ export function MatchesFeed({ onOpenConversation }: MatchesFeedProps) {
 
   const handleArchive = async (matchId: string) => {
     try {
-      await cofounderMatchingService.archiveMatch(matchId);
-      setMatches((prev) => prev.filter((match) => match.match_id !== matchId));
+      await archiveMatchMutation.mutateAsync(matchId);
       toast.success("Match archived");
     } catch {
       toast.error("Failed to archive match");
     }
+  };
+
+  const handleViewProfile = (userId: string) => {
+    navigate(`/profile/${userId}`);
   };
 
   const filters: { key: FilterOption; label: string }[] = [
@@ -181,6 +178,7 @@ export function MatchesFeed({ onOpenConversation }: MatchesFeedProps) {
               match={match}
               onMessage={handleMessage}
               onArchive={handleArchive}
+              onViewProfile={handleViewProfile}
             />
           ))}
         </div>

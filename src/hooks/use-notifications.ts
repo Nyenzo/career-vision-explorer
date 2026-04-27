@@ -4,10 +4,29 @@ import { useAuth } from "./use-auth";
 import { supabase } from "@/lib/supabase";
 import { authStorage } from "@/lib/session-auth-storage";
 
+export type NotificationType =
+  | "new_application"
+  | "application_status_changed"
+  | "cofounder_follow"
+  | "cofounder_match"
+  | "cofounder_mutual_interest"
+  | "cofounder_new_message"
+  | "cofounder_project_join_request"
+  | "cofounder_project_approved";
+
+export const COFOUNDER_NOTIFICATION_TYPES: NotificationType[] = [
+  "cofounder_follow",
+  "cofounder_match",
+  "cofounder_mutual_interest",
+  "cofounder_new_message",
+  "cofounder_project_join_request",
+  "cofounder_project_approved",
+];
+
 export interface Notification {
   id: string;
   user_id: string;
-  type: "new_application" | "application_status_changed";
+  type: NotificationType;
   title: string;
   message: string;
   link: string | null;
@@ -37,6 +56,16 @@ export function useNotifications(options?: {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
 
+  const upsertNotification = useCallback((incoming: Notification) => {
+    setNotifications((prev) => {
+      const next = [incoming, ...prev.filter((notification) => notification.id !== incoming.id)];
+      next.sort((left, right) => {
+        return new Date(right.created_at).getTime() - new Date(left.created_at).getTime();
+      });
+      return next.slice(0, limit);
+    });
+  }, [limit]);
+
   const refresh = useCallback(async () => {
     if (!isAuthenticated) return;
     setIsLoading(true);
@@ -63,15 +92,66 @@ export function useNotifications(options?: {
     refresh();
   }, [refresh]);
 
-  // Subscribe to INSERT events via Supabase Realtime 
+  // Consume DB-authored notifications from the shared notifications table.
   useEffect(() => {
     if (!isAuthenticated || !user?.user_id || !supabase) return;
-    // Authenticate the Realtime connection with the user's access token so
-    // RLS policies evaluate correctly for postgres_changes subscriptions.
     const accessToken = authStorage.getAccessToken();
     if (accessToken) {
       supabase.realtime.setAuth(accessToken);
     }
+
+    const handleInsert = (payload: { new: Notification }) => {
+      const incoming = payload.new;
+      upsertNotification(incoming);
+      setTotal((prev) => prev + 1);
+      if (!incoming.is_read) {
+        setUnreadCount((prev) => prev + 1);
+      }
+    };
+
+    const handleUpdate = (payload: { new: Notification; old: Notification }) => {
+      const incoming = payload.new;
+      const previous = payload.old;
+
+      setNotifications((prev) => {
+        const hasExisting = prev.some((notification) => notification.id === incoming.id);
+        if (!hasExisting && unreadOnly && incoming.is_read) {
+          return prev;
+        }
+        const next = prev
+          .map((notification) => (notification.id === incoming.id ? incoming : notification))
+          .filter((notification) => !(unreadOnly && notification.is_read));
+        if (!hasExisting && (!unreadOnly || !incoming.is_read)) {
+          next.unshift(incoming);
+        }
+        next.sort((left, right) => {
+          return new Date(right.created_at).getTime() - new Date(left.created_at).getTime();
+        });
+        return next.slice(0, limit);
+      });
+
+      if (previous.is_read !== incoming.is_read) {
+        setUnreadCount((prev) => {
+          if (previous.is_read && !incoming.is_read) {
+            return prev + 1;
+          }
+          if (!previous.is_read && incoming.is_read) {
+            return Math.max(0, prev - 1);
+          }
+          return prev;
+        });
+      }
+    };
+
+    const handleDelete = (payload: { old: Notification }) => {
+      const removed = payload.old;
+      setNotifications((prev) => prev.filter((notification) => notification.id !== removed.id));
+      setTotal((prev) => Math.max(0, prev - 1));
+      if (!removed.is_read) {
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+    };
+
     const channel = supabase
       .channel(`notifications:${user.user_id}`)
       .on(
@@ -82,21 +162,34 @@ export function useNotifications(options?: {
           table: 'notifications',
           filter: `user_id=eq.${user.user_id}`,
         },
-        (payload) => {
-          const incoming = payload.new as Notification;
-          setNotifications((prev) => [incoming, ...prev].slice(0, limit));
-          setTotal((prev) => prev + 1);
-          if (!incoming.is_read) {
-            setUnreadCount((prev) => prev + 1);
-          }
+        handleInsert,
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.user_id}`,
         },
+        handleUpdate,
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.user_id}`,
+        },
+        handleDelete,
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [isAuthenticated, user?.user_id, limit]);
+  }, [isAuthenticated, user?.user_id, limit, unreadOnly, upsertNotification]);
 
   const markAsRead = useCallback(
     async (id: string) => {

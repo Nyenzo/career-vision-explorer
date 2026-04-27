@@ -41,6 +41,9 @@ interface UseRealtimeChatOptions {
 
 const TYPING_EVENT = "typing:update";
 const READ_EVENT = "message:read";
+const MESSAGE_INSERT_EVENT = "INSERT";
+const TYPING_BROADCAST_MIN_INTERVAL_MS = 900;
+const DEBUG_REALTIME_CHAT = import.meta.env.VITE_DEBUG_REALTIME_CHAT === "true";
 
 export function useRealtimeChat({
   conversationId,
@@ -55,6 +58,15 @@ export function useRealtimeChat({
   const [typingProfiles, setTypingProfiles] = useState<RealtimeChatProfile[]>([]);
   const channelRef = useRef<any>(null);
   const typingTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const lastTypingStateRef = useRef<boolean | null>(null);
+  const lastTypingSentAtRef = useRef<number>(0);
+
+  const logRealtime = useCallback((message: string, context: Record<string, unknown> = {}) => {
+    if (!DEBUG_REALTIME_CHAT) {
+      return;
+    }
+    console.info("cofounder_realtime_debug", { message, ...context });
+  }, []);
 
   const clearTypingProfile = useCallback((targetProfileId: string) => {
     const timeout = typingTimeoutsRef.current.get(targetProfileId);
@@ -100,7 +112,6 @@ export function useRealtimeChat({
 
     const channel = supabase.channel(`cofounder-chat:${conversationId}`, {
       config: {
-        private: true,
         broadcast: {
           ack: true,
           self: true,
@@ -148,16 +159,23 @@ export function useRealtimeChat({
         }
         onReadReceipt?.(payload);
       })
-      .on("broadcast", { event: "INSERT" }, ({ payload }: { payload: any }) => {
+      .on("broadcast", { event: MESSAGE_INSERT_EVENT }, ({ payload }: { payload: any }) => {
         const row = (payload?.new ?? payload?.record ?? payload) as RealtimeMessageRow | undefined;
         if (!row || row.conversation_id !== conversationId || !row.id) {
+          logRealtime("drop_message_payload", {
+            conversationId,
+            rowConversationId: row?.conversation_id,
+            hasId: Boolean(row?.id),
+          });
           return;
         }
 
+        logRealtime("incoming_message_event", { conversationId, messageId: row.id });
         onMessage({
           message_id: row.id,
           conversation_id: row.conversation_id,
           sender_profile_id: row.sender_profile_id,
+          sender_name: row.sender_profile_id === profileId ? profileName : undefined,
           message_text: row.message_text,
           is_read: row.is_read,
           is_ai_generated: row.is_ai_generated,
@@ -165,8 +183,25 @@ export function useRealtimeChat({
           created_at: row.created_at,
         });
       })
+      .on("system", {}, (event: Record<string, any>) => {
+        const payload = event?.payload ?? event;
+        const severity = String(payload?.status ?? event?.status ?? "").toLowerCase();
+        if (severity.includes("error") || severity.includes("timeout") || payload?.message) {
+          console.warn("cofounder_realtime_system_event", {
+            conversationId,
+            extension: payload?.extension ?? event?.extension,
+            channel: payload?.channel ?? event?.channel,
+            status: payload?.status ?? event?.status,
+            message: payload?.message ?? event?.message,
+          });
+        }
+      })
       .subscribe(async (status: string) => {
         setIsConnected(status === "SUBSCRIBED");
+        if (status !== "SUBSCRIBED") {
+          console.warn("cofounder_realtime_subscription_status", { conversationId, status });
+          logRealtime("subscription_status_change", { conversationId, status });
+        }
 
         if (status === "SUBSCRIBED") {
           await channel.track({
@@ -183,6 +218,8 @@ export function useRealtimeChat({
       setTypingProfiles([]);
       setOnlineProfiles([]);
       setIsConnected(false);
+      lastTypingStateRef.current = null;
+      lastTypingSentAtRef.current = 0;
       supabase.removeChannel(channel);
       channelRef.current = null;
     };
@@ -195,11 +232,20 @@ export function useRealtimeChat({
     profileId,
     profileName,
     syncPresence,
+    logRealtime,
   ]);
 
   const sendTyping = useCallback(
     async (isTyping: boolean) => {
       if (!channelRef.current || !profileId) {
+        return;
+      }
+
+      const now = Date.now();
+      if (
+        lastTypingStateRef.current === isTyping
+        && now - lastTypingSentAtRef.current < TYPING_BROADCAST_MIN_INTERVAL_MS
+      ) {
         return;
       }
 
@@ -212,6 +258,9 @@ export function useRealtimeChat({
           isTyping,
         },
       });
+
+      lastTypingStateRef.current = isTyping;
+      lastTypingSentAtRef.current = now;
     },
     [profileId, profileName]
   );

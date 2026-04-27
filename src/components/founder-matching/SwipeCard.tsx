@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   X,
   Bookmark,
@@ -11,6 +12,7 @@ import {
   ChevronUp,
   Zap,
   Star,
+  User,
 } from "lucide-react";
 import { cn, getMatchScoreBgClass } from "@/lib/utils";
 import type { CofounderMatchWithProfile } from "@/types/founder-matching";
@@ -65,6 +67,7 @@ export function SwipeCard({
   onSkip,
   isLoading,
 }: SwipeCardProps) {
+  const navigate = useNavigate();
   const profile = match.matched_profile;
   const [isBioExpanded, setIsBioExpanded] = useState(false);
 
@@ -89,6 +92,7 @@ export function SwipeCard({
   const profileId = profile.profile_id || (profile as any).id;
   const matchPercent =
     match.overall_score != null ? Math.round(match.overall_score * 100) : null;
+  const canViewProfile = Boolean(profile.user_id);
 
   return (
     <div className="flex flex-col items-center gap-4 w-full pb-6">
@@ -222,6 +226,15 @@ export function SwipeCard({
           <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-gray-200 bg-white text-gray-400 shadow-sm group-hover:border-red-200 group-hover:text-red-500 group-hover:bg-red-50">
             <X className="h-6 w-6" />
           </div>
+        </button>
+
+        <button
+          onClick={() => profile.user_id && navigate(`/profile/${profile.user_id}`)}
+          disabled={isLoading || !canViewProfile}
+          className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-5 py-3 text-xs font-bold uppercase tracking-wider text-gray-600 shadow-sm transition hover:border-blue-200 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <User className="h-4 w-4" />
+          View Profile
         </button>
 
         <div className="flex items-center gap-2 px-6 py-2 rounded-full bg-white border border-gray-100 shadow-sm text-xs font-bold text-gray-400 tracking-widest uppercase">

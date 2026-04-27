@@ -27,6 +27,37 @@ import type {
 const BASE = "/cofounder-matching";
 
 class CofounderMatchingService {
+  private readonly cacheTtlMs = 15000;
+  private cache = new Map<string, { expiresAt: number; value: unknown }>();
+
+  private getCached<T>(key: string): T | null {
+    const cached = this.cache.get(key);
+    if (!cached) {
+      return null;
+    }
+    if (cached.expiresAt <= Date.now()) {
+      this.cache.delete(key);
+      return null;
+    }
+    return cached.value as T;
+  }
+
+  private setCached<T>(key: string, value: T): void {
+    this.cache.set(key, { expiresAt: Date.now() + this.cacheTtlMs, value });
+  }
+
+  private invalidateCache(prefixes: string[] = []): void {
+    if (prefixes.length === 0) {
+      this.cache.clear();
+      return;
+    }
+    Array.from(this.cache.keys()).forEach((key) => {
+      if (prefixes.some((prefix) => key.startsWith(prefix))) {
+        this.cache.delete(key);
+      }
+    });
+  }
+
   private normalizeMatch(match: any): any {
     if (!match) return match;
     if (match.id && !match.match_id) match.match_id = match.id;
@@ -52,6 +83,9 @@ class CofounderMatchingService {
     if (normalized.id && !normalized.conversation_id) {
       normalized.conversation_id = normalized.id;
     }
+    normalized.other_profile_photo_url = normalized.other_profile_photo_url ?? undefined;
+    normalized.other_profile_user_id = normalized.other_profile_user_id ?? undefined;
+    normalized.other_last_seen_at = normalized.other_last_seen_at ?? undefined;
     if (Array.isArray(normalized.messages)) {
       normalized.messages = normalized.messages.map((msg: any) => this.normalizeMessage(msg));
     }
@@ -61,7 +95,11 @@ class CofounderMatchingService {
   // --- Profile ---
 
   async getProfile(): Promise<CofounderMatchProfile> {
-    return apiClient.get<CofounderMatchProfile>(`${BASE}/profile`);
+    const profile = await apiClient.get<any>(`${BASE}/profile`);
+    if (profile?.id && !profile?.profile_id) {
+      profile.profile_id = profile.id;
+    }
+    return profile as CofounderMatchProfile;
   }
 
   async updateProfile(data: CofounderMatchProfileUpdate): Promise<CofounderMatchProfile> {
@@ -119,10 +157,12 @@ class CofounderMatchingService {
   // --- Swipe ---
 
   async swipe(targetProfileId: string, action: SwipeAction): Promise<SwipeActionResponse> {
-    return apiClient.post<SwipeActionResponse>(`${BASE}/swipe`, {
+    const response = await apiClient.post<SwipeActionResponse>(`${BASE}/swipe`, {
       target_profile_id: targetProfileId,
       action,
     });
+    this.invalidateCache(["matches:", "mutual-matches", "conversations:"]);
+    return response;
   }
 
   swipeRight(targetProfileId: string): Promise<SwipeActionResponse> {
@@ -139,17 +179,24 @@ class CofounderMatchingService {
 
   // --- Matches ---
 
-  async listMatches(statusFilter?: string, limit = 20, offset = 0): Promise<MatchListResponse> {
+  async listMatches(statusFilter?: string, limit = 20, offset = 0, before?: string): Promise<MatchListResponse> {
     const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
     if (statusFilter) params.append("status_filter", statusFilter);
+    if (before) params.append("before", before);
     const res = await apiClient.get<MatchListResponse>(`${BASE}/matches?${params}`);
     res.matches?.forEach(this.normalizeMatch.bind(this));
     return res;
   }
 
   async getMutualMatches(): Promise<{ mutual_matches: CofounderMatchWithProfile[] }> {
+    const cacheKey = "mutual-matches";
+    const cached = this.getCached<{ mutual_matches: CofounderMatchWithProfile[] }>(cacheKey);
+    if (cached) {
+      return cached;
+    }
     const res = await apiClient.get<{ mutual_matches: CofounderMatchWithProfile[] }>(`${BASE}/matches/mutual`);
     res.mutual_matches?.forEach(this.normalizeMatch.bind(this));
+    this.setCached(cacheKey, res);
     return res;
   }
 
@@ -159,7 +206,9 @@ class CofounderMatchingService {
   }
 
   async archiveMatch(matchId: string): Promise<void> {
-    return apiClient.delete<void>(`${BASE}/matches/${matchId}`);
+    const result = await apiClient.delete<void>(`${BASE}/matches/${matchId}`);
+    this.invalidateCache(["matches:", "mutual-matches"]);
+    return result;
   }
 
   // --- Statistics ---
@@ -203,22 +252,33 @@ class CofounderMatchingService {
   // --- Conversations ---
 
   async getConversations(limit = 20, offset = 0): Promise<ConversationListResponse> {
+    const cacheKey = `conversations:${limit}:${offset}`;
+    const cached = this.getCached<ConversationListResponse>(cacheKey);
+    if (cached) {
+      return cached;
+    }
     const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
     const res = await apiClient.get<ConversationListResponse>(`${BASE}/conversations?${params}`);
-    return {
+    const normalized = {
       ...res,
       conversations: (res.conversations || []).map((conv: any) => this.normalizeConversation(conv)),
     };
+    this.setCached(cacheKey, normalized);
+    return normalized;
   }
 
-  async getMessages(conversationId: string, limit = 50, page = 1): Promise<Message[]> {
+  async getMessages(conversationId: string, limit = 50, page = 1, before?: string): Promise<Message[]> {
     const params = new URLSearchParams({ limit: String(limit), page: String(page) });
+    if (before) {
+      params.set("before", before);
+    }
     const res = await apiClient.get<Message[]>(`${BASE}/conversations/${conversationId}/messages?${params}`);
     return (res || []).map((msg: any) => this.normalizeMessage(msg));
   }
 
   async sendMessage(conversationId: string, text: string): Promise<Message> {
     const res = await apiClient.post<Message>(`${BASE}/conversations/${conversationId}/messages`, { message_text: text });
+    this.invalidateCache(["conversations:"]);
     return this.normalizeMessage(res);
   }
 
@@ -226,11 +286,14 @@ class CofounderMatchingService {
     if (!conversationId || conversationId === "undefined") {
       throw new Error("Cannot mark conversation as read without a valid conversation id");
     }
-    return apiClient.put<{ message: string }>(`${BASE}/conversations/${conversationId}/read`);
+    const res = await apiClient.put<{ message: string }>(`${BASE}/conversations/${conversationId}/read`);
+    this.invalidateCache(["conversations:"]);
+    return res;
   }
 
   async getOrCreateDirectConversation(otherProfileId: string): Promise<Conversation> {
     const res = await apiClient.post<Conversation>(`${BASE}/conversations/direct/${otherProfileId}`);
+    this.invalidateCache(["conversations:"]);
     return this.normalizeConversation(res);
   }
 
@@ -291,7 +354,7 @@ class CofounderMatchingService {
   }
 
   async addProjectMember(projectId: string, profileId: string, role: MemberRole = "member"): Promise<void> {
-    return apiClient.post<void>(`${BASE}/projects/${projectId}/members`, { profile_id: profileId, role });
+    return apiClient.post<void>(`${BASE}/projects/${projectId}/members`, { target_profile_id: profileId, role });
   }
 
   async requestJoinProject(projectId: string): Promise<void> {
@@ -307,7 +370,9 @@ class CofounderMatchingService {
   }
 
   async createProjectGroupChat(projectId: string, title?: string): Promise<Conversation> {
-    return apiClient.post<Conversation>(`${BASE}/projects/${projectId}/group-chat`, { project_id: projectId, title });
+    const res = await apiClient.post<Conversation>(`${BASE}/projects/${projectId}/group-chat`, { project_id: projectId, title });
+    this.invalidateCache(["conversations:"]);
+    return this.normalizeConversation(res);
   }
 }
 

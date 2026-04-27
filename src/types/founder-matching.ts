@@ -204,6 +204,7 @@ export interface Message {
     message_id: string;
     conversation_id: string;
     sender_profile_id: string;
+    sender_name?: string;
     message_text: string;
     is_read: boolean;
     is_ai_generated: boolean;
@@ -224,6 +225,9 @@ export interface Conversation {
     created_at?: string;
     participant_count?: number;
     unread_count?: number;
+    other_profile_photo_url?: string;
+    other_profile_user_id?: string;
+    other_last_seen_at?: string;
     messages?: Message[];
     participants?: Array<Record<string, unknown>>;
 }
@@ -274,6 +278,12 @@ export interface ProjectMember {
     user_id: string;
     role: MemberRole;
     status: MemberStatus;
+    requested_at?: string;
+    responded_at?: string;
+    member_name?: string;
+    member_role?: string;
+    member_intent_type?: IntentType;
+    member_photo?: string;
     created_at?: string;
     updated_at?: string;
 }
@@ -281,9 +291,15 @@ export interface ProjectMember {
 export interface ProjectWithMembers extends IdeaProject {
     members: ProjectMember[];
     owner_name?: string;
+    owner_photo?: string;
+    member_count?: number;
+    pending_count?: number;
+    has_group_chat?: boolean;
+    group_chat_conversation_id?: string;
+    user_membership_status?: MemberStatus | "owner" | null;
 }
 
 export interface AddProjectMemberRequest {
-    profile_id: string;
+    target_profile_id: string;
     role?: MemberRole;
 }
