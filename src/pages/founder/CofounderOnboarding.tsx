@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import Navbar from "@/components/layout/Navbar";
 import { cn } from "@/lib/utils";
+import { CofounderOnboardingSkeleton } from "@/components/ui/skeleton-loaders";
 import { cofounderMatchingService } from "@/services/founder-matching.service";
 import type {
   CommitmentLevel,
@@ -421,11 +422,7 @@ export default function CofounderOnboarding() {
   };
 
   if (isInitialLoading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-      </div>
-    );
+    return <CofounderOnboardingSkeleton />;
   }
 
   const progress = Math.round(((step + 1) / steps.length) * 100);

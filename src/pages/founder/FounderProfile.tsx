@@ -4,6 +4,7 @@ import { ArrowLeft, Camera, Trash2, Loader2, Save, Plus } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import { cofounderMatchingService } from "@/services/founder-matching.service";
 import { toast } from "sonner";
+import { FounderProfileSkeleton } from "@/components/ui/skeleton-loaders";
 import type {
     CofounderMatchProfile,
     CommitmentLevel,
@@ -226,11 +227,7 @@ export default function FounderProfile() {
     };
 
     if (isLoading) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-            </div>
-        );
+        return <FounderProfileSkeleton />;
     }
 
     return (

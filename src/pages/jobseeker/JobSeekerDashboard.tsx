@@ -4,7 +4,6 @@ import Layout from "@/components/layout/Layout";
 import { DashboardBackground } from "@/components/jobseeker/dashboard/DashboardBackground";
 import { ProfileCompletionCard } from "@/components/jobseeker/dashboard/ProfileCompletionCard";
 import { RecentActivityCard } from "@/components/jobseeker/dashboard/RecentActivityCard";
-import { QuickStatsCards } from "@/components/jobseeker/dashboard/QuickStatsCards";
 
 import EditProfileDialog from "@/components/profile/EditProfileDialog";
 import { useAuth } from "@/hooks/use-auth";
@@ -25,6 +24,7 @@ import {
   Target,
   TrendingUp,
   Loader2,
+  Layers,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -162,24 +162,33 @@ const JobSeekerDashboard = () => {
             {/* Right Column: Profile Completion (Bento Main) & Quick Stats */}
             <div className="lg:col-span-8 flex flex-col gap-8">
               <ProfileCompletionCard />
-              <QuickStatsCards />
               {/* Co-Founder Matching CTA */}
-              <section
-                className="relative overflow-hidden rounded-lg border border-blue-200 bg-gradient-to-br from-blue-600 to-blue-800 p-6 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                onClick={!isFounderLoading ? handleCofounderClick : undefined}
-              >
-                <div className="relative z-10">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-blue-200 mb-1">New</p>
-                  <h3 className="text-xl font-bold text-white mb-2">Find Your Co-Founder</h3>
-                  <p className="text-sm text-blue-100 mb-4 max-w-sm">
-                    Connect with technically strong co-founders and collaborators who match your vision, skills, and ambition.
-                  </p>
-                  <button disabled={isFounderLoading} className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-blue-700 hover:bg-blue-50 transition-colors disabled:opacity-70">
-                    {isFounderLoading ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading...</> : "Get Started →"}
-                  </button>
+              <section className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
+                <div className="flex items-center gap-3 mb-2">
+                  <h3 className="text-2xl font-bold font-headline text-on-surface">Find Co-Founders</h3>
+                  <Badge className="bg-blue-50 hover:bg-blue-100 text-blue-600 border-0 rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider">NEW</Badge>
                 </div>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-10 text-9xl font-black text-white select-none pointer-events-none">
-                  ✦
+                <p className="text-gray-500 mb-6">
+                  Connect with potential co-founders for your startup.
+                </p>
+
+                <div className="bg-[#f8f9fa] rounded-2xl p-6 relative">
+                  <button className="absolute right-4 top-4 text-blue-600 w-6 h-6 rounded flex items-center justify-center bg-blue-50 hover:bg-blue-100 transition-colors">
+                    <span className="text-sm font-bold">?</span>
+                  </button>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-1">Build Your Dream Team</h4>
+                  <p className="text-gray-500 text-sm mb-6">
+                    Find technical, business, and marketing co-founders who match your skills and vision.
+                  </p>
+
+                  <button
+                    onClick={!isFounderLoading ? handleCofounderClick : undefined}
+                    disabled={isFounderLoading}
+                    className="bg-[#1a56db] text-white px-6 py-2.5 rounded-full font-semibold text-sm hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-70"
+                  >
+                    {isFounderLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Layers className="w-4 h-4" />}
+                    Explore Co-Founder Matching
+                  </button>
                 </div>
               </section>
             </div>

@@ -24,6 +24,7 @@ import {
   useCofounderProfile,
   useCofounderStatistics,
 } from "@/hooks/use-cofounder-matching";
+import { FounderDashboardSkeleton } from "@/components/ui/skeleton-loaders";
 import { cn } from "@/lib/utils";
 
 const MIN_PHOTOS_REQUIRED = 3;
@@ -93,11 +94,7 @@ export default function FounderDashboard() {
   };
 
   if (profileQuery.isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-      </div>
-    );
+    return <FounderDashboardSkeleton />;
   }
 
   return (

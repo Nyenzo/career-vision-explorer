@@ -167,131 +167,74 @@ export const ProfileCompletionCard = () => {
   }
 
   const getProgressColor = (percentage: number) => {
-    if (percentage >= 80) return "bg-green-500";
-    if (percentage >= 50) return "bg-blue-500";
-    if (percentage >= 30) return "bg-yellow-500";
-    return "bg-red-500";
+    // We'll use a unified blue color for the progress bar as shown in the design
+    return "bg-[#1a56db]";
   };
 
-  const getMotivationalMessage = (percentage: number) => {
-    if (percentage === 100) {
-      return "Perfect! Your profile is complete and ready for employers! 🎉";
-    }
-    if (percentage >= 80) {
-      return "Great job! You're almost there - complete your profile to stand out!";
-    }
-    if (percentage >= 50) {
-      return "Good progress! Keep going to make your profile more attractive to employers.";
-    }
-    if (percentage >= 30) {
-      return "You're on your way! Complete more sections to improve your chances.";
-    }
-    return "Start building your profile to attract employers and get noticed!";
+  const getStatusText = (percentage: number) => {
+    if (percentage === 100) return "READY FOR EMPLOYERS";
+    if (percentage >= 80) return "REFINING EXCELLENCE";
+    if (percentage >= 50) return "BUILDING FOUNDATION";
+    if (percentage >= 30) return "GETTING STARTED";
+    return "ACTION REQUIRED";
   };
 
   return (
-    <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-gray-900">
-          <Target className="h-5 w-5 text-blue-600" />
-          Profile Completion
-        </CardTitle>
-        <CardDescription>{getMotivationalMessage(overall)}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-700">Overall Progress</span>
-            <span className="font-medium text-gray-900">{overall}%</span>
-          </div>
-          <Progress
-            value={overall}
-            className={`h-3 ${getProgressColor(overall)}`}
-            aria-label={`Profile completion progress: ${overall}%`}
+    <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
+      <div className="flex justify-between items-start mb-6">
+        <div>
+          <p className="text-[10px] font-bold tracking-widest text-[#1a56db] uppercase mb-2">Identity Status</p>
+          <h2 className="text-2xl font-bold font-headline text-on-surface">Profile Completion</h2>
+        </div>
+        <div className="text-right">
+          <p className="text-4xl font-bold text-[#1a56db] mb-1">{overall}%</p>
+          <p className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">{getStatusText(overall)}</p>
+        </div>
+      </div>
+
+      <div className="mb-8">
+        <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-[#1a56db] rounded-full transition-all duration-500 ease-out" 
+            style={{ width: `${overall}%` }}
           />
-          <p className="text-xs text-gray-500">
-            {completedCount} of {sections.length} sections complete
-          </p>
         </div>
+      </div>
 
-        {nextAction && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-800">
-                Next Step
-              </span>
-            </div>
-            <p className="text-sm text-blue-700 mb-3">{nextAction.label}</p>
-            <Button
-              size="sm"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-              onClick={() => navigate(nextAction.action)}
-            >
-              Complete Now
-              <ArrowRight className="h-3 w-3 ml-1" />
-            </Button>
-          </div>
-        )}
-
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium text-gray-700">
-            Progress Details
-          </h4>
-          <div className="space-y-1 max-h-48 overflow-y-auto">
-            {sortedSections.map((section) => (
-              <div
-                key={section.key}
-                className="flex items-center justify-between p-2 bg-gray-50 rounded-lg text-sm"
-              >
-                <span
-                  className={`font-medium ${section.completed ? "text-gray-600" : "text-gray-700"
-                    }`}
-                >
-                  {section.label}
-                </span>
-                <Badge
-                  className={
-                    section.completed
-                      ? "bg-green-100 text-green-800 border-green-200"
-                      : "bg-orange-100 text-orange-800 border-orange-200"
-                  }
-                >
-                  {section.completed ? (
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                  ) : (
-                    <AlertCircle className="h-3 w-3 mr-1" />
-                  )}
-                  {section.completed ? "Complete" : "Pending"}
-                </Badge>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {overall < 100 && (
-          <Button
-            variant="outline"
-            className="w-full border-blue-200 text-blue-600 hover:bg-blue-50"
-            onClick={() => navigate("/profile")}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        {/* We want to show a mix of completed and uncompleted tasks. The design shows Add Your Name (checked), Add Profile Photo (unchecked), Add Portfolio URL (unchecked), Upload Your Resume (unchecked), Connect GitHub (unchecked). */}
+        {sections.slice(0, 6).map((section) => (
+          <div 
+            key={section.key} 
+            className="flex items-center gap-3 p-4 rounded-xl bg-[#f8f9fa] border border-transparent hover:border-gray-200 transition-colors cursor-pointer"
+            onClick={() => navigate(section.action)}
           >
-            Complete All Sections
-            <ArrowRight className="h-3 w-3 ml-1" />
-          </Button>
-        )}
-
-        {overall === 100 && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
-            <CheckCircle className="h-5 w-5 text-green-600 mx-auto mb-2" />
-            <p className="text-sm font-medium text-green-800">
-              Profile Complete!
-            </p>
-            <p className="text-xs text-green-600">
-              Your profile is now optimized for employers
-            </p>
+            {section.completed ? (
+              <div className="w-5 h-5 rounded-full bg-[#059669] flex items-center justify-center flex-shrink-0">
+                <CheckCircle className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+              </div>
+            ) : (
+              <div className="w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0">
+                <div className="flex gap-[2px]">
+                  <div className="w-[3px] h-[3px] bg-white rounded-full"></div>
+                  <div className="w-[3px] h-[3px] bg-white rounded-full"></div>
+                  <div className="w-[3px] h-[3px] bg-white rounded-full"></div>
+                </div>
+              </div>
+            )}
+            <span className={`text-sm font-medium ${section.completed ? 'text-gray-900' : 'text-gray-600'}`}>
+              {section.label}
+            </span>
           </div>
-        )}
-      </CardContent>
-    </Card>
+        ))}
+      </div>
+
+      <button 
+        onClick={() => navigate(nextAction ? nextAction.action : "/profile")}
+        className="bg-[#1a56db] text-white px-8 py-3 rounded-full font-semibold text-sm hover:bg-blue-700 transition-colors"
+      >
+        Complete Now
+      </button>
+    </div>
   );
 };

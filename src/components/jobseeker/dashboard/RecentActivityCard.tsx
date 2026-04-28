@@ -86,56 +86,79 @@ export const RecentActivityCard = () => {
   const activities = generateActivities();
 
   return (
-    <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-gray-900">
-          <Clock className="h-5 w-5 text-green-600" />
-          Recent Activity
-        </CardTitle>
-        <CardDescription>Your latest actions and updates</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="bg-[#f8f9fa] rounded-3xl p-8 border border-transparent">
+      <div className="flex items-center justify-between mb-8">
+        <h3 className="text-xl font-bold font-headline text-on-surface">Recent Activity</h3>
+        <Clock className="h-5 w-5 text-gray-500" />
+      </div>
+
+      <div className="space-y-0">
         {error && (
-          <div className="flex items-center gap-2 text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
+          <div className="flex items-center gap-2 text-red-600 bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
             <AlertCircle className="h-4 w-4" />
             <span className="text-sm">Error: {error}</span>
           </div>
         )}
         
         {loading ? (
-          // Skeleton rows mirror the real activity items
-          [1, 2, 3, 4].map((i) => (
-            <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <div className="h-2 w-2 rounded-full bg-gray-200 animate-pulse" />
-                <div className="h-4 w-4 rounded bg-gray-200 animate-pulse" />
-              </div>
-              <div className="flex-1 space-y-1">
+          [1, 2, 3].map((i) => (
+            <div key={i} className="flex gap-4 relative pb-8">
+              <div className="w-px bg-gray-200 absolute left-[3.5px] top-3 bottom-0" />
+              <div className="h-2 w-2 rounded-full bg-gray-300 relative top-1.5 flex-shrink-0 animate-pulse" />
+              <div className="flex-1 space-y-2">
                 <div className={`h-4 rounded bg-gray-200 animate-pulse ${i % 2 === 0 ? 'w-3/4' : 'w-5/6'}`} />
                 <div className="h-3 w-16 rounded bg-gray-200 animate-pulse" />
               </div>
             </div>
           ))
         ) : (
-          <div className="space-y-3">
+          <div className="relative">
             {activities.map((activity, index) => {
-              const IconComponent = activity.icon;
+              const isLast = index === activities.length - 1;
+              // Extract the company name to highlight it
+              // Assuming text format: "Applied to [Role] at [Company]" or similar
+              let highlightedText = <>{activity.text}</>;
+              if (activity.text.includes(" at ")) {
+                const parts = activity.text.split(" at ");
+                highlightedText = (
+                  <>
+                    {parts[0]} at <span className="font-semibold text-[#1a56db]">{parts[1]}</span>
+                  </>
+                );
+              } else if (activity.text.includes("with ")) {
+                const parts = activity.text.split("with ");
+                highlightedText = (
+                  <>
+                    {parts[0]}with <span className="font-semibold text-[#059669]">{parts[1]}</span>
+                  </>
+                );
+              }
+
+              // Set dot color based on some logic or activity colors
+              // The design shows green dot for profile update, blue for job application
+              const isApplication = activity.text.includes("Applied");
+              const dotColor = isApplication ? "bg-[#1a56db]" : "bg-[#059669]";
+
               return (
-                <div key={index} className={`flex items-center gap-3 p-3 ${activity.colors.bg} rounded-lg transition-all duration-200 hover:shadow-sm`}>
-                  <div className="flex items-center gap-2">
-                    <div className={`h-2 w-2 ${activity.colors.dot} rounded-full`}></div>
-                    <IconComponent className={`h-4 w-4 ${activity.colors.text}`} />
-                  </div>
-                  <div className="flex-1">
-                    <span className={`text-sm ${activity.colors.text} font-medium`}>{activity.text}</span>
-                    <div className="text-xs text-gray-500 mt-1">{activity.time}</div>
+                <div key={index} className="flex gap-4 relative pb-8">
+                  {/* Timeline vertical line */}
+                  {!isLast && (
+                    <div className="w-px bg-gray-200 absolute left-[3.5px] top-3 bottom-0" />
+                  )}
+                  {/* Timeline dot */}
+                  <div className={`h-2 w-2 ${dotColor} rounded-full relative top-1.5 flex-shrink-0 shadow-[0_0_0_4px_#f8f9fa]`} />
+                  
+                  {/* Content */}
+                  <div className="flex-1 pt-0">
+                    <p className="text-sm text-gray-700 leading-snug">{highlightedText}</p>
+                    <p className="text-[10px] font-bold text-gray-400 mt-2 uppercase tracking-wider">{activity.time}</p>
                   </div>
                 </div>
               );
             })}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };

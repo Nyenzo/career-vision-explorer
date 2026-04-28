@@ -553,3 +553,154 @@ export const ApplicantsTableRowSkeleton: React.FC<{ rows?: number }> = ({ rows =
     ))}
   </>
 );
+
+// ─── Cofounder Onboarding Skeleton ───────────────────────────────────────────
+export const CofounderOnboardingSkeleton: React.FC = () => (
+  <div className="min-h-screen bg-white">
+    {/* Simulate Navbar spacing */}
+    <div className="h-16 border-b bg-white" />
+    <main className="px-4 py-8">
+      <div className="mx-auto max-w-3xl">
+        {/* Header section */}
+        <section className="mb-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="space-y-3">
+            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-8 w-64" />
+          </div>
+        </section>
+
+        {/* Progress bar section */}
+        <section className="mb-6">
+          <div className="mb-2 flex justify-between">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-12" />
+          </div>
+          <Skeleton className="h-2 w-full rounded-full" />
+        </section>
+
+        {/* Content section */}
+        <section className="rounded-3xl bg-white p-6 shadow-2xl sm:p-8">
+          <Skeleton className="mb-6 h-8 w-48" />
+          <div className="grid gap-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="rounded-2xl border-2 px-5 py-4">
+                <div className="flex items-start gap-3">
+                  <Skeleton className="h-10 w-10 rounded-lg flex-shrink-0" />
+                  <div className="w-full space-y-2">
+                    <Skeleton className="h-5 w-40" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-2/3" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+);
+
+// ─── Founder Dashboard Skeleton ──────────────────────────────────────────────
+export const FounderDashboardSkeleton: React.FC = () => (
+  <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="h-16 border-b bg-white" />
+    <section className="bg-gray-50 pt-8 pb-4 border-b border-gray-200">
+      <div className="mx-auto max-w-5xl px-4">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-3">
+            <Skeleton className="h-10 w-80" />
+            <Skeleton className="h-5 w-48" />
+          </div>
+          <Skeleton className="h-10 w-32 rounded-lg" />
+        </div>
+        
+        <div className="mt-8 flex items-center gap-4 overflow-x-auto pb-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="flex min-w-[220px] flex-col items-center rounded-full bg-white py-4 px-6 shadow-sm border border-gray-100 space-y-2">
+              <Skeleton className="h-8 w-16" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} className="h-9 w-24 rounded-lg" />
+          ))}
+        </div>
+      </div>
+    </section>
+    
+    <main className="flex-1 mx-auto w-full max-w-5xl px-4 py-6">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="rounded-2xl border bg-white p-5 space-y-4">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-12 w-12 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+            </div>
+            <Skeleton className="h-20 w-full" />
+            <div className="flex gap-2">
+              <Skeleton className="h-6 w-16 rounded-full" />
+              <Skeleton className="h-6 w-20 rounded-full" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </main>
+  </div>
+);
+
+// ─── Founder Profile Skeleton ────────────────────────────────────────────────
+export const FounderProfileSkeleton: React.FC = () => (
+  <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="h-16 border-b bg-white" />
+    <div className="mx-auto max-w-3xl px-4 py-6 flex flex-col gap-6 w-full">
+      {/* Header card */}
+      <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-3">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Skeleton className="h-10 w-40 rounded-lg" />
+            <Skeleton className="h-10 w-32 rounded-lg" />
+          </div>
+        </div>
+      </section>
+
+      {/* Photos section */}
+      <section className="rounded-xl bg-white border border-gray-100 p-5 shadow-sm space-y-4">
+        <Skeleton className="h-5 w-24" />
+        <div className="grid grid-cols-3 gap-2">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="aspect-square rounded-xl w-full" />
+          ))}
+        </div>
+      </section>
+
+      {/* Basic Info section */}
+      <section className="rounded-xl bg-white border border-gray-100 p-5 shadow-sm space-y-4">
+        <Skeleton className="h-5 w-40" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-10 w-full rounded-lg" />
+            </div>
+          ))}
+        </div>
+        <div className="space-y-2 pt-2">
+          <Skeleton className="h-4 w-12" />
+          <Skeleton className="h-32 w-full rounded-lg" />
+        </div>
+      </section>
+    </div>
+  </div>
+);
