@@ -23,6 +23,8 @@ import {
   useCofounderMutualMatches,
   useCofounderProfile,
   useCofounderStatistics,
+  useCofounderUnreadCount,
+  useCofounderRealtimeSync,
 } from "@/hooks/use-cofounder-matching";
 import { FounderDashboardSkeleton } from "@/components/ui/skeleton-loaders";
 import { cn } from "@/lib/utils";
@@ -59,6 +61,10 @@ export default function FounderDashboard() {
   const profileQuery = useCofounderProfile();
   const statsQuery = useCofounderStatistics();
   const mutualMatchesQuery = useCofounderMutualMatches();
+  const unreadQuery = useCofounderUnreadCount();
+
+  // Global realtime sync for the dashboard
+  useCofounderRealtimeSync();
 
   const founderName = useMemo(() => {
     const name = profileQuery.data?.name;
@@ -66,11 +72,12 @@ export default function FounderDashboard() {
   }, [profileQuery.data?.name]);
 
   const mutualCount = mutualMatchesQuery.data?.mutual_matches.length ?? 0;
+  const unreadCount = unreadQuery.data ?? 0;
   const statistics = useMemo(() => ({
     profileViews: statsQuery.data?.profile_views ?? profileQuery.data?.views_count ?? 0,
-    mutualInterestCount: statsQuery.data?.mutual_interest_count ?? profileQuery.data?.mutual_interest_count ?? mutualCount,
+    mutualInterestCount: statsQuery.data?.mutual_interest_count ?? mutualCount,
     pendingMatches: statsQuery.data?.pending_matches ?? 0,
-  }), [mutualCount, profileQuery.data?.mutual_interest_count, profileQuery.data?.views_count, statsQuery.data?.mutual_interest_count, statsQuery.data?.pending_matches, statsQuery.data?.profile_views]);
+  }), [mutualCount, statsQuery.data?.mutual_interest_count, statsQuery.data?.pending_matches, statsQuery.data?.profile_views, profileQuery.data?.views_count]);
 
   useEffect(() => {
     const profile = profileQuery.data;
@@ -159,6 +166,11 @@ export default function FounderDashboard() {
                 {tab.key === "network" && mutualCount > 0 && (
                   <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[10px] font-bold text-white">
                     {mutualCount}
+                  </span>
+                )}
+                {tab.key === "messages" && unreadCount > 0 && (
+                  <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
+                    {unreadCount}
                   </span>
                 )}
               </button>

@@ -30,6 +30,17 @@ class CofounderMatchingService {
   private readonly cacheTtlMs = 15000;
   private cache = new Map<string, { expiresAt: number; value: unknown }>();
 
+  private normalizeProfile(profile: any): any {
+    if (!profile) return profile;
+    if (profile.id && !profile.profile_id) {
+      profile.profile_id = profile.id;
+    }
+    if (!profile.current_role && profile.current_role_text) {
+      profile.current_role = profile.current_role_text;
+    }
+    return profile;
+  }
+
   private getCached<T>(key: string): T | null {
     const cached = this.cache.get(key);
     if (!cached) {
@@ -61,8 +72,8 @@ class CofounderMatchingService {
   private normalizeMatch(match: any): any {
     if (!match) return match;
     if (match.id && !match.match_id) match.match_id = match.id;
-    if (match.matched_profile && match.matched_profile.id && !match.matched_profile.profile_id) {
-      match.matched_profile.profile_id = match.matched_profile.id;
+    if (match.matched_profile) {
+      match.matched_profile = this.normalizeProfile(match.matched_profile);
     }
     return match;
   }
@@ -96,10 +107,7 @@ class CofounderMatchingService {
 
   async getProfile(): Promise<CofounderMatchProfile> {
     const profile = await apiClient.get<any>(`${BASE}/profile`);
-    if (profile?.id && !profile?.profile_id) {
-      profile.profile_id = profile.id;
-    }
-    return profile as CofounderMatchProfile;
+    return this.normalizeProfile(profile) as CofounderMatchProfile;
   }
 
   async updateProfile(data: CofounderMatchProfileUpdate): Promise<CofounderMatchProfile> {
@@ -211,6 +219,18 @@ class CofounderMatchingService {
     return result;
   }
 
+  async getIncomingInterest(): Promise<CofounderMatchProfile[]> {
+    const cacheKey = "incoming-interest";
+    const cached = this.getCached<CofounderMatchProfile[]>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+    const res = await apiClient.get<CofounderMatchProfile[]>(`${BASE}/matches/incoming-interest`);
+    const normalized = (res || []).map((p: any) => this.normalizeProfile(p) as CofounderMatchProfile);
+    this.setCached(cacheKey, normalized);
+    return normalized;
+  }
+
   // --- Statistics ---
 
   async getStatistics(): Promise<MatchStatistics> {
@@ -242,11 +262,13 @@ class CofounderMatchingService {
   }
 
   async getFollowingProfiles(): Promise<CofounderMatchProfile[]> {
-    return apiClient.get<CofounderMatchProfile[]>(`${BASE}/profiles/following`);
+    const profiles = await apiClient.get<CofounderMatchProfile[]>(`${BASE}/profiles/following`);
+    return (profiles || []).map((profile: any) => this.normalizeProfile(profile));
   }
 
   async getProfileById(profileId: string): Promise<CofounderMatchProfile> {
-    return apiClient.get<CofounderMatchProfile>(`${BASE}/profiles/${profileId}`);
+    const profile = await apiClient.get<CofounderMatchProfile>(`${BASE}/profiles/${profileId}`);
+    return this.normalizeProfile(profile) as CofounderMatchProfile;
   }
 
   // --- Conversations ---

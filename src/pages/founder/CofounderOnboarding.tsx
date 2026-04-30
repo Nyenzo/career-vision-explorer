@@ -203,35 +203,6 @@ export default function CofounderOnboarding() {
           portfolio_url: profile.portfolio_url,
         }));
 
-        if (profile.intent_type === "founder") {
-          try {
-            const ideaProject = await cofounderMatchingService.getIdeaProject();
-            if (!cancelled && ideaProject) {
-              setProjectData({
-                title: ideaProject.title,
-                idea_description: ideaProject.idea_description,
-                problem_statement: ideaProject.problem_statement,
-                looking_for_description: ideaProject.looking_for_description,
-                stage: ideaProject.stage ?? "idea",
-                industry: ideaProject.industry,
-                tech_stack: ideaProject.tech_stack ?? [],
-                max_members: ideaProject.max_members,
-              });
-            }
-          } catch {
-            // No existing idea project yet.
-          }
-        }
-
-        try {
-          const status = await cofounderMatchingService.getPhotoStatus();
-          if (!cancelled) {
-            setPhotoUrls(status.photo_urls);
-            setMaxPhotos(status.max_photos);
-          }
-        } catch {
-          // Non-blocking.
-        }
       } catch {
         // First-time founder onboarding is allowed to start empty.
       } finally {
@@ -476,8 +447,8 @@ export default function CofounderOnboarding() {
                   },
                   {
                     key: "collaborator" as IntentType,
-                    label: "I'm exploring both",
-                    desc: "You're open to collaborating with founders or joining early teams while you explore the right fit.",
+                    label: "I want to contribute to existing projects",
+                    desc: "You want to work with founders and early teams by contributing skills to ventures that are already underway.",
                     icon: <Target className="h-5 w-5" />,
                   },
                 ].map((option) => (

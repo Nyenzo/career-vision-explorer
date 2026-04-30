@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, Plus, Users, Trash2, MessageSquare, RefreshCcw, UserPlus } from "lucide-react";
+import { Loader2, Plus, Users, Trash2, MessageSquare, RefreshCcw, UserPlus, ChevronDown, ChevronUp, Briefcase, CheckCircle2, Clock, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { cofounderMatchingService } from "@/services/founder-matching.service";
 import { useAuth } from "@/hooks/use-auth";
@@ -260,11 +260,16 @@ export function ProjectsTab({ onOpenConversation, currentProfile }: ProjectsTabP
         try {
             await cofounderMatchingService.requestJoinProject(projectId);
             toast.success("Join request sent");
-            await loadProjects();
+            // Optimistic update — reflect "pending" status immediately
+            setProjects(prev => prev.map(p =>
+                p.id === projectId
+                    ? { ...p, user_membership_status: "pending" as const }
+                    : p
+            ));
         } catch {
             toast.error("Could not submit join request");
         }
-    }, [loadProjects]);
+    }, []);
 
     const handleCreateGroupChat = useCallback(async (projectId: string, title: string) => {
         try {
@@ -401,10 +406,17 @@ export function ProjectsTab({ onOpenConversation, currentProfile }: ProjectsTabP
         if (!status) {
             return null;
         }
-        const label = status === "owner" ? "Owner" : status.charAt(0).toUpperCase() + status.slice(1);
+        const config: Record<string, { bg: string; text: string; icon: React.ReactNode; label: string }> = {
+            owner: { bg: "bg-indigo-50 border-indigo-200", text: "text-indigo-700", icon: <Shield className="h-3 w-3" />, label: "Owner" },
+            approved: { bg: "bg-emerald-50 border-emerald-200", text: "text-emerald-700", icon: <CheckCircle2 className="h-3 w-3" />, label: "Approved" },
+            pending: { bg: "bg-amber-50 border-amber-200", text: "text-amber-700", icon: <Clock className="h-3 w-3" />, label: "Pending" },
+            rejected: { bg: "bg-red-50 border-red-200", text: "text-red-600", icon: null, label: "Rejected" },
+        };
+        const c = config[status] ?? { bg: "bg-gray-50 border-gray-200", text: "text-gray-600", icon: null, label: status.charAt(0).toUpperCase() + status.slice(1) };
         return (
-            <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-bold text-blue-700">
-                {label}
+            <span className={cn("inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-bold", c.bg, c.text)}>
+                {c.icon}
+                {c.label}
             </span>
         );
     };
@@ -420,35 +432,34 @@ export function ProjectsTab({ onOpenConversation, currentProfile }: ProjectsTabP
     return (
         <div className="space-y-4">
             <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
-                <div className="flex items-center justify-between gap-3">
-                    <div>
+                <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0">
                         <h3 className="text-lg font-bold text-gray-900">Projects</h3>
-                        <p className="text-sm text-gray-500">
+                        <p className="mt-0.5 text-sm text-gray-500">
                             {isFounder
                                 ? "Create and manage your startup projects, members, and team chats."
                                 : "Browse matched founder projects and request to join."}
                         </p>
                     </div>
-                    <button
-                        onClick={loadProjects}
-                        className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-                    >
-                        <RefreshCcw className="h-4 w-4" />
-                        Refresh
-                    </button>
-                </div>
-
-                {isFounder && (
-                    <div className="mt-5 flex justify-end">
+                    <div className="flex shrink-0 items-center gap-2">
                         <button
-                            onClick={() => setIsCreateDialogOpen(true)}
-                            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                            onClick={loadProjects}
+                            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 active:scale-[0.97]"
                         >
-                            <Plus className="h-4 w-4" />
-                            New Project
+                            <RefreshCcw className="h-4 w-4" />
+                            <span className="hidden sm:inline">Refresh</span>
                         </button>
+                        {isFounder && (
+                            <button
+                                onClick={() => setIsCreateDialogOpen(true)}
+                                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.97]"
+                            >
+                                <Plus className="h-4 w-4" />
+                                <span className="hidden sm:inline">New Project</span>
+                            </button>
+                        )}
                     </div>
-                )}
+                </div>
             </div>
 
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
@@ -522,88 +533,117 @@ export function ProjectsTab({ onOpenConversation, currentProfile }: ProjectsTabP
                 const isProjectOwner = String(membershipStatus || "") === "owner" || project.user_id === profile?.user_id;
 
                 return (
-                    <div key={project.id} className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
-                        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                            <div>
-                                <h4 className="text-lg font-bold text-gray-900">{project.title}</h4>
-                                {project.idea_description && (
-                                    <p className="mt-1 text-sm text-gray-600">{project.idea_description}</p>
-                                )}
-                                <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5">
-                                        <Users className="h-3.5 w-3.5" />
-                                        {memberCount} members
-                                    </span>
-                                    {pendingCount > 0 && (
-                                        <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-800">
-                                            {pendingCount} pending
-                                        </span>
+                    <div key={project.id} className="group rounded-3xl border border-gray-100 bg-white shadow-sm transition hover:shadow-md">
+                        {/* Card header */}
+                        <div className="p-5 pb-3">
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-50 to-indigo-100">
+                                            <Briefcase className="h-4 w-4 text-blue-600" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <h4 className="truncate text-base font-bold text-gray-900">{project.title}</h4>
+                                            {project.owner_name && !isProjectOwner && (
+                                                <p className="text-xs text-gray-400">by {project.owner_name}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {project.idea_description && (
+                                        <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-gray-600">{project.idea_description}</p>
                                     )}
-                                    {renderMembershipStatus(membershipStatus)}
                                 </div>
+                                {renderMembershipStatus(membershipStatus)}
                             </div>
 
-                            <div className="flex flex-wrap gap-2">
-                                <button
-                                    onClick={async () => {
-                                        setExpandedProjectId((prev) => prev === project.id ? null : project.id);
-                                        await loadProjectDetail(project.id);
-                                    }}
-                                    className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-                                >
-                                    {isExpanded ? "Hide Details" : "Show Details"}
-                                </button>
-
-                                {isProjectOwner ? (
-                                    <>
-                                        <button
-                                            onClick={() => handleOpenInviteCandidates(project.id)}
-                                            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
-                                        >
-                                            <UserPlus className="h-3.5 w-3.5" />
-                                            Invite Matched Cofounders
-                                        </button>
-                                        <button
-                                            onClick={() => handleCreateGroupChat(project.id, project.title)}
-                                            className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100"
-                                        >
-                                            <MessageSquare className="h-3.5 w-3.5" />
-                                            Team Chat
-                                        </button>
-                                        <button
-                                            onClick={() => handleDeleteProject(project.id)}
-                                            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100"
-                                        >
-                                            <Trash2 className="h-3.5 w-3.5" />
-                                            Delete
-                                        </button>
-                                    </>
-                                ) : (
-                                    <button
-                                        onClick={() => handleJoinProject(project.id)}
-                                        className={cn(
-                                            "rounded-lg px-3 py-1.5 text-xs font-semibold",
-                                            isProjectOwner || membershipStatus === "approved" || membershipStatus === "pending"
-                                                ? "bg-gray-100 text-gray-500 cursor-not-allowed"
-                                                : "bg-blue-600 text-white hover:bg-blue-700"
-                                        )}
-                                        disabled={isProjectOwner || membershipStatus === "approved" || membershipStatus === "pending"}
-                                    >
-                                        {isProjectOwner
-                                            ? "Owner"
-                                            : membershipStatus === "approved"
-                                                ? "Already Joined"
-                                                : membershipStatus === "pending"
-                                                    ? "Join Requested"
-                                                    : "Request Join"}
-                                    </button>
+                            {/* Meta badges */}
+                            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2.5 py-1 font-medium">
+                                    <Users className="h-3.5 w-3.5 text-gray-400" />
+                                    {memberCount} member{memberCount !== 1 ? "s" : ""}
+                                </span>
+                                {pendingCount > 0 && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 font-semibold text-amber-700">
+                                        <Clock className="h-3 w-3" />
+                                        {pendingCount} pending
+                                    </span>
+                                )}
+                                {project.industry && (
+                                    <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 font-medium text-blue-600">
+                                        {project.industry}
+                                    </span>
                                 )}
                             </div>
                         </div>
 
+                        {/* Action bar */}
+                        <div className="flex items-center gap-2 border-t border-gray-100 px-5 py-3">
+                            <button
+                                onClick={async () => {
+                                    setExpandedProjectId((prev) => prev === project.id ? null : project.id);
+                                    await loadProjectDetail(project.id);
+                                }}
+                                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50 hover:text-gray-900"
+                            >
+                                {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                                {isExpanded ? "Hide" : "Details"}
+                            </button>
+
+                            {isFounder && isProjectOwner ? (
+                                <>
+                                    <div className="h-4 w-px bg-gray-200" />
+                                    <button
+                                        onClick={() => handleOpenInviteCandidates(project.id)}
+                                        title="Invite Matched Cofounders"
+                                        className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50"
+                                    >
+                                        <UserPlus className="h-3.5 w-3.5" />
+                                        <span className="hidden sm:inline">Invite</span>
+                                    </button>
+                                    <button
+                                        onClick={() => handleCreateGroupChat(project.id, project.title)}
+                                        title="Team Chat"
+                                        className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-blue-700 transition hover:bg-blue-50"
+                                    >
+                                        <MessageSquare className="h-3.5 w-3.5" />
+                                        <span className="hidden sm:inline">Chat</span>
+                                    </button>
+                                    <div className="flex-1" />
+                                    <button
+                                        onClick={() => handleDeleteProject(project.id)}
+                                        title="Delete Project"
+                                        className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-red-500 transition hover:bg-red-50 hover:text-red-700"
+                                    >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                </>
+                            ) : !isProjectOwner ? (
+                                <>
+                                    <div className="flex-1" />
+                                    <button
+                                        onClick={() => handleJoinProject(project.id)}
+                                        className={cn(
+                                            "inline-flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-semibold transition",
+                                            membershipStatus === "approved"
+                                                ? "border border-emerald-200 bg-emerald-50 text-emerald-700 cursor-default"
+                                                : membershipStatus === "pending"
+                                                    ? "border border-amber-200 bg-amber-50 text-amber-700 cursor-default"
+                                                    : "bg-blue-600 text-white shadow-sm hover:bg-blue-700 active:scale-[0.97]"
+                                        )}
+                                        disabled={membershipStatus === "approved" || membershipStatus === "pending"}
+                                    >
+                                        {membershipStatus === "approved" && <><CheckCircle2 className="h-3.5 w-3.5" /> Joined</>}
+                                        {membershipStatus === "pending" && <><Clock className="h-3.5 w-3.5" /> Requested</>}
+                                        {!membershipStatus && "Request Join"}
+                                        {membershipStatus === "rejected" && "Request Join"}
+                                    </button>
+                                </>
+                            ) : null}
+                        </div>
+
                         {isExpanded && renderProjectDetails(project, detail)}
 
-                        {isProjectOwner && inviteProjectId === project.id && (
+                        {isFounder && isProjectOwner && inviteProjectId === project.id && (
                             <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
                                 <div className="flex items-center justify-between gap-3">
                                     <div>
@@ -653,7 +693,7 @@ export function ProjectsTab({ onOpenConversation, currentProfile }: ProjectsTabP
                             </div>
                         )}
 
-                        {isExpanded && detail?.members && isProjectOwner && (
+                        {isExpanded && detail?.members && isFounder && isProjectOwner && (
                             <PendingActions
                                 members={detail.members}
                                 onAction={handleMemberAction}

@@ -6,6 +6,7 @@ import { cofounderQueryKeys, useCofounderDiscovery, useCofounderMutualMatches } 
 import { SwipeCard } from "./SwipeCard";
 import { toast } from "sonner";
 import type { CofounderMatchWithProfile } from "@/types/founder-matching";
+import { formatIntentType } from "@/lib/utils";
 
 interface RecentMatchCardProps {
   match: CofounderMatchWithProfile;
@@ -15,7 +16,7 @@ function RecentMatchCard({ match }: RecentMatchCardProps) {
   const profile = match.matched_profile;
   const photo = profile.photo_urls?.[0];
   const name = profile.name || "Unknown";
-  const role = profile.current_role || "Co-founder";
+  const intentLabel = formatIntentType(profile.intent_type);
 
   return (
     <div className="flex flex-col items-center gap-2 rounded-xl border border-gray-100 bg-white p-4 shadow-sm min-w-[130px]">
@@ -30,7 +31,7 @@ function RecentMatchCard({ match }: RecentMatchCardProps) {
       </div>
       <div className="text-center">
         <p className="text-sm font-semibold text-gray-900 truncate max-w-[110px]">{name}</p>
-        <p className="text-xs text-gray-500 truncate max-w-[110px]">{role}</p>
+        <p className="text-xs text-gray-500 truncate max-w-[110px]">{intentLabel}</p>
       </div>
       <span className="rounded-full px-2 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-600">
         Recently connected

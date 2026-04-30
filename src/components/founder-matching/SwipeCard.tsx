@@ -14,7 +14,7 @@ import {
   Star,
   User,
 } from "lucide-react";
-import { cn, getMatchScoreBgClass } from "@/lib/utils";
+import { cn, formatIntentType, getMatchScoreBgClass } from "@/lib/utils";
 import type { CofounderMatchWithProfile } from "@/types/founder-matching";
 
 interface SwipeCardProps {
@@ -73,7 +73,7 @@ export function SwipeCard({
 
   const photo = profile.photo_urls?.[0];
   const name = profile.name || "Unknown";
-  const role = profile.current_role || "Co-founder";
+  const intentLabel = formatIntentType(profile.intent_type);
   const experience = profile.years_experience;
   const bio = profile.bio || "Looking to build something great together.";
 
@@ -131,7 +131,7 @@ export function SwipeCard({
             <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
               {name}
             </h2>
-            <p className="text-sm font-bold text-blue-600 mt-0.5">{role}</p>
+            <p className="text-sm font-bold text-blue-600 mt-0.5">{intentLabel}</p>
           </div>
 
           {/* Bio */}

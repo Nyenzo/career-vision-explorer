@@ -39,3 +39,13 @@ export function getMatchScoreLightClass(score: number): string {
   if (score >= 40) return "bg-orange-100 text-orange-700 border-orange-200";
   return "bg-red-100 text-red-700 border-red-200";
 }
+
+export function formatIntentType(intentType?: string | null): string {
+  if (!intentType) return "Not specified";
+  if (intentType === "cofounder") return "Co-founder";
+  return intentType
+    .split("_")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}

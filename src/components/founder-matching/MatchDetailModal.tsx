@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { cofounderMatchingService } from "@/services/founder-matching.service";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, formatIntentType } from "@/lib/utils";
 import type { CofounderMatchWithProfile, FollowStats } from "@/types/founder-matching";
 
 interface MatchDetailModalProps {
@@ -66,7 +66,7 @@ export function MatchDetailModal({ match, onClose, onMessage }: MatchDetailModal
   const profile = match.matched_profile;
   const photos = profile.photo_urls ?? [];
   const name = profile.name || "Unknown";
-  const role = profile.current_role || "Co-founder";
+  const intentLabel = formatIntentType(profile.intent_type);
 
   const tags: string[] = [
     profile.location_preference,
@@ -159,7 +159,7 @@ export function MatchDetailModal({ match, onClose, onMessage }: MatchDetailModal
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">{name}</h2>
-              <p className="text-base font-semibold text-blue-600">{role}</p>
+              <p className="text-base font-semibold text-blue-600">{intentLabel}</p>
               {profile.years_experience != null && (
                 <p className="text-sm text-gray-500">{profile.years_experience}+ years experience</p>
               )}
